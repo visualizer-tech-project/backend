@@ -1,50 +1,30 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
-from pydantic import EmailStr
+from typing import List, TYPE_CHECKING
 from sqlmodel import Field, Relationship
-from app.core.constants import NAME_FIELD_CONFIG  # если вынесли в константы
-from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
+
+from app.models.base import BaseModel
 
 if TYPE_CHECKING:
     from app.models.program import Program
     from app.models.course import Course
-    from app.models.userprogress import UserProgress
-    from app.models.careertrack import CareerTrack
-
+    from app.models.user_progress import UserProgress
+    from app.models.career_track import CareerTrack
 
 class UserRole(str, Enum):
     ADMIN = 'admin'
-    STUDENT = 'student'
+    USER = 'user'
     TEACHER = 'teacher'
 
-
-class UserBase(BaseSchema):
-    email: EmailStr = Field(max_length=255, unique=True, index=True)
+class User(BaseModel, table=True):
+    __tablename__ = 'users'
+    
+    email: str = Field(unique=True, max_length=255, index=True)
+    hashed_password: str
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
-    role: UserRole = Field(default=UserRole.STUDENT)
+    role: UserRole
 
-
-class User(UserBase, BaseSQLModel, table=True):
-    __tablename__ = 'users'
-
-    hashed_password: str = Field(nullable=False)
-
-    programs: list['Program'] = Relationship(back_populates='user', cascade_delete=True)
-    courses: list['Course'] = Relationship(back_populates='user', cascade_delete=True)
-    progress: list['UserProgress'] = Relationship(back_populates='user', cascade_delete=True)
-    career_tracks: list['CareerTrack'] = Relationship(back_populates='user', cascade_delete=True)
-
-
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, max_length=128)
-
-
-class UserUpdate(BaseSchema):
-    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    role: Optional[UserRole] = None
-
-
-class UserPublic(UserBase, BaseModelSchema):
-    pass
+    programs: List['Program'] = Relationship(back_populates='user')
+    courses: List['Course'] = Relationship(back_populates='user')
+    progress: List['UserProgress'] = Relationship(back_populates='user')
+    career_tracks: List['CareerTrack'] = Relationship(back_populates='user')
