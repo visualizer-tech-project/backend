@@ -1,23 +1,26 @@
 from enum import Enum
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
 from sqlmodel import Field, Relationship
 
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
-    from app.models.program import Program
-    from app.models.course import Course
-    from app.models.user_progress import UserProgress
     from app.models.career_track import CareerTrack
+    from app.models.course import Course
+    from app.models.program import Program
+    from app.models.user_progress import UserProgress
+
 
 class UserRole(str, Enum):
     ADMIN = 'admin'
     USER = 'user'
     TEACHER = 'teacher'
 
+
 class User(BaseModel, table=True):
     __tablename__ = 'users'
-    
+
     email: str = Field(unique=True, max_length=255, index=True)
     hashed_password: str
     first_name: str = Field(max_length=100)

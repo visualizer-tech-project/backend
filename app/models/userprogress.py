@@ -1,6 +1,7 @@
 import datetime
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
 from sqlmodel import Column, Field, Numeric, Relationship
 
 from app.models.base import BaseModel
@@ -9,10 +10,12 @@ if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.user import User
 
+
 class UserProgressStatus(str, Enum):
     NOT_STARTED = 'not_started'
     IN_PROCESS = 'in_process'
     FINISHED = 'finished'
+
 
 class UserProgress(BaseModel, table=True):
     __tablename__ = 'user_progress'

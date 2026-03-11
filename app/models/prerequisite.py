@@ -16,9 +16,9 @@ class Prerequisite(BaseModel, table=True):
 
     course: 'Course' = Relationship(
         back_populates='prerequisites',
-        sa_relationship_kwargs={'foreign_keys': 'Prerequisite.course_id'}
+        sa_relationship_kwargs={'foreign_keys': 'Prerequisite.course_id'},
     )
     prerequisite_course: 'Course' = Relationship(
         back_populates='prerequisite_for',
-        sa_relationship_kwargs={'foreign_keys': 'Prerequisite.prerequisite_course_id'}
+        sa_relationship_kwargs={'foreign_keys': 'Prerequisite.prerequisite_course_id'},
     )
