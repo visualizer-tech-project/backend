@@ -1,4 +1,5 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
 from sqlmodel import Column, Field, Relationship, Text
 
 from app.models.base import BaseModel
@@ -6,6 +7,7 @@ from app.models.base import BaseModel
 if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.user import User
+
 
 class CareerTrack(BaseModel, table=True):
     __tablename__ = 'career_tracks'

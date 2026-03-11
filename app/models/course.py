@@ -1,14 +1,16 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
 from sqlmodel import Column, Field, Relationship, Text
 
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
-    from app.models.prerequisite import Prerequisite
     from app.models.career_track import CareerTrackCourse
-    from app.models.user_progress import UserProgress
+    from app.models.prerequisite import Prerequisite
     from app.models.program import Program
     from app.models.user import User
+    from app.models.user_progress import UserProgress
+
 
 class Course(BaseModel, table=True):
     __tablename__ = 'courses'
@@ -23,7 +25,7 @@ class Course(BaseModel, table=True):
     prerequisites: List['Prerequisite'] = Relationship(back_populates='course')
     prerequisite_for: List['Prerequisite'] = Relationship(
         back_populates='prerequisite_course',
-        sa_relationship_kwargs={'foreign_keys': 'Prerequisite.prerequisite_course_id'}
+        sa_relationship_kwargs={'foreign_keys': 'Prerequisite.prerequisite_course_id'},
     )
     career_track_courses: List['CareerTrackCourse'] = Relationship(
         back_populates='course'
