@@ -23,10 +23,24 @@ tags:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    oauth2:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: /auth/login
+          scopes:
+            read:users: "Просмотр пользователей"
+            write:users: "Редактирование пользователей"
+            read:programs: "Просмотр программ"
+            write:programs: "Создание/редактирование программ"
+            delete:programs: "Удаление программ"
+            read:courses: "Просмотр курсов"
+            write:courses: "Создание/редактирование курсов"
+            delete:courses: "Удаление курсов"
+            read:career-tracks: "Просмотр карьерных треков"
+            write:career-tracks: "Создание/редактирование треков"
+            delete:career-tracks: "Удаление треков"
+            admin:assign-teacher: "Назначение преподавателей"
 
   schemas:
     Error:
@@ -34,7 +48,7 @@ components:
       properties:
         detail:
           type: string
-          example: "Course not found"
+          description: Описание ошибки
       required:
         - detail
 
@@ -68,6 +82,7 @@ components:
         email:
           type: string
           format: email
+          example: "student@example.com"
         first_name:
           type: string
           example: "Иван"
@@ -93,39 +108,46 @@ components:
         email:
           type: string
           format: email
+          example: "student@example.com"
         password:
           type: string
           format: password
           minLength: 6
+          example: "securepass123"
         first_name:
           type: string
+          example: "Иван"
         last_name:
           type: string
-        role:
-          $ref: '#/components/schemas/UserRole'
+          example: "Петров"
       required:
         - email
         - password
         - first_name
         - last_name
-        - role
 
     UserUpdate:
       type: object
       properties:
         first_name:
           type: string
+          example: "Петр"
         last_name:
           type: string
+          example: "Сидоров"
 
     Token:
       type: object
       properties:
         access_token:
           type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         token_type:
           type: string
           example: "bearer"
+        scope:
+          type: string
+          example: "read:users write:programs"
       required:
         - access_token
         - token_type
@@ -136,39 +158,47 @@ components:
         email:
           type: string
           format: email
+          example: "student@example.com"
         password:
           type: string
           format: password
+          example: "securepass123"
       required:
         - email
         - password
 
-    ProgramStream:
+    ProgramStudyMode:
       type: string
       enum: [full-time, part-time]
+      description: "full-time - очная, part-time - заочная"
 
     Program:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         title:
           type: string
+          example: "Программная инженерия"
         description:
           type: string
-        stream:
-          $ref: '#/components/schemas/ProgramStream'
+          example: "Подготовка инженеров-программистов"
+        study_mode:
+          $ref: '#/components/schemas/ProgramStudyMode'
         admission_year:
           type: integer
+          example: 2026
         created_by:
           type: integer
+          example: 1
         created_at:
           type: string
           format: date-time
       required:
         - id
         - title
-        - stream
+        - study_mode
         - admission_year
         - created_by
         - created_at
@@ -178,15 +208,18 @@ components:
       properties:
         title:
           type: string
+          example: "Программная инженерия"
         description:
           type: string
-        stream:
-          $ref: '#/components/schemas/ProgramStream'
+          example: "Подготовка инженеров-программистов"
+        study_mode:
+          $ref: '#/components/schemas/ProgramStudyMode'
         admission_year:
           type: integer
+          example: 2026
       required:
         - title
-        - stream
+        - study_mode
         - admission_year
 
     ProgramUpdate:
@@ -194,32 +227,40 @@ components:
       properties:
         title:
           type: string
+          example: "Программная инженерия (обновленная)"
         description:
           type: string
-        stream:
-          $ref: '#/components/schemas/ProgramStream'
+        study_mode:
+          $ref: '#/components/schemas/ProgramStudyMode'
         admission_year:
           type: integer
+          example: 2027
 
     CourseType:
       type: string
       enum: [required, elective]
+      description: "required - обязательный, elective - элективный"
 
     Course:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         title:
           type: string
+          example: "Алгоритмы и структуры данных"
         description:
           type: string
+          example: "Базовый курс по алгоритмам"
         type:
           $ref: '#/components/schemas/CourseType'
         semester:
           type: integer
+          example: 3
         program_id:
           type: integer
+          example: 1
         created_at:
           type: string
           format: date-time
@@ -236,14 +277,18 @@ components:
       properties:
         title:
           type: string
+          example: "Алгоритмы и структуры данных"
         description:
           type: string
+          example: "Базовый курс по алгоритмам"
         type:
           $ref: '#/components/schemas/CourseType'
         semester:
           type: integer
+          example: 3
         program_id:
           type: integer
+          example: 1
       required:
         - title
         - type
@@ -255,20 +300,24 @@ components:
       properties:
         title:
           type: string
+          example: "Продвинутые алгоритмы"
         description:
           type: string
         type:
           $ref: '#/components/schemas/CourseType'
         semester:
           type: integer
+          example: 4
 
     Prerequisite:
       type: object
       properties:
         course_id:
           type: integer
+          example: 2
         prerequisite_id:
           type: integer
+          example: 1
         created_at:
           type: string
           format: date-time
@@ -282,14 +331,19 @@ components:
       properties:
         id:
           type: integer
+          example: 1
         title:
           type: string
+          example: "Backend-разработчик"
         description:
           type: string
+          example: "Траектория для будущих backend-разработчиков"
         program_id:
           type: integer
+          example: 1
         created_by:
           type: integer
+          example: 1
         created_at:
           type: string
           format: date-time
@@ -305,10 +359,13 @@ components:
       properties:
         title:
           type: string
+          example: "Backend-разработчик"
         description:
           type: string
+          example: "Траектория для будущих backend-разработчиков"
         program_id:
           type: integer
+          example: 1
       required:
         - title
         - program_id
@@ -318,9 +375,43 @@ components:
       properties:
         title:
           type: string
+          example: "Go-разработчик"
         description:
           type: string
 
+    CareerTrackCourse:
+      type: object
+      properties:
+        career_track_id:
+          type: integer
+          example: 1
+        course_id:
+          type: integer
+          example: 3
+        order_index:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - career_track_id
+        - course_id
+        - order_index
+        - created_at
+
+    AddCourseToTrack:
+      type: object
+      properties:
+        course_id:
+          type: integer
+          example: 3
+        order_index:
+          type: integer
+          example: 1
+      required:
+        - course_id
+        - order_index
 
     ProgressStatus:
       type: string
@@ -331,15 +422,19 @@ components:
       properties:
         id:
           type: integer
+          example: 1
         user_id:
           type: integer
+          example: 5
         course_id:
           type: integer
+          example: 3
         status:
           $ref: '#/components/schemas/ProgressStatus'
         grade:
           type: integer
           nullable: true
+          example: 85
         started_at:
           type: string
           format: date-time
@@ -366,6 +461,7 @@ components:
         grade:
           type: integer
           nullable: true
+          example: 85
         started_at:
           type: string
           format: date-time
@@ -434,107 +530,97 @@ components:
         page_info:
           $ref: '#/components/schemas/PageInfo'
 
-    CareerTrackCourse:
-      type: object
-      properties:
-        career_track_id:
-          type: integer
-          example: 1
-        course_id:
-          type: integer
-          example: 3
-        order_index:
-          type: integer
-          example: 1
-        created_at:
-          type: string
-          format: date-time
-      required:
-        - career_track_id
-        - course_id
-        - order_index
-        - created_at
-
-    AddCourseToTrack:
-      type: object
-      properties:
-        course_id:
-          type: integer
-          example: 3
-        order_index:
-          type: integer
-          example: 1
-      required:
-        - course_id
-        - order_index
-
 paths:
   /auth/register:
     post:
       tags: [auth]
-      summary: Регистрация
+      summary: Регистрация нового пользователя
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UserCreate'
+            example:
+              email: "student@example.com"
+              password: "securepass123"
+              first_name: "Иван"
+              last_name: "Петров"
       responses:
         '201':
-          description: Успешно
+          description: Пользователь успешно зарегистрирован
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
         '400':
-          description: Ошибка
+          description: Некорректные данные
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid email format"
+        '409':
+          description: Email уже зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User with this email already exists"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /auth/login:
     post:
       tags: [auth]
-      summary: Вход
+      summary: Вход в систему
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "student@example.com"
+              password: "securepass123"
       responses:
         '200':
-          description: Успешно
+          description: Успешный вход
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token'
         '401':
-          description: Неверные данные
+          description: Неверный email или пароль
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid credentials"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /users:
     get:
       tags: [users]
-      summary: Список пользователей (преподаватели и админы)
+      summary: Получить список пользователей
       security:
-        - bearerAuth: []
+        - oauth2: [read:users]
       parameters:
         - in: query
           name: role
@@ -544,15 +630,18 @@ paths:
           name: skip
           schema:
             type: integer
+            minimum: 0
             default: 0
         - in: query
           name: limit
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
       responses:
         '200':
-          description: Успешно
+          description: Список пользователей
           content:
             application/json:
               schema:
@@ -570,25 +659,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /users/{user_id}:
     get:
       tags: [users]
-      summary: Получить пользователя
+      summary: Получить пользователя по ID
       security:
-        - bearerAuth: []
+        - oauth2: [read:users]
       parameters:
         - in: path
           name: user_id
@@ -597,25 +692,49 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Информация о пользователе
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
-          description: Нет доступа
+          description: Нет доступа к данному пользователю
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Access denied"
         '404':
-          description: Не найден
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     put:
       tags: [users]
-      summary: Обновить пользователя
+      summary: Обновить данные пользователя
       security:
-        - bearerAuth: []
+        - oauth2: [write:users]
       parameters:
         - in: path
           name: user_id
@@ -628,30 +747,64 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserUpdate'
+            example:
+              first_name: "Петр"
+              last_name: "Сидоров"
       responses:
         '200':
-          description: Успешно
+          description: Пользователь обновлен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid input data"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
-          description: Нет прав
+          description: Нет прав на редактирование
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Cannot edit this user"
         '404':
-          description: Не найден
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /users/{user_id}/assign-teacher:
     post:
       tags: [users]
-      summary: Назначить преподавателя (только админы)
+      summary: Назначить роль преподавателя
+      description: Изменяет роль пользователя с "student" на "teacher"
       security:
-        - bearerAuth: []
+        - oauth2: [admin:assign-teacher]
       parameters:
         - in: path
           name: user_id
@@ -660,31 +813,68 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Роль успешно изменена на преподавателя
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+              example:
+                id: 1
+                email: "student@example.com"
+                first_name: "Иван"
+                last_name: "Петров"
+                role: "teacher"
+                created_at: "2026-03-12T17:42:49.884Z"
         '400':
-          description: Уже преподаватель
+          description: Пользователь уже является преподавателем или администратором
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User is already a teacher or admin"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Admin privileges required"
         '404':
           description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /programs:
     get:
       tags: [programs]
-      summary: Список программ
+      summary: Получить список образовательных программ
       parameters:
         - in: query
-          name: stream
+          name: study_mode
           schema:
-            $ref: '#/components/schemas/ProgramStream'
+            $ref: '#/components/schemas/ProgramStudyMode'
         - in: query
           name: admission_year
           schema:
@@ -697,27 +887,36 @@ paths:
           name: skip
           schema:
             type: integer
+            minimum: 0
             default: 0
         - in: query
           name: limit
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
       responses:
         '200':
-          description: Успешно
+          description: Список программ
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedPrograms'
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     post:
       tags: [programs]
-      summary: Создать программу (преподаватели и админы)
+      summary: Создать новую программу
       security:
-        - bearerAuth: []
+        - oauth2: [write:programs]
       requestBody:
         required: true
         content:
@@ -726,24 +925,48 @@ paths:
               $ref: '#/components/schemas/ProgramCreate'
       responses:
         '201':
-          description: Успешно
+          description: Программа создана
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Program'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid program data"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /programs/{program_id}:
     get:
       tags: [programs]
-      summary: Получить программу
+      summary: Получить программу по ID
       parameters:
         - in: path
           name: program_id
@@ -752,21 +975,33 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Информация о программе
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Program'
         '404':
-          description: Не найдена
+          description: Программа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Program not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     put:
       tags: [programs]
-      summary: Обновить программу (преподаватели и админы)
+      summary: Обновить программу
       security:
-        - bearerAuth: []
+        - oauth2: [write:programs]
       parameters:
         - in: path
           name: program_id
@@ -781,27 +1016,57 @@ paths:
               $ref: '#/components/schemas/ProgramUpdate'
       responses:
         '200':
-          description: Успешно
+          description: Программа обновлена
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Program'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid update data"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найдена
+          description: Программа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Program not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     delete:
       tags: [programs]
-      summary: Удалить программу (преподаватели и админы)
+      summary: Удалить программу
       security:
-        - bearerAuth: []
+        - oauth2: [delete:programs]
       parameters:
         - in: path
           name: program_id
@@ -810,22 +1075,46 @@ paths:
             type: integer
       responses:
         '204':
-          description: Удалено
+          description: Программа удалена
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найдена
+          description: Программа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Program not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /programs/{program_id}/copy:
     post:
       tags: [programs]
-      summary: Копировать программу (преподаватели и админы)
+      summary: Копировать программу для нового потока/года
       security:
-        - bearerAuth: []
+        - oauth2: [write:programs]
       parameters:
         - in: path
           name: program_id
@@ -841,35 +1130,67 @@ paths:
               properties:
                 title:
                   type: string
+                  example: "Программная инженерия 2027"
                 admission_year:
                   type: integer
-                stream:
-                  $ref: '#/components/schemas/ProgramStream'
+                  example: 2027
+                study_mode:
+                  $ref: '#/components/schemas/ProgramStudyMode'
               required:
                 - title
                 - admission_year
       responses:
         '201':
-          description: Успешно
+          description: Копия программы создана
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Program'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid copy parameters"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найдена
+          description: Исходная программа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Source program not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /courses:
     get:
       tags: [courses]
-      summary: Список курсов
+      summary: Получить список курсов
       parameters:
         - in: query
           name: program_id
@@ -891,27 +1212,36 @@ paths:
           name: skip
           schema:
             type: integer
+            minimum: 0
             default: 0
         - in: query
           name: limit
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
       responses:
         '200':
-          description: Успешно
+          description: Список курсов
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedCourses'
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     post:
       tags: [courses]
-      summary: Создать курс (преподаватели и админы)
+      summary: Создать новый курс
       security:
-        - bearerAuth: []
+        - oauth2: [write:courses]
       requestBody:
         required: true
         content:
@@ -920,24 +1250,48 @@ paths:
               $ref: '#/components/schemas/CourseCreate'
       responses:
         '201':
-          description: Успешно
+          description: Курс создан
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Course'
         '400':
-          description: Ошибка
+          description: Некорректные данные или program_id не существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Program not found"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /courses/{course_id}:
     get:
       tags: [courses]
-      summary: Получить курс
+      summary: Получить курс по ID
       parameters:
         - in: path
           name: course_id
@@ -946,21 +1300,33 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Информация о курсе
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Course'
         '404':
-          description: Не найден
+          description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     put:
       tags: [courses]
-      summary: Обновить курс (преподаватели и админы)
+      summary: Обновить курс
       security:
-        - bearerAuth: []
+        - oauth2: [write:courses]
       parameters:
         - in: path
           name: course_id
@@ -975,27 +1341,57 @@ paths:
               $ref: '#/components/schemas/CourseUpdate'
       responses:
         '200':
-          description: Успешно
+          description: Курс обновлен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Course'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid course data"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найден
+          description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     delete:
       tags: [courses]
-      summary: Удалить курс (преподаватели и админы)
+      summary: Удалить курс
       security:
-        - bearerAuth: []
+        - oauth2: [delete:courses]
       parameters:
         - in: path
           name: course_id
@@ -1004,20 +1400,44 @@ paths:
             type: integer
       responses:
         '204':
-          description: Удалено
+          description: Курс удален
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найден
+          description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /courses/{course_id}/prerequisites:
     get:
       tags: [courses]
-      summary: Пререквизиты курса
+      summary: Получить все пререквизиты для курса
       parameters:
         - in: path
           name: course_id
@@ -1026,7 +1446,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Список курсов-пререквизитов
           content:
             application/json:
               schema:
@@ -1035,14 +1455,26 @@ paths:
                   $ref: '#/components/schemas/Course'
         '404':
           description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     post:
       tags: [courses]
-      summary: Добавить пререквизит (преподаватели и админы)
+      summary: Добавить пререквизит для курса
       security:
-        - bearerAuth: []
+        - oauth2: [write:courses]
       parameters:
         - in: path
           name: course_id
@@ -1058,32 +1490,63 @@ paths:
               properties:
                 prerequisite_id:
                   type: integer
+                  example: 1
               required:
                 - prerequisite_id
       responses:
         '201':
-          description: Успешно
+          description: Пререквизит добавлен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Prerequisite'
         '400':
-          description: Ошибка
+          description: Некорректные данные (циклическая зависимость, дубликат)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Cyclic dependency detected"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найден
+          description: Курс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /courses/{course_id}/prerequisites/{prerequisite_id}:
     delete:
       tags: [courses]
-      summary: Удалить пререквизит (преподаватели и админы)
+      summary: Удалить пререквизит у курса
       security:
-        - bearerAuth: []
+        - oauth2: [write:courses]
       parameters:
         - in: path
           name: course_id
@@ -1097,20 +1560,44 @@ paths:
             type: integer
       responses:
         '204':
-          description: Удалено
+          description: Пререквизит удален
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найдено
+          description: Связь не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Prerequisite relation not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /career-tracks:
     get:
       tags: [career-tracks]
-      summary: Список карьерных треков
+      summary: Получить список карьерных треков
       parameters:
         - in: query
           name: program_id
@@ -1124,27 +1611,36 @@ paths:
           name: skip
           schema:
             type: integer
+            minimum: 0
             default: 0
         - in: query
           name: limit
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
       responses:
         '200':
-          description: Успешно
+          description: Список карьерных треков
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedCareerTracks'
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     post:
       tags: [career-tracks]
-      summary: Создать трек (преподаватели и админы)
+      summary: Создать новый карьерный трек
       security:
-        - bearerAuth: []
+        - oauth2: [write:career-tracks]
       requestBody:
         required: true
         content:
@@ -1153,24 +1649,48 @@ paths:
               $ref: '#/components/schemas/CareerTrackCreate'
       responses:
         '201':
-          description: Успешно
+          description: Карьерный трек создан
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareerTrack'
         '400':
-          description: Ошибка
+          description: Некорректные данные или program_id не существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Program not found"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /career-tracks/{track_id}:
     get:
       tags: [career-tracks]
-      summary: Получить трек
+      summary: Получить карьерный трек по ID
       parameters:
         - in: path
           name: track_id
@@ -1179,21 +1699,33 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Информация о треке
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareerTrack'
         '404':
-          description: Не найден
+          description: Трек не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Career track not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     put:
       tags: [career-tracks]
-      summary: Обновить трек (преподаватели и админы)
+      summary: Обновить карьерный трек
       security:
-        - bearerAuth: []
+        - oauth2: [write:career-tracks]
       parameters:
         - in: path
           name: track_id
@@ -1208,27 +1740,57 @@ paths:
               $ref: '#/components/schemas/CareerTrackUpdate'
       responses:
         '200':
-          description: Успешно
+          description: Трек обновлен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareerTrack'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid track data"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найден
+          description: Трек не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Career track not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     delete:
       tags: [career-tracks]
-      summary: Удалить трек (преподаватели и админы)
+      summary: Удалить карьерный трек
       security:
-        - bearerAuth: []
+        - oauth2: [delete:career-tracks]
       parameters:
         - in: path
           name: track_id
@@ -1237,20 +1799,44 @@ paths:
             type: integer
       responses:
         '204':
-          description: Удалено
+          description: Трек удален
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найден
+          description: Трек не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Career track not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /career-tracks/{track_id}/courses:
     get:
       tags: [career-tracks]
-      summary: Курсы в треке
+      summary: Получить курсы в карьерном треке
       parameters:
         - in: path
           name: track_id
@@ -1259,7 +1845,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Успешно
+          description: Список курсов с порядковыми номерами
           content:
             application/json:
               schema:
@@ -1269,18 +1855,31 @@ paths:
                   properties:
                     order_index:
                       type: integer
+                      example: 1
                     course:
                       $ref: '#/components/schemas/Course'
         '404':
           description: Трек не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Career track not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     post:
       tags: [career-tracks]
-      summary: Добавить курс в трек (преподаватели и админы)
+      summary: Добавить курс в карьерный трек
       security:
-        - bearerAuth: []
+        - oauth2: [write:career-tracks]
       parameters:
         - in: path
           name: track_id
@@ -1295,28 +1894,58 @@ paths:
               $ref: '#/components/schemas/AddCourseToTrack'
       responses:
         '201':
-          description: Успешно
+          description: Курс добавлен в трек
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareerTrackCourse'
         '400':
-          description: Ошибка
+          description: Некорректные данные или курс уже в треке
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course already in track"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найдено
+          description: Трек или курс не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course or track not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /career-tracks/{track_id}/courses/{course_id}:
     delete:
       tags: [career-tracks]
-      summary: Удалить курс из трека (преподаватели и админы)
+      summary: Удалить курс из карьерного трека
       security:
-        - bearerAuth: []
+        - oauth2: [write:career-tracks]
       parameters:
         - in: path
           name: track_id
@@ -1330,22 +1959,46 @@ paths:
             type: integer
       responses:
         '204':
-          description: Удалено
+          description: Курс удален из трека
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
           description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Insufficient scope"
         '404':
-          description: Не найдено
+          description: Связь не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Course not in track"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
   /users/{user_id}/progress:
     get:
       tags: [progress]
-      summary: Прогресс пользователя
+      summary: Получить прогресс пользователя по курсам
       security:
-        - bearerAuth: []
+        - oauth2: [read:users]
       parameters:
         - in: path
           name: user_id
@@ -1364,34 +2017,61 @@ paths:
           name: skip
           schema:
             type: integer
+            minimum: 0
             default: 0
         - in: query
           name: limit
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
       responses:
         '200':
-          description: Успешно
+          description: Список записей прогресса
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedProgress'
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
-          description: Нет доступа
+          description: Нет доступа к прогрессу этого пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Access denied"
         '404':
-          description: Не найден
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
-  /users/{user_id}/progress/courses/{course_id}:
+  /users/{user_id}/courses/{course_id}/progress:
     post:
       tags: [progress]
-      summary: Отметить прогресс
+      summary: Отметить прогресс по курсу для пользователя
       security:
-        - bearerAuth: []
+        - oauth2: [write:users]
       parameters:
         - in: path
           name: user_id
@@ -1411,27 +2091,57 @@ paths:
               $ref: '#/components/schemas/ProgressCreate'
       responses:
         '201':
-          description: Успешно
+          description: Прогресс отмечен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProgress'
         '400':
-          description: Ошибка
+          description: Некорректные данные или запись уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Progress record already exists"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
-          description: Нет прав
+          description: Нет прав для отметки прогресса этому пользователю
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Cannot modify this user's progress"
         '404':
-          description: Не найдено
+          description: Пользователь или курс не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "User or course not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     put:
       tags: [progress]
-      summary: Обновить прогресс
+      summary: Обновить прогресс по курсу для пользователя
       security:
-        - bearerAuth: []
+        - oauth2: [write:users]
       parameters:
         - in: path
           name: user_id
@@ -1451,27 +2161,57 @@ paths:
               $ref: '#/components/schemas/ProgressUpdate'
       responses:
         '200':
-          description: Успешно
+          description: Прогресс обновлен
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProgress'
         '400':
-          description: Ошибка
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Invalid progress data"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
-          description: Нет прав
+          description: Нет прав для обновления прогресса этого пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Cannot modify this user's progress"
         '404':
-          description: Не найдено
+          description: Запись прогресса не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Progress record not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
 
     delete:
       tags: [progress]
-      summary: Удалить прогресс
+      summary: Удалить запись о прогрессе пользователя по курсу
       security:
-        - bearerAuth: []
+        - oauth2: [write:users]
       parameters:
         - in: path
           name: user_id
@@ -1485,12 +2225,36 @@ paths:
             type: integer
       responses:
         '204':
-          description: Удалено
+          description: Запись удалена
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Not authenticated"
         '403':
-          description: Нет прав
+          description: Нет прав для удаления прогресса этого пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Cannot delete this user's progress"
         '404':
-          description: Не найдено
+          description: Запись не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Progress record not found"
         '500':
-          description: Ошибка сервера
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
