@@ -1,0 +1,1496 @@
+openapi: 3.0.0
+info:
+  title: EduMap API
+  description: API для интерактивной карты учебных курсов
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+tags:
+  - name: auth
+    description: Аутентификация и регистрация
+  - name: users
+    description: Управление пользователями
+  - name: programs
+    description: Образовательные программы
+  - name: courses
+    description: Курсы и дисциплины
+  - name: career-tracks
+    description: Карьерные треки
+  - name: progress
+    description: Прогресс студента
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Course not found"
+      required:
+        - detail
+
+    PageInfo:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 150
+        skip:
+          type: integer
+          example: 0
+        limit:
+          type: integer
+          example: 20
+      required:
+        - total
+        - skip
+        - limit
+
+    UserRole:
+      type: string
+      enum: [student, teacher, admin]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          example: "Иван"
+        last_name:
+          type: string
+          example: "Петров"
+        role:
+          $ref: '#/components/schemas/UserRole'
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - first_name
+        - last_name
+        - role
+        - created_at
+
+    UserCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 6
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+      required:
+        - email
+        - password
+        - first_name
+        - last_name
+        - role
+
+    UserUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+
+    Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: "bearer"
+      required:
+        - access_token
+        - token_type
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required:
+        - email
+        - password
+
+    ProgramStream:
+      type: string
+      enum: [full-time, part-time]
+
+    Program:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        stream:
+          $ref: '#/components/schemas/ProgramStream'
+        admission_year:
+          type: integer
+        created_by:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - stream
+        - admission_year
+        - created_by
+        - created_at
+
+    ProgramCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        stream:
+          $ref: '#/components/schemas/ProgramStream'
+        admission_year:
+          type: integer
+      required:
+        - title
+        - stream
+        - admission_year
+
+    ProgramUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        stream:
+          $ref: '#/components/schemas/ProgramStream'
+        admission_year:
+          type: integer
+
+    CourseType:
+      type: string
+      enum: [required, elective]
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/CourseType'
+        semester:
+          type: integer
+        program_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - type
+        - semester
+        - program_id
+        - created_at
+
+    CourseCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/CourseType'
+        semester:
+          type: integer
+        program_id:
+          type: integer
+      required:
+        - title
+        - type
+        - semester
+        - program_id
+
+    CourseUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/CourseType'
+        semester:
+          type: integer
+
+    Prerequisite:
+      type: object
+      properties:
+        course_id:
+          type: integer
+        prerequisite_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - course_id
+        - prerequisite_id
+        - created_at
+
+    CareerTrack:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        program_id:
+          type: integer
+        created_by:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - program_id
+        - created_by
+        - created_at
+
+    CareerTrackCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        program_id:
+          type: integer
+      required:
+        - title
+        - program_id
+
+    CareerTrackUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+
+
+    ProgressStatus:
+      type: string
+      enum: [not_started, in_progress, completed]
+
+    UserProgress:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        course_id:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ProgressStatus'
+        grade:
+          type: integer
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - user_id
+        - course_id
+        - status
+        - updated_at
+
+    ProgressCreate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ProgressStatus'
+        grade:
+          type: integer
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - status
+
+    ProgressUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ProgressStatus'
+        grade:
+          type: integer
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PaginatedPrograms:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Program'
+        page_info:
+          $ref: '#/components/schemas/PageInfo'
+
+    PaginatedCourses:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+        page_info:
+          $ref: '#/components/schemas/PageInfo'
+
+    PaginatedCareerTracks:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CareerTrack'
+        page_info:
+          $ref: '#/components/schemas/PageInfo'
+
+    PaginatedProgress:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProgress'
+        page_info:
+          $ref: '#/components/schemas/PageInfo'
+
+    CareerTrackCourse:
+      type: object
+      properties:
+        career_track_id:
+          type: integer
+          example: 1
+        course_id:
+          type: integer
+          example: 3
+        order_index:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - career_track_id
+        - course_id
+        - order_index
+        - created_at
+
+    AddCourseToTrack:
+      type: object
+      properties:
+        course_id:
+          type: integer
+          example: 3
+        order_index:
+          type: integer
+          example: 1
+      required:
+        - course_id
+        - order_index
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Регистрация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users:
+    get:
+      tags: [users]
+      summary: Список пользователей (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: role
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  page_info:
+                    $ref: '#/components/schemas/PageInfo'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{user_id}:
+    get:
+      tags: [users]
+      summary: Получить пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет доступа
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+    put:
+      tags: [users]
+      summary: Обновить пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+  /users/{user_id}/assign-teacher:
+    post:
+      tags: [users]
+      summary: Назначить преподавателя (только админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Уже преподаватель
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Пользователь не найден
+        '500':
+          description: Ошибка сервера
+
+  /programs:
+    get:
+      tags: [programs]
+      summary: Список программ
+      parameters:
+        - in: query
+          name: stream
+          schema:
+            $ref: '#/components/schemas/ProgramStream'
+        - in: query
+          name: admission_year
+          schema:
+            type: integer
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPrograms'
+        '500':
+          description: Ошибка сервера
+
+    post:
+      tags: [programs]
+      summary: Создать программу (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramCreate'
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '500':
+          description: Ошибка сервера
+
+  /programs/{program_id}:
+    get:
+      tags: [programs]
+      summary: Получить программу
+      parameters:
+        - in: path
+          name: program_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '404':
+          description: Не найдена
+        '500':
+          description: Ошибка сервера
+
+    put:
+      tags: [programs]
+      summary: Обновить программу (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: program_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramUpdate'
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найдена
+        '500':
+          description: Ошибка сервера
+
+    delete:
+      tags: [programs]
+      summary: Удалить программу (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: program_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найдена
+        '500':
+          description: Ошибка сервера
+
+  /programs/{program_id}/copy:
+    post:
+      tags: [programs]
+      summary: Копировать программу (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: program_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                admission_year:
+                  type: integer
+                stream:
+                  $ref: '#/components/schemas/ProgramStream'
+              required:
+                - title
+                - admission_year
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найдена
+        '500':
+          description: Ошибка сервера
+
+  /courses:
+    get:
+      tags: [courses]
+      summary: Список курсов
+      parameters:
+        - in: query
+          name: program_id
+          schema:
+            type: integer
+        - in: query
+          name: type
+          schema:
+            $ref: '#/components/schemas/CourseType'
+        - in: query
+          name: semester
+          schema:
+            type: integer
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCourses'
+        '500':
+          description: Ошибка сервера
+
+    post:
+      tags: [courses]
+      summary: Создать курс (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseCreate'
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '500':
+          description: Ошибка сервера
+
+  /courses/{course_id}:
+    get:
+      tags: [courses]
+      summary: Получить курс
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+    put:
+      tags: [courses]
+      summary: Обновить курс (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseUpdate'
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+    delete:
+      tags: [courses]
+      summary: Удалить курс (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+  /courses/{course_id}/prerequisites:
+    get:
+      tags: [courses]
+      summary: Пререквизиты курса
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+        '404':
+          description: Курс не найден
+        '500':
+          description: Ошибка сервера
+
+    post:
+      tags: [courses]
+      summary: Добавить пререквизит (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prerequisite_id:
+                  type: integer
+              required:
+                - prerequisite_id
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prerequisite'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+  /courses/{course_id}/prerequisites/{prerequisite_id}:
+    delete:
+      tags: [courses]
+      summary: Удалить пререквизит (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: prerequisite_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найдено
+        '500':
+          description: Ошибка сервера
+
+  /career-tracks:
+    get:
+      tags: [career-tracks]
+      summary: Список карьерных треков
+      parameters:
+        - in: query
+          name: program_id
+          schema:
+            type: integer
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCareerTracks'
+        '500':
+          description: Ошибка сервера
+
+    post:
+      tags: [career-tracks]
+      summary: Создать трек (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerTrackCreate'
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerTrack'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '500':
+          description: Ошибка сервера
+
+  /career-tracks/{track_id}:
+    get:
+      tags: [career-tracks]
+      summary: Получить трек
+      parameters:
+        - in: path
+          name: track_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerTrack'
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+    put:
+      tags: [career-tracks]
+      summary: Обновить трек (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: track_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerTrackUpdate'
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerTrack'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+    delete:
+      tags: [career-tracks]
+      summary: Удалить трек (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: track_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+  /career-tracks/{track_id}/courses:
+    get:
+      tags: [career-tracks]
+      summary: Курсы в треке
+      parameters:
+        - in: path
+          name: track_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    order_index:
+                      type: integer
+                    course:
+                      $ref: '#/components/schemas/Course'
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+
+    post:
+      tags: [career-tracks]
+      summary: Добавить курс в трек (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: track_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCourseToTrack'
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerTrackCourse'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найдено
+        '500':
+          description: Ошибка сервера
+
+  /career-tracks/{track_id}/courses/{course_id}:
+    delete:
+      tags: [career-tracks]
+      summary: Удалить курс из трека (преподаватели и админы)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: track_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Не найдено
+        '500':
+          description: Ошибка сервера
+
+  /users/{user_id}/progress:
+    get:
+      tags: [progress]
+      summary: Прогресс пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ProgressStatus'
+        - in: query
+          name: program_id
+          schema:
+            type: integer
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProgress'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет доступа
+        '404':
+          description: Не найден
+        '500':
+          description: Ошибка сервера
+
+  /users/{user_id}/progress/courses/{course_id}:
+    post:
+      tags: [progress]
+      summary: Отметить прогресс
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgressCreate'
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgress'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Не найдено
+        '500':
+          description: Ошибка сервера
+
+    put:
+      tags: [progress]
+      summary: Обновить прогресс
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgressUpdate'
+      responses:
+        '200':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgress'
+        '400':
+          description: Ошибка
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Не найдено
+        '500':
+          description: Ошибка сервера
+
+    delete:
+      tags: [progress]
+      summary: Удалить прогресс
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: course_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Не найдено
+        '500':
+          description: Ошибка сервера
