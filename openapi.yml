@@ -2251,10 +2251,4 @@ paths:
               example:
                 detail: "Progress record not found"
         '500':
-          description: Внутренняя ошибка сервера
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                detail: "Internal server error"
+          description: Ошибка сервера
