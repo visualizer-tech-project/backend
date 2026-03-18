@@ -1,10 +1,13 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
+
 from sqlmodel import Column, Field, Relationship, Text
+
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.user import User
+
 
 class Program(BaseModel, table=True):
     __tablename__ = 'programs'
@@ -16,5 +19,5 @@ class Program(BaseModel, table=True):
     user: 'User' = Relationship(back_populates='programs')
     courses: List['Course'] = Relationship(
         back_populates='program',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
     )

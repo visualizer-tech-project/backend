@@ -1,6 +1,8 @@
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
+
 from sqlmodel import Field, Relationship
+
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
@@ -9,10 +11,12 @@ if TYPE_CHECKING:
     from app.models.program import Program
     from app.models.userprogress import UserProgress
 
+
 class UserRole(str, Enum):
     ADMIN = 'admin'
     STUDENT = 'student'
     TEACHER = 'teacher'
+
 
 class User(BaseModel, table=True):
     __tablename__ = 'users'
