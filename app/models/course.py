@@ -27,24 +27,24 @@ class Course(BaseModel, table=True):
         back_populates='course',
         sa_relationship_kwargs={
             'foreign_keys': 'Prerequisite.course_id',
-            'cascade': 'all, delete-orphan'
-        }
+            'cascade': 'all, delete-orphan',
+        },
     )
 
     prerequisite_for: List['Prerequisite'] = Relationship(
         back_populates='prerequisite_course',
         sa_relationship_kwargs={
             'foreign_keys': 'Prerequisite.prerequisite_course_id',
-            'cascade': 'all, delete-orphan'
-        }
+            'cascade': 'all, delete-orphan',
+        },
     )
 
     career_track_courses: List['CareerTrackCourse'] = Relationship(
         back_populates='course',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
     )
 
     progress: List['UserProgress'] = Relationship(
         back_populates='course',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
     )
