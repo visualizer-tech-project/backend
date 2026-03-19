@@ -27,7 +27,15 @@ class User(BaseModel, table=True):
     last_name: str = Field(max_length=100, nullable=False)
     role: UserRole = Field(default=UserRole.STUDENT, nullable=False)
 
-    programs: List['Program'] = Relationship(back_populates='user')
-    courses: List['Course'] = Relationship(back_populates='user')
-    progress: List['UserProgress'] = Relationship(back_populates='user')
-    career_tracks: List['CareerTrack'] = Relationship(back_populates='user')
+    programs: List['Program'] = Relationship(
+        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    )
+    courses: List['Course'] = Relationship(
+        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    )
+    progress: List['UserProgress'] = Relationship(
+        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    )
+    career_tracks: List['CareerTrack'] = Relationship(
+        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    )

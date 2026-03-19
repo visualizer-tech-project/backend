@@ -1,8 +1,8 @@
-"""Initial migration
+"""initial_migration
 
-Revision ID: abcaa15a7c9e
+Revision ID: 9951e844341b
 Revises:
-Create Date: 2026-03-11 20:59:05.746503
+Create Date: 2026-03-19 15:26:21.411790
 
 """
 
@@ -13,7 +13,7 @@ import sqlmodel
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'abcaa15a7c9e'
+revision: str = '9951e844341b'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +26,7 @@ def upgrade() -> None:
         'users',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
             'email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
@@ -41,7 +41,9 @@ def upgrade() -> None:
             'last_name', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False
         ),
         sa.Column(
-            'role', sa.Enum('ADMIN', 'USER', 'TEACHER', name='userrole'), nullable=False
+            'role',
+            sa.Enum('ADMIN', 'STUDENT', 'TEACHER', name='userrole'),
+            nullable=False,
         ),
         sa.PrimaryKeyConstraint('id'),
     )
@@ -50,7 +52,7 @@ def upgrade() -> None:
         'career_tracks',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
             'title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
@@ -66,11 +68,14 @@ def upgrade() -> None:
     op.create_index(
         op.f('ix_career_tracks_title'), 'career_tracks', ['title'], unique=True
     )
+    op.create_index(
+        op.f('ix_career_tracks_user_id'), 'career_tracks', ['user_id'], unique=False
+    )
     op.create_table(
         'programs',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
             'title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
@@ -84,11 +89,12 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
     )
     op.create_index(op.f('ix_programs_title'), 'programs', ['title'], unique=True)
+    op.create_index(op.f('ix_programs_user_id'), 'programs', ['user_id'], unique=False)
     op.create_table(
         'courses',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
             'title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
@@ -106,12 +112,16 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint('id'),
     )
+    op.create_index(
+        op.f('ix_courses_program_id'), 'courses', ['program_id'], unique=False
+    )
     op.create_index(op.f('ix_courses_title'), 'courses', ['title'], unique=True)
+    op.create_index(op.f('ix_courses_user_id'), 'courses', ['user_id'], unique=False)
     op.create_table(
         'career_track_courses',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column('career_track_id', sa.Integer(), nullable=False),
         sa.Column('course_id', sa.Integer(), nullable=False),
@@ -125,15 +135,31 @@ def upgrade() -> None:
             ['courses.id'],
         ),
         sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),
+    )
+    op.create_index(
+        op.f('ix_career_track_courses_career_track_id'),
+        'career_track_courses',
+        ['career_track_id'],
+        unique=False,
+    )
+    op.create_index(
+        op.f('ix_career_track_courses_course_id'),
+        'career_track_courses',
+        ['course_id'],
+        unique=False,
     )
     op.create_table(
         'prerequisites',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column('course_id', sa.Integer(), nullable=False),
         sa.Column('prerequisite_course_id', sa.Integer(), nullable=False),
+        sa.CheckConstraint(
+            'course_id != prerequisite_course_id', name='ck_no_self_prerequisite'
+        ),
         sa.ForeignKeyConstraint(
             ['course_id'],
             ['courses.id'],
@@ -143,21 +169,35 @@ def upgrade() -> None:
             ['courses.id'],
         ),
         sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint(
+            'course_id', 'prerequisite_course_id', name='uq_course_prerequisite'
+        ),
+    )
+    op.create_index(
+        op.f('ix_prerequisites_course_id'), 'prerequisites', ['course_id'], unique=False
+    )
+    op.create_index(
+        op.f('ix_prerequisites_prerequisite_course_id'),
+        'prerequisites',
+        ['prerequisite_course_id'],
+        unique=False,
     )
     op.create_table(
         'user_progress',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
-            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True
+            'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.Column('course_id', sa.Integer(), nullable=False),
         sa.Column(
-            'progress',
-            sa.Enum('NOT_STARTED', 'IN_PROCESS', 'FINISHED', name='userprogressstatus'),
+            'status',
+            sa.Enum(
+                'NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', name='userprogressstatus'
+            ),
             nullable=False,
         ),
-        sa.Column('grade', sa.Numeric(precision=5, scale=2), nullable=True),
+        sa.Column('grade', sa.Integer(), nullable=True),
         sa.Column('started_at', sa.DateTime(), nullable=True),
         sa.Column('completed_at', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -169,6 +209,13 @@ def upgrade() -> None:
             ['users.id'],
         ),
         sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('user_id', 'course_id', name='uq_user_course'),
+    )
+    op.create_index(
+        op.f('ix_user_progress_course_id'), 'user_progress', ['course_id'], unique=False
+    )
+    op.create_index(
+        op.f('ix_user_progress_user_id'), 'user_progress', ['user_id'], unique=False
     )
     # ### end Alembic commands ###
 
@@ -176,13 +223,30 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_user_progress_user_id'), table_name='user_progress')
+    op.drop_index(op.f('ix_user_progress_course_id'), table_name='user_progress')
     op.drop_table('user_progress')
+    op.drop_index(
+        op.f('ix_prerequisites_prerequisite_course_id'), table_name='prerequisites'
+    )
+    op.drop_index(op.f('ix_prerequisites_course_id'), table_name='prerequisites')
     op.drop_table('prerequisites')
+    op.drop_index(
+        op.f('ix_career_track_courses_course_id'), table_name='career_track_courses'
+    )
+    op.drop_index(
+        op.f('ix_career_track_courses_career_track_id'),
+        table_name='career_track_courses',
+    )
     op.drop_table('career_track_courses')
+    op.drop_index(op.f('ix_courses_user_id'), table_name='courses')
     op.drop_index(op.f('ix_courses_title'), table_name='courses')
+    op.drop_index(op.f('ix_courses_program_id'), table_name='courses')
     op.drop_table('courses')
+    op.drop_index(op.f('ix_programs_user_id'), table_name='programs')
     op.drop_index(op.f('ix_programs_title'), table_name='programs')
     op.drop_table('programs')
+    op.drop_index(op.f('ix_career_tracks_user_id'), table_name='career_tracks')
     op.drop_index(op.f('ix_career_tracks_title'), table_name='career_tracks')
     op.drop_table('career_tracks')
     op.drop_index(op.f('ix_users_email'), table_name='users')

@@ -17,7 +17,10 @@ class CareerTrack(BaseModel, table=True):
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
     user: 'User' = Relationship(back_populates='career_tracks')
-    courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track')
+    courses: List['CareerTrackCourse'] = Relationship(
+        back_populates='career_track',
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
+    )
 
 
 class CareerTrackCourse(BaseModel, table=True):
