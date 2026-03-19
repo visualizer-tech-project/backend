@@ -1,13 +1,10 @@
-from typing import TYPE_CHECKING, List
-
+from typing import TYPE_CHECKING, List, Optional
 from sqlmodel import Column, Field, Relationship, Text, UniqueConstraint
-
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.user import User
-
 
 class CareerTrack(BaseModel, table=True):
     __tablename__ = 'career_tracks'
@@ -17,8 +14,10 @@ class CareerTrack(BaseModel, table=True):
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
     user: 'User' = Relationship(back_populates='career_tracks')
-    courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track')
-
+    courses: List['CareerTrackCourse'] = Relationship(
+        back_populates='career_track',
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    )
 
 class CareerTrackCourse(BaseModel, table=True):
     __tablename__ = 'career_track_courses'
@@ -26,9 +25,7 @@ class CareerTrackCourse(BaseModel, table=True):
         UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),
     )
 
-    career_track_id: int = Field(
-        foreign_key='career_tracks.id', nullable=False, index=True
-    )
+    career_track_id: int = Field(foreign_key='career_tracks.id', nullable=False, index=True)
     course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
     order_index: int = Field(default=0, nullable=False)
 

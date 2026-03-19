@@ -19,5 +19,5 @@ class Program(BaseModel, table=True):
     user: 'User' = Relationship(back_populates='programs')
     courses: List['Course'] = Relationship(
         back_populates='program',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
     )
