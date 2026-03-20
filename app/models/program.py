@@ -12,9 +12,12 @@ if TYPE_CHECKING:
 class Program(BaseModel, table=True):
     __tablename__ = 'programs'
 
-    title: str = Field(unique=True, max_length=255, index=True)
-    description: str = Field(sa_column=Column(Text))
-    user_id: int = Field(foreign_key='users.id')
+    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
+    description: str = Field(sa_column=Column(Text, nullable=True))
+    user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
     user: 'User' = Relationship(back_populates='programs')
-    courses: List['Course'] = Relationship(back_populates='program')
+    courses: List['Course'] = Relationship(
+        back_populates='program',
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
+    )
