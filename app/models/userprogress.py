@@ -26,9 +26,7 @@ class UserProgress(BaseModel, table=True):
     status: UserProgressStatus = Field(
         default=UserProgressStatus.NOT_STARTED, nullable=False
     )
-    grade: Optional[int] = Field(
-        default=None, nullable=True, ge=0, le=100
-    )
+    grade: Optional[int] = Field(default=None, nullable=True, ge=0, le=100)
     started_at: Optional[datetime] = Field(default=None, nullable=True)
     completed_at: Optional[datetime] = Field(default=None, nullable=True)
 
