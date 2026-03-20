@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, Relationship, UniqueConstraint
+from sqlmodel import Column, Field, Numeric, Relationship, UniqueConstraint
 
 from app.models.base import BaseModel
 
