@@ -1,40 +1,52 @@
-from typing import Optional, Any
-from pydantic import computed_field, Field
-from app.models.base import BaseSchema
-from app.models.userprogress import UserProgressPublic
+from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from pydantic import Field
+
+from app.schemas.base import BaseModelSchema, BaseSchema
 
 
-class UserProgressWithDetails(BaseSchema):
-    """Составная схема: прогресс с деталями курса и пользователя"""
-    progress: UserProgressPublic
+class ProgressStatus(str, Enum):
+    """Статус прогресса"""
+
+    NOT_STARTED = 'not_started'
+    IN_PROGRESS = 'in_progress'
+    COMPLETED = 'completed'
 
 
-    course: Optional[Any] = Field(None, exclude=True)
-    user: Any = Field(exclude=True)
+class ProgressCreate(BaseSchema):
+    """Схема для создания записи прогресса"""
 
-    @computed_field
-    @property
-    def course_title(self) -> Optional[str]:
-        return self.course.title if self.course else None
+    status: ProgressStatus = Field(..., description='Статус прохождения')
+    grade: Optional[int] = Field(None, ge=0, le=100, description='Оценка')
+    started_at: Optional[datetime] = Field(None, description='Дата начала')
+    completed_at: Optional[datetime] = Field(None, description='Дата завершения')
 
-    @computed_field
-    @property
-    def course_type(self) -> Optional[str]:
-        if self.course and hasattr(self.course, 'type') and self.course.type:
-            return getattr(self.course.type, 'value', self.course.type)
-        return None
 
-    @computed_field
-    @property
-    def program_id(self) -> Optional[int]:
-        return self.course.program_id if self.course else None
+class ProgressUpdate(BaseSchema):
+    """Схема для обновления прогресса"""
 
-    @computed_field
-    @property
-    def user_name(self) -> str:
-        return f"{self.user.first_name} {self.user.last_name}"
+    status: Optional[ProgressStatus] = Field(None, description='Статус прохождения')
+    grade: Optional[int] = Field(None, ge=0, le=100, description='Оценка')
+    started_at: Optional[datetime] = Field(None, description='Дата начала')
+    completed_at: Optional[datetime] = Field(None, description='Дата завершения')
 
-    @computed_field
-    @property
-    def user_email(self) -> str:
-        return self.user.email
+
+class UserProgressPublic(BaseModelSchema):
+    """Публичная информация о прогрессе"""
+
+    user_id: int
+    course_id: int
+    status: ProgressStatus
+    grade: Optional[int] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+
+class UserProgressWithDetails(UserProgressPublic):
+    """Прогресс с деталями курса и пользователя"""
+
+    course_title: Optional[str] = None
+    course_semester: Optional[int] = None
+    user_name: Optional[str] = None

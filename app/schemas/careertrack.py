@@ -1,34 +1,61 @@
-from typing import List, Optional, Any
-from pydantic import Field, computed_field
-from app.models.base import BaseSchema
-from app.models.course import CoursePublic
+from typing import List, Optional
+
+from pydantic import Field
+
+from app.schemas.base import BaseModelSchema, BaseSchema
+from app.schemas.course import CoursePublic
+
+
+class CareerTrackCreate(BaseSchema):
+    """Схема для создания карьерного трека"""
+
+    title: str = Field(..., min_length=1, max_length=255, description='Название трека')
+    description: Optional[str] = Field(None, description='Описание трека')
+
+
+class CareerTrackUpdate(BaseSchema):
+    """Схема для обновления карьерного трека"""
+
+    title: Optional[str] = Field(
+        None, min_length=1, max_length=255, description='Название трека'
+    )
+    description: Optional[str] = Field(None, description='Описание трека')
 
 
 class AddCourseToTrack(BaseSchema):
     """Схема для добавления курса в трек"""
-    course_id: int = Field(..., gt=0)
-    order_index: int = Field(..., ge=0)
+
+    course_id: int = Field(..., gt=0, description='ID курса')
+    order_index: int = Field(..., ge=0, description='Порядковый номер в треке')
 
 
-class UpdateCourseOrder(BaseSchema):
-    """Схема для обновления порядка курса"""
-    new_order_index: int = Field(..., ge=0)
+class CareerTrackPublic(BaseModelSchema):
+    """Публичная информация о карьерном треке"""
+
+    title: str
+    description: Optional[str] = None
+    created_by: int
 
 
-class ReorderCourses(BaseSchema):
-    """Схема для полной перестановки курсов"""
-    course_ids: List[int]
+class CareerTrackCoursePublic(BaseModelSchema):
+    """Публичная информация о связи трека с курсом"""
+
+    career_track_id: int
+    course_id: int
+    order_index: int
 
 
-class TrackCourseItemWithDetails(BaseSchema):
-    career_track_course: Any = Field(..., exclude=True)
+class CareerTrackWithCourses(CareerTrackPublic):
+    """Карьерный трек с курсами"""
 
-    @computed_field
-    @property
-    def order_index(self) -> int:
-        return self.career_track_course.order_index
+    courses: List['TrackCourseItem'] = []
 
-    @computed_field
-    @property
-    def course(self) -> CoursePublic:
-        return CoursePublic.model_validate(self.career_track_course.course)
+
+class TrackCourseItem(BaseSchema):
+    """Элемент курса в треке"""
+
+    order_index: int
+    course: CoursePublic
+
+
+CareerTrackWithCourses.model_rebuild()
