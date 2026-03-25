@@ -40,9 +40,11 @@ class Course(BaseModel, table=True):
     )
 
     career_track_courses: List['CareerTrackCourse'] = Relationship(
-        back_populates='course', cascade='all, delete-orphan'
+        back_populates='course',
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
     )
 
     progress: List['UserProgress'] = Relationship(
-        back_populates='course', cascade='all, delete-orphan'
+        back_populates='course',
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
     )

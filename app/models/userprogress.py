@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Column, Field, Numeric, Relationship, UniqueConstraint
+from sqlmodel import Field, Relationship, UniqueConstraint
 
 from app.models.base import BaseModel
 
@@ -26,9 +26,7 @@ class UserProgress(BaseModel, table=True):
     status: UserProgressStatus = Field(
         default=UserProgressStatus.NOT_STARTED, nullable=False
     )
-    grade: Optional[float] = Field(
-        default=None, sa_column=Column(Numeric(5, 2), nullable=True)
-    )
+    grade: Optional[int] = Field(default=None, nullable=True, ge=0, le=100)
     started_at: Optional[datetime] = Field(default=None, nullable=True)
     completed_at: Optional[datetime] = Field(default=None, nullable=True)
 
