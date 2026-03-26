@@ -28,7 +28,7 @@ class ProgramPublic(BaseModelSchema):
 
     title: str
     description: Optional[str] = None
-    created_by: int
+    created_by: int = Field(alias='user_id')
 
 
 class ProgramCopyRequest(BaseSchema):

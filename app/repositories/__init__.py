@@ -1,7 +1,6 @@
 from app.repositories.base import BaseRepository
 from app.repositories.careertrack import CareerTrackRepository
 from app.repositories.course import CourseRepository
-from app.repositories.prerequisite import PrerequisiteRepository
 from app.repositories.program import ProgramRepository
 from app.repositories.user import UserRepository
 from app.repositories.userprogress import UserProgressRepository
@@ -11,7 +10,6 @@ __all__ = [
     'UserRepository',
     'ProgramRepository',
     'CourseRepository',
-    'PrerequisiteRepository',
     'CareerTrackRepository',
     'UserProgressRepository',
 ]
