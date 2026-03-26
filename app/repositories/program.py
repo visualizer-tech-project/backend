@@ -82,7 +82,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
         """
         Получить программы с количеством курсов в каждой.
         Returns:
-            Кортеж (список кортежей (программа, количество_курсов), 
+            Кортеж (список кортежей (программа, количество_курсов),
                 общее_количество_программ)
         """
         base_query = select(Program)

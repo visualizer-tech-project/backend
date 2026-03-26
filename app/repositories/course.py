@@ -88,7 +88,7 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
         Получить курс с его пререквизитами.
         Args:
             course_id: ID курса
-            include_prerequisite_for: Включать ли курсы, для которых 
+            include_prerequisite_for: Включать ли курсы, для которых
             этот курс является пререквизитом
         """
         course = await self.get_by_id(course_id)
