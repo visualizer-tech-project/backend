@@ -14,6 +14,7 @@ class TimestampSchema(BaseSchema):
     """Схема с временными метками"""
 
     created_at: datetime
+    updated_at: datetime
 
 
 class BaseModelSchema(TimestampSchema):

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import Field
@@ -29,12 +30,25 @@ class AddCourseToTrack(BaseSchema):
     order_index: int = Field(..., ge=0, description='Порядковый номер в треке')
 
 
+class UpdateCourseOrder(BaseSchema):
+    """Схема для обновления порядка курса"""
+
+    new_order_index: int = Field(..., ge=0, description='Новый порядковый номер')
+
+
+class ReorderCourses(BaseSchema):
+    """Схема для полной перестановки курсов"""
+
+    course_ids: List[int] = Field(..., description='Список ID курсов в новом порядке')
+
+
 class CareerTrackPublic(BaseModelSchema):
     """Публичная информация о карьерном треке"""
 
     title: str
     description: Optional[str] = None
-    created_by: int
+    user_id: int
+    courses_count: int = 0
 
 
 class CareerTrackCoursePublic(BaseModelSchema):
@@ -45,12 +59,6 @@ class CareerTrackCoursePublic(BaseModelSchema):
     order_index: int
 
 
-class CareerTrackWithCourses(CareerTrackPublic):
-    """Карьерный трек с курсами"""
-
-    courses: List['TrackCourseItem'] = []
-
-
 class TrackCourseItem(BaseSchema):
     """Элемент курса в треке"""
 
@@ -58,4 +66,47 @@ class TrackCourseItem(BaseSchema):
     course: CoursePublic
 
 
-CareerTrackWithCourses.model_rebuild()
+class CareerTrackWithCourses(CareerTrackPublic):
+    """Карьерный трек с курсами"""
+
+    courses: List[TrackCourseItem] = []
+
+
+class TrackCompletionCourse(BaseSchema):
+    """Статус прохождения курса в треке"""
+
+    order_index: int
+    course_id: int
+    course_title: str
+    status: str
+    grade: Optional[int] = None
+    completed_at: Optional[str] = None
+
+
+class TrackCompletionStatus(BaseSchema):
+    """Статус прохождения трека пользователем"""
+
+    total_courses: int
+    completed_courses: int
+    in_progress_courses: int
+    not_started_courses: int
+    completion_percentage: float
+    courses: List[TrackCompletionCourse] = []
+
+
+class TrackWithCoursesCount(BaseSchema):
+    """Трек с количеством курсов"""
+
+    id: int
+    title: str
+    description: Optional[str] = None
+    user_id: int
+    courses_count: int
+    created_at: datetime
+
+
+class PopularTrack(BaseSchema):
+    """Популярный трек"""
+
+    track: CareerTrackPublic
+    courses_count: int
