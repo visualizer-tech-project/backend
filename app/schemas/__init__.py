@@ -27,7 +27,6 @@ from app.schemas.program import (
 )
 from app.schemas.user import (
     LoginRequest,
-    Token,
     UserCreate,
     UserDB,
     UserPublic,
@@ -53,7 +52,6 @@ __all__ = [
     'LoginRequest',
     'UserPublic',
     'UserDB',
-    'Token',
     'ProgramCreate',
     'ProgramUpdate',
     'ProgramPublic',

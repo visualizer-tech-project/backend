@@ -31,7 +31,6 @@ class CourseUpdate(BaseSchema):
     )
     description: Optional[str] = Field(None, description='Описание курса')
     type: Optional[CourseType] = Field(None, description='Тип курса')
-    semester: Optional[int] = Field(None, ge=1, le=12, description='Семестр')
 
 
 class CoursePublic(BaseModelSchema):
@@ -40,9 +39,8 @@ class CoursePublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
     type: CourseType
-    semester: int
     program_id: int
-    created_by: int
+    created_by: int = Field(alias='user_id')
 
 
 class CourseWithPrerequisites(CoursePublic):

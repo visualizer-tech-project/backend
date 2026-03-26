@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -50,6 +51,7 @@ class UserPublic(BaseModelSchema):
     first_name: str
     last_name: str
     role: UserRole
+    created_at: datetime
 
 
 class UserDB(UserPublic):

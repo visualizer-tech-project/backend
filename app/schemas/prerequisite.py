@@ -6,7 +6,7 @@ from app.schemas.base import BaseModelSchema, BaseSchema
 class PrerequisiteCreate(BaseSchema):
     """Схема для создания пререквизита"""
 
-    prerequisite_id: int = Field(..., gt=0, description='ID курса-пререквизита')
+    prerequisite_course_id: int = Field(..., gt=0, description='ID курса-пререквизита')
 
 
 class PrerequisitePublic(BaseModelSchema):

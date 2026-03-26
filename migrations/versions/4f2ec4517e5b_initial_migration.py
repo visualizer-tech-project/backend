@@ -1,8 +1,8 @@
 """initial_migration
 
-Revision ID: 9951e844341b
+Revision ID: 4f2ec4517e5b
 Revises:
-Create Date: 2026-03-19 15:26:21.411790
+Create Date: 2026-03-26 17:59:06.420085
 
 """
 
@@ -13,7 +13,7 @@ import sqlmodel
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '9951e844341b'
+revision: str = '4f2ec4517e5b'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,6 +27,9 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
+        sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
             'email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
@@ -55,6 +58,9 @@ def upgrade() -> None:
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
+        sa.Column(
             'title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
         ),
         sa.Column('description', sa.Text(), nullable=True),
@@ -78,6 +84,9 @@ def upgrade() -> None:
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
+        sa.Column(
             'title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
         ),
         sa.Column('description', sa.Text(), nullable=True),
@@ -97,10 +106,16 @@ def upgrade() -> None:
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
+        sa.Column(
             'title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
         ),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('program_id', sa.Integer(), nullable=False),
+        sa.Column(
+            'type', sa.Enum('REQUIRED', 'ELECTIVE', name='coursetype'), nullable=False
+        ),
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ['program_id'],
@@ -122,6 +137,9 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
+        sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column('career_track_id', sa.Integer(), nullable=False),
         sa.Column('course_id', sa.Integer(), nullable=False),
@@ -155,6 +173,9 @@ def upgrade() -> None:
         sa.Column(
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
+        sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
         sa.Column('course_id', sa.Integer(), nullable=False),
         sa.Column('prerequisite_course_id', sa.Integer(), nullable=False),
         sa.CheckConstraint(
@@ -187,6 +208,9 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
             'created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
+        ),
+        sa.Column(
+            'updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False
         ),
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.Column('course_id', sa.Integer(), nullable=False),

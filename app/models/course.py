@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import TYPE_CHECKING, List
 
 from sqlmodel import Column, Field, Relationship, Text
@@ -12,12 +13,18 @@ if TYPE_CHECKING:
     from app.models.userprogress import UserProgress
 
 
+class CourseType(str, Enum):
+    REQUIRED = 'required'
+    ELECTIVE = 'elective'
+
+
 class Course(BaseModel, table=True):
     __tablename__ = 'courses'
 
     title: str = Field(unique=True, index=True, max_length=255, nullable=False)
     description: str = Field(sa_column=Column(Text, nullable=True))
     program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
+    type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
     program: 'Program' = Relationship(back_populates='courses')
