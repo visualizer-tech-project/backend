@@ -14,9 +14,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
         self.session = session
 
-    async def get_by_id(self, id: int) -> Optional[ModelType]:
+    async def get_by_id(self, item_id: int) -> Optional[ModelType]:
         """Получить запись по ID."""
-        return await self.session.get(self.model, id)
+        return await self.session.get(self.model, item_id)
 
     async def get_all(
         self,
@@ -64,10 +64,10 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     async def update(
-        self, id: int, update_data: UpdateSchemaType
+        self, item_id: int, update_data: UpdateSchemaType
     ) -> Optional[ModelType]:
         """Обновить существующую запись."""
-        db_obj = await self.get_by_id(id)
+        db_obj = await self.get_by_id(item_id)
         if not db_obj:
             return None
         update_dict = update_data.model_dump(exclude_unset=True)
@@ -78,9 +78,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await self.session.refresh(db_obj)
         return db_obj
 
-    async def delete(self, id: int) -> bool:
+    async def delete(self, item_id: int) -> bool:
         """Удалить запись по ID."""
-        db_obj = await self.get_by_id(id)
+        db_obj = await self.get_by_id(item_id)
         if not db_obj:
             return False
         await self.session.delete(db_obj)

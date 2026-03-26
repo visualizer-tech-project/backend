@@ -25,9 +25,8 @@ class ProgressCreate(BaseSchema):
 
     @model_validator(mode='after')
     def validate_dates(self) -> 'ProgressCreate':
-        if self.started_at and self.completed_at:
-            if self.completed_at < self.started_at:
-                raise ValueError('completed_at не может быть раньше started_at')
+        if self.started_at and self.completed_at and self.completed_at < self.started_at:
+            raise ValueError('completed_at не может быть раньше started_at')
         return self
 
 
@@ -40,11 +39,9 @@ class ProgressUpdate(BaseSchema):
     completed_at: Optional[datetime] = Field(None, description='Дата завершения')
 
     @model_validator(mode='after')
-    def validate_dates(self) -> 'ProgressUpdate':
-        """Валидация дат"""
-        if self.started_at and self.completed_at:
-            if self.completed_at < self.started_at:
-                raise ValueError('completed_at не может быть раньше started_at')
+    def validate_dates(self) -> 'ProgressCreate':
+        if self.started_at and self.completed_at and self.completed_at < self.started_at:
+            raise ValueError('completed_at не может быть раньше started_at')
         return self
 
 

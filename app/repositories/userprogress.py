@@ -18,6 +18,10 @@ from app.schemas.userprogress import (
     UserProgressWithDetails,
 )
 
+GRADE_EXCELLENT = 90
+GRADE_GOOD = 75
+GRADE_SATISFACTORY = 60
+
 
 class UserProgressRepository(
     BaseRepository[UserProgress, ProgressCreate, ProgressUpdate]
@@ -419,19 +423,19 @@ class UserProgressRepository(
             'excellent': 0,
             'good': 0,
             'satisfactory': 0,
-            'poor': 0,
+            'bad': 0,
         }
 
         for p in progresses:
             if p.status == UserProgressStatus.COMPLETED and p.grade is not None:
-                if p.grade >= 90:
+                if p.grade >= GRADE_EXCELLENT:
                     grade_distribution['excellent'] += 1
-                elif p.grade >= 75:
+                elif p.grade >= GRADE_GOOD:
                     grade_distribution['good'] += 1
-                elif p.grade >= 60:
+                elif p.grade >= GRADE_SATISFACTORY:
                     grade_distribution['satisfactory'] += 1
                 else:
-                    grade_distribution['poor'] += 1
+                    grade_distribution['bad'] += 1
 
         return {
             'course_id': course_id,

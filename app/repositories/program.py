@@ -37,7 +37,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[List[Program], int]:
-        """Поиск программ по названию и описанию с возможной фильтрацией по году набора"""
+        """Поиск программ по названию и описанию с фильтрацией по году набора"""
         search_pattern = f'%{query_str}%'
         base_query = select(Program).where(
             (Program.title.ilike(search_pattern))
@@ -82,7 +82,8 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
         """
         Получить программы с количеством курсов в каждой.
         Returns:
-            Кортеж (список кортежей (программа, количество_курсов), общее_количество_программ)
+            Кортеж (список кортежей (программа, количество_курсов), 
+                общее_количество_программ)
         """
         base_query = select(Program)
         count_query = select(func.count()).select_from(base_query.subquery())
