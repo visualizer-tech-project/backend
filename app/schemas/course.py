@@ -19,7 +19,6 @@ class CourseCreate(BaseSchema):
     title: str = Field(..., min_length=1, max_length=255, description='Название курса')
     description: Optional[str] = Field(None, description='Описание курса')
     type: CourseType = Field(..., description='Тип курса (required/elective)')
-    semester: int = Field(..., ge=1, le=12, description='Семестр')
     program_id: int = Field(..., gt=0, description='ID программы')
 
 

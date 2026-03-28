@@ -550,7 +550,7 @@ class UserProgressRepository(
 
         courses_query = (
             select(Course).where(Course.program_id == program_id).order_by(Course.title)
-        )  # убрал semester
+        )
         courses_result = await self.session.exec(courses_query)
         all_courses = courses_result.all()
 
