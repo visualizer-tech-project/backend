@@ -155,7 +155,6 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
             courses_query = (
                 courses_query.offset(skip_courses)
                 .limit(limit_courses)
-                .order_by(Course.semester)
             )
             courses_result = await self.session.exec(courses_query)
             program.courses = courses_result.all()

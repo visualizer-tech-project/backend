@@ -255,9 +255,6 @@ components:
           example: "Базовый курс по алгоритмам"
         type:
           $ref: '#/components/schemas/CourseType'
-        semester:
-          type: integer
-          example: 3
         program_id:
           type: integer
           example: 1
@@ -268,7 +265,6 @@ components:
         - id
         - title
         - type
-        - semester
         - program_id
         - created_at
 
@@ -283,16 +279,12 @@ components:
           example: "Базовый курс по алгоритмам"
         type:
           $ref: '#/components/schemas/CourseType'
-        semester:
-          type: integer
-          example: 3
         program_id:
           type: integer
           example: 1
       required:
         - title
         - type
-        - semester
         - program_id
 
     CourseUpdate:
@@ -305,9 +297,6 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/CourseType'
-        semester:
-          type: integer
-          example: 4
 
     Prerequisite:
       type: object
@@ -1200,10 +1189,6 @@ paths:
           name: type
           schema:
             $ref: '#/components/schemas/CourseType'
-        - in: query
-          name: semester
-          schema:
-            type: integer
         - in: query
           name: title
           schema:

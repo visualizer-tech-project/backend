@@ -15,6 +15,14 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
     def __init__(self, session: AsyncSession):
         super().__init__(Course, session)
 
+    async def create(self, course_data: dict) -> Course:
+        """Создать курс из словаря"""
+        course = Course(**course_data)
+        self.session.add(course)
+        await self.session.commit()
+        await self.session.refresh(course)
+        return course
+
     async def get_by_title(self, title: str) -> Optional[Course]:
         """Получить курс по названию"""
         query = select(Course).where(Course.title == title)
@@ -194,7 +202,7 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
         prerequisite_course = await self.get_by_id(prerequisite_course_id)
         if not course or not prerequisite_course:
             return None
-        if await self._would_create_cycle(course_id, prerequisite_course_id):
+        if await self.would_create_cycle(course_id, prerequisite_course_id):
             return None
         existing_query = select(Prerequisite).where(
             and_(
@@ -234,7 +242,7 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
         await self.session.commit()
         return True
 
-    async def _would_create_cycle(
+    async def would_create_cycle(
         self,
         course_id: int,
         prerequisite_course_id: int,

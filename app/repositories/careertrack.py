@@ -559,7 +559,7 @@ class CareerTrackRepository(
             await self.session.rollback()
             return []
 
-    async def _get_courses_count(self, track_id: int) -> int:
+    async def get_courses_count(self, track_id: int) -> int:
         """Получить количество курсов в треке"""
         count_query = (
             select(func.count())

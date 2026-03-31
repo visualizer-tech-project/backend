@@ -1,63 +1,96 @@
-from app.dependencies.current_user import get_current_user_id
-from app.models.base import ListResponse
-from app.models.user import UserPublic, UserUpdate, UserRole
-from app.schemas.filters import UserFilters
+from typing import Optional
+
+from app.models.user import User, UserRole
 from app.repositories.user import UserRepository
+from app.schemas.user import UserUpdate, UserPublic
+from app.schemas.base import PageInfo, PaginatedResponse
 
 
 class UserService:
-    def __init__(self, user_repo: UserRepository) -> None:
-        self._user_repo = user_repo
+    """Сервис управления пользователями"""
 
-    async def get_users(self, filters: UserFilters) -> ListResponse[UserPublic]:
-        result = await self._user_repo.get_filtered_paginated(filters)
-        result.items = [UserPublic.model_validate(item) for item in result.items]
-        return result
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
+
+    async def get_users(
+        self,
+        role: Optional[UserRole] = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> PaginatedResponse[UserPublic]:
+        """Получить список пользователей"""
+        if role:
+            users, total = await self.user_repo.get_by_role(role, skip, limit)
+        else:
+            users, total = await self.user_repo.get_all(
+                skip=skip,
+                limit=limit,
+                order_by="created_at",
+                descending=True,
+            )
+
+        return PaginatedResponse(
+            items=[UserPublic.model_validate(user) for user in users],
+            page_info=PageInfo(total=total, offset=skip, limit=limit),
+        )
 
     async def get_user_by_id(self, user_id: int) -> UserPublic:
-        user = await self._user_repo.get_by_id(user_id)
+        """Получить пользователя по ID"""
+        user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError('User not found')
+            raise ValueError("User not found")
+
         return UserPublic.model_validate(user)
 
-    async def update_own_profile(self, user_data: UserUpdate) -> UserPublic:
-        user_id = await get_current_user_id()
-        user = await self._user_repo.get_by_id(user_id)
-        if not user:
-            raise ValueError('User not found')
-
-        updated_user = await self._user_repo.update(user_id, user_data)
-        if not updated_user:
-            raise ValueError('User not found')
-
-        return UserPublic.model_validate(updated_user)
-
-    async def update_user_by_admin(
+    async def update_user(
         self,
         user_id: int,
         user_data: UserUpdate,
+        current_user: User,
     ) -> UserPublic:
-        user = await self._user_repo.get_by_id(user_id)
+        """Обновить данные пользователя"""
+        user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError('User not found')
+            raise ValueError("User not found")
 
-        updated_user = await self._user_repo.update(user_id, user_data)
+        if current_user.id != user_id and current_user.role != UserRole.ADMIN:
+            raise ValueError("Cannot edit this user")
+
+        update_dict = user_data.model_dump(exclude_unset=True)
+        if "email" in update_dict:
+            if await self.user_repo.is_email_taken(
+                update_dict["email"], exclude_user_id=user_id
+            ):
+                raise ValueError("Email already taken")
+
+        updated_user = await self.user_repo.update(user_id, user_data)
         if not updated_user:
-            raise ValueError('User not found')
+            raise ValueError("User not found")
 
         return UserPublic.model_validate(updated_user)
 
-    async def assign_teacher(self, user_id: int) -> UserPublic:
-        user = await self._user_repo.get_by_id(user_id)
+    async def assign_teacher_role(
+        self,
+        user_id: int,
+        current_user: User,
+    ) -> UserPublic:
+        """Назначить пользователю роль преподавателя"""
+        if current_user.role != UserRole.ADMIN:
+            raise PermissionError("Admin privileges required")
+
+        user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError('User not found')
+            raise ValueError("User not found")
 
-        if user.role in (UserRole.TEACHER, UserRole.ADMIN):
-            raise ValueError('User is already a teacher or admin')
+        if user.role in [UserRole.TEACHER, UserRole.ADMIN]:
+            raise ValueError("User is already a teacher or admin")
 
-        update_data = UserUpdate(role=UserRole.TEACHER)
-        updated_user = await self._user_repo.update(user_id, update_data)
+        updated_user = await self.user_repo.assign_teacher_role(user_id)
         if not updated_user:
-            raise ValueError('User not found')
+            raise ValueError("User not found")
 
         return UserPublic.model_validate(updated_user)
+
+    async def get_current_user(self, user_id: int) -> Optional[User]:
+        """Получить текущего пользователя по ID (для зависимостей)"""
+        return await self.user_repo.get_by_id(user_id)
