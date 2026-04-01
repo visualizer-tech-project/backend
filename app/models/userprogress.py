@@ -33,7 +33,3 @@ class UserProgress(BaseModel, table=True):
 
     user: 'User' = Relationship(back_populates='progress')
     course: 'Course' = Relationship(back_populates='progress')
-
-
-def get_current_datetime() -> datetime:
-    return datetime.now(ZoneInfo('UTC'))
