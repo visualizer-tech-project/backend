@@ -1,20 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.dependencies import (
-    get_career_track_service,
-    require_delete_career_tracks,
-    require_write_career_tracks,
-)
+from app.dependencies import get_career_track_service
 from app.models.user import User
 from app.schemas.base import PaginatedResponse
 from app.schemas.careertrack import (
     AddCourseToTrack,
+    CareerTrackCoursePublic,
     CareerTrackCreate,
     CareerTrackPublic,
     CareerTrackUpdate,
     TrackCourseItem,
 )
 from app.services.careertrack import CareerTrackService
+
+# Временная заглушка для текущего пользователя
+DUMMY_USER = User(id=1, role='admin')
 
 router = APIRouter(prefix='/career-tracks', tags=['career-tracks'])
 
@@ -23,29 +23,21 @@ router = APIRouter(prefix='/career-tracks', tags=['career-tracks'])
     '/',
     response_model=PaginatedResponse[CareerTrackPublic],
     summary='Получить список карьерных треков',
-    responses={
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def get_tracks(
-    program_id: int = None,
     title: str = None,
     skip: int = 0,
     limit: int = 20,
     track_service: CareerTrackService = Depends(get_career_track_service),
 ) -> PaginatedResponse[CareerTrackPublic]:
     """Получить список карьерных треков с пагинацией и фильтрацией."""
-    return await track_service.get_tracks(program_id, title, skip, limit)
+    return await track_service.get_tracks(title, skip, limit)
 
 
 @router.get(
     '/{track_id}',
     response_model=CareerTrackPublic,
     summary='Получить карьерный трек по ID',
-    responses={
-        404: {'description': 'Трек не найден'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def get_track_by_id(
     track_id: int,
@@ -62,18 +54,16 @@ async def get_track_by_id(
     '/{track_id}/courses',
     response_model=list[TrackCourseItem],
     summary='Получить курсы в карьерном треке',
-    responses={
-        404: {'description': 'Трек не найден'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def get_track_courses(
     track_id: int,
+    skip: int = 0,
+    limit: int = 100,
     track_service: CareerTrackService = Depends(get_career_track_service),
 ) -> list[TrackCourseItem]:
     """Получить список курсов с порядковыми номерами в карьерном треке."""
     try:
-        return await track_service.get_track_courses(track_id)
+        return await track_service.get_track_courses(track_id, skip, limit)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -83,23 +73,14 @@ async def get_track_courses(
     response_model=CareerTrackPublic,
     status_code=status.HTTP_201_CREATED,
     summary='Создать новый карьерный трек',
-    responses={
-        400: {'description': 'Некорректные данные или program_id не существует'},
-        401: {'description': 'Не авторизован'},
-        403: {'description': 'Недостаточно прав'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def create_track(
     track_data: CareerTrackCreate,
     track_service: CareerTrackService = Depends(get_career_track_service),
-    current_user: User = Security(
-        require_write_career_tracks, scopes=['write:career-tracks']
-    ),
 ) -> CareerTrackPublic:
     """Создать новый карьерный трек."""
     try:
-        return await track_service.create_track(track_data, current_user)
+        return await track_service.create_track(track_data, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -108,25 +89,15 @@ async def create_track(
     '/{track_id}',
     response_model=CareerTrackPublic,
     summary='Обновить карьерный трек',
-    responses={
-        400: {'description': 'Некорректные данные'},
-        401: {'description': 'Не авторизован'},
-        403: {'description': 'Недостаточно прав'},
-        404: {'description': 'Трек не найден'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def update_track(
     track_id: int,
     track_data: CareerTrackUpdate,
     track_service: CareerTrackService = Depends(get_career_track_service),
-    current_user: User = Security(
-        require_write_career_tracks, scopes=['write:career-tracks']
-    ),
 ) -> CareerTrackPublic:
     """Обновить карьерный трек."""
     try:
-        return await track_service.update_track(track_id, track_data, current_user)
+        return await track_service.update_track(track_id, track_data, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -135,19 +106,10 @@ async def update_track(
     '/{track_id}',
     status_code=status.HTTP_204_NO_CONTENT,
     summary='Удалить карьерный трек',
-    responses={
-        401: {'description': 'Не авторизован'},
-        403: {'description': 'Недостаточно прав'},
-        404: {'description': 'Трек не найден'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def delete_track(
     track_id: int,
     track_service: CareerTrackService = Depends(get_career_track_service),
-    current_user: User = Security(
-        require_delete_career_tracks, scopes=['delete:career-tracks']
-    ),
 ) -> None:
     """Удалить карьерный трек."""
     try:
@@ -158,28 +120,18 @@ async def delete_track(
 
 @router.post(
     '/{track_id}/courses',
-    response_model=dict,
+    response_model=CareerTrackCoursePublic,
     status_code=status.HTTP_201_CREATED,
     summary='Добавить курс в карьерный трек',
-    responses={
-        400: {'description': 'Некорректные данные или курс уже в треке'},
-        401: {'description': 'Не авторизован'},
-        403: {'description': 'Недостаточно прав'},
-        404: {'description': 'Трек или курс не найдены'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def add_course_to_track(
     track_id: int,
     add_data: AddCourseToTrack,
     track_service: CareerTrackService = Depends(get_career_track_service),
-    current_user: User = Security(
-        require_write_career_tracks, scopes=['write:career-tracks']
-    ),
-) -> dict:
+) -> CareerTrackCoursePublic:
     """Добавить курс в карьерный трек с указанием порядка."""
     try:
-        return await track_service.add_course_to_track(track_id, add_data, current_user)
+        return await track_service.add_course_to_track(track_id, add_data, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -188,12 +140,6 @@ async def add_course_to_track(
     '/{track_id}/courses/{course_id}',
     status_code=status.HTTP_204_NO_CONTENT,
     summary='Удалить курс из карьерного трека',
-    responses={
-        401: {'description': 'Не авторизован'},
-        403: {'description': 'Недостаточно прав'},
-        404: {'description': 'Связь не найдена'},
-        500: {'description': 'Внутренняя ошибка сервера'},
-    },
 )
 async def remove_course_from_track(
     track_id: int,

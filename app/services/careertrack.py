@@ -6,43 +6,63 @@ from app.repositories.course import CourseRepository
 from app.schemas.base import PageInfo, PaginatedResponse
 from app.schemas.careertrack import (
     AddCourseToTrack,
+    CareerTrackCoursePublic,
     CareerTrackCreate,
     CareerTrackPublic,
     CareerTrackUpdate,
     CareerTrackWithCourses,
     TrackCourseItem,
 )
+from app.schemas.course import CoursePublic
 
 
 class CareerTrackService:
     """Сервис управления карьерными треками"""
 
     def __init__(
-        self, track_repo: CareerTrackRepository, course_repo: CourseRepository
+        self,
+        track_repo: CareerTrackRepository,
+        course_repo: CourseRepository,
     ):
         self.track_repo = track_repo
         self.course_repo = course_repo
 
     async def get_tracks(
         self,
-        program_id: Optional[int] = None,
         title: Optional[str] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> PaginatedResponse[CareerTrackPublic]:
         """Получить список карьерных треков"""
+        filters = {}
         if title:
-            tracks, total = await self.track_repo.search(title, skip, limit)
-        else:
-            tracks, total = await self.track_repo.get_all(
-                skip=skip,
-                limit=limit,
-                order_by='created_at',
-                descending=True,
+            filters['title'] = title
+
+        tracks, total = await self.track_repo.get_all(
+            skip=skip,
+            limit=limit,
+            filters=filters,
+            order_by='created_at',
+            descending=True,
+        )
+
+        result_items = []
+        for track in tracks:
+            courses_count = await self.track_repo.get_track_courses_count(track.id)
+            result_items.append(
+                CareerTrackPublic(
+                    id=track.id,
+                    title=track.title,
+                    description=track.description,
+                    user_id=track.user_id,
+                    created_at=track.created_at,
+                    updated_at=track.updated_at,
+                    _courses_count=courses_count,
+                )
             )
 
         return PaginatedResponse(
-            items=tracks,
+            items=result_items,
             page_info=PageInfo(total=total, offset=skip, limit=limit),
         )
 
@@ -52,16 +72,16 @@ class CareerTrackService:
         if not track:
             raise ValueError('Career track not found')
 
-        courses_count = await self.track_repo.get_courses_count(track_id)
+        courses_count = await self.track_repo.get_track_courses_count(track_id)
 
         return CareerTrackPublic(
             id=track.id,
             title=track.title,
             description=track.description,
             user_id=track.user_id,
-            courses_count=courses_count,
             created_at=track.created_at,
             updated_at=track.updated_at,
+            _courses_count=courses_count,
         )
 
     async def get_track_with_courses(
@@ -71,15 +91,38 @@ class CareerTrackService:
         limit_courses: int = 100,
     ) -> CareerTrackWithCourses:
         """Получить карьерный трек со списком курсов"""
-        track_with_courses = await self.track_repo.get_with_courses(
-            track_id,
-            skip_courses,
-            limit_courses,
-        )
-        if not track_with_courses:
+        result = await self.track_repo.get_track_with_courses(track_id)
+        if not result:
             raise ValueError('Career track not found')
 
-        return track_with_courses
+        track = result['track']
+        courses_data = result['courses']
+
+        track_courses = []
+        for idx, course_data in enumerate(courses_data):
+            if idx < skip_courses:
+                continue
+            if len(track_courses) >= limit_courses:
+                break
+
+            course = course_data['course']
+            track_courses.append(
+                TrackCourseItem(
+                    order_index=course_data['order_index'],
+                    course=CoursePublic.model_validate(course),
+                )
+            )
+
+        return CareerTrackWithCourses(
+            id=track.id,
+            title=track.title,
+            description=track.description,
+            user_id=track.user_id,
+            created_at=track.created_at,
+            updated_at=track.updated_at,
+            _courses_count=len(courses_data),
+            courses=track_courses,
+        )
 
     async def create_track(
         self,
@@ -87,12 +130,27 @@ class CareerTrackService:
         current_user: User,
     ) -> CareerTrackPublic:
         """Создать новый карьерный трек"""
-        if await self.track_repo.is_title_taken(track_data.title):
+        existing, _ = await self.track_repo.get_all(
+            filters={'title': track_data.title},
+            limit=1,
+        )
+        if existing:
             raise ValueError('Track with this title already exists')
 
-        track = await self.track_repo.create(track_data, current_user.id)
+        track_dict = track_data.model_dump()
+        track_dict['user_id'] = current_user.id
 
-        return track
+        track = await self.track_repo.create(track_dict)
+
+        return CareerTrackPublic(
+            id=track.id,
+            title=track.title,
+            description=track.description,
+            user_id=track.user_id,
+            created_at=track.created_at,
+            updated_at=track.updated_at,
+            _courses_count=0,
+        )
 
     async def update_track(
         self,
@@ -107,26 +165,27 @@ class CareerTrackService:
 
         update_dict = track_data.model_dump(exclude_unset=True)
         if 'title' in update_dict:
-            if await self.track_repo.is_title_taken(
-                update_dict['title'],
-                exclude_track_id=track_id,
-            ):
+            existing, _ = await self.track_repo.get_all(
+                filters={'title': update_dict['title']},
+                limit=1,
+            )
+            if existing and existing[0].id != track_id:
                 raise ValueError('Track with this title already exists')
 
         updated_track = await self.track_repo.update(track_id, track_data)
         if not updated_track:
             raise ValueError('Career track not found')
 
-        courses_count = await self.track_repo.get_courses_count(track_id)
+        courses_count = await self.track_repo.get_track_courses_count(track_id)
 
         return CareerTrackPublic(
             id=updated_track.id,
             title=updated_track.title,
             description=updated_track.description,
             user_id=updated_track.user_id,
-            courses_count=courses_count,
             created_at=updated_track.created_at,
             updated_at=updated_track.updated_at,
+            _courses_count=courses_count,
         )
 
     async def delete_track(self, track_id: int) -> None:
@@ -138,20 +197,35 @@ class CareerTrackService:
     async def get_track_courses(
         self,
         track_id: int,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[TrackCourseItem]:
         """Получить курсы в карьерном треке"""
         track = await self.track_repo.get_by_id(track_id)
         if not track:
             raise ValueError('Career track not found')
 
-        return await self.track_repo.get_courses_with_order(track_id)
+        track_courses, total = await self.track_repo.get_track_courses(
+            track_id, skip, limit
+        )
+
+        result = []
+        for tc in track_courses:
+            result.append(
+                TrackCourseItem(
+                    order_index=tc.order_index,
+                    course=CoursePublic.model_validate(tc.course),
+                )
+            )
+
+        return result
 
     async def add_course_to_track(
         self,
         track_id: int,
         add_data: AddCourseToTrack,
         current_user: User,
-    ) -> dict:
+    ) -> CareerTrackCoursePublic:
         """Добавить курс в карьерный трек"""
         track = await self.track_repo.get_by_id(track_id)
         if not track:
@@ -161,21 +235,22 @@ class CareerTrackService:
         if not course:
             raise ValueError('Course not found')
 
-        track_course = await self.track_repo.add_course(
-            track_id,
-            add_data.course_id,
-            add_data.order_index,
-        )
-
-        if not track_course:
+        existing = await self.track_repo.get_track_course(track_id, add_data.course_id)
+        if existing:
             raise ValueError('Course already in track')
 
-        return {
-            'career_track_id': track_course.career_track_id,
-            'course_id': track_course.course_id,
-            'order_index': track_course.order_index,
-            'created_at': track_course.created_at,
-        }
+        track_course = await self.track_repo.create_track_course(
+            track_id, add_data.course_id, add_data.order_index
+        )
+
+        return CareerTrackCoursePublic(
+            id=track_course.id,
+            career_track_id=track_course.career_track_id,
+            course_id=track_course.course_id,
+            order_index=track_course.order_index,
+            created_at=track_course.created_at,
+            updated_at=track_course.updated_at,
+        )
 
     async def remove_course_from_track(
         self,
@@ -183,6 +258,6 @@ class CareerTrackService:
         course_id: int,
     ) -> None:
         """Удалить курс из карьерного трека"""
-        removed = await self.track_repo.remove_course(track_id, course_id)
+        removed = await self.track_repo.delete_track_course(track_id, course_id)
         if not removed:
             raise ValueError('Course not in track')

@@ -6,7 +6,6 @@ from app.repositories.course import CourseRepository
 from app.repositories.program import ProgramRepository
 from app.repositories.user import UserRepository
 from app.repositories.userprogress import UserProgressRepository
-from app.services.auth import AuthService
 from app.services.careertrack import CareerTrackService
 from app.services.course import CourseService
 from app.services.program import ProgramService
@@ -32,12 +31,6 @@ async def get_career_track_repo(session: SessionDep) -> CareerTrackRepository:
 
 async def get_user_progress_repo(session: SessionDep) -> UserProgressRepository:
     return UserProgressRepository(session)
-
-
-async def get_auth_service(
-    user_repo: UserRepository = Depends(get_user_repo),
-) -> AuthService:
-    return AuthService(user_repo)
 
 
 async def get_user_service(

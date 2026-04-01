@@ -19,15 +19,17 @@ class UserService:
         limit: int = 20,
     ) -> PaginatedResponse[UserPublic]:
         """Получить список пользователей"""
+        filters = {}
         if role:
-            users, total = await self.user_repo.get_by_role(role, skip, limit)
-        else:
-            users, total = await self.user_repo.get_all(
-                skip=skip,
-                limit=limit,
-                order_by='created_at',
-                descending=True,
-            )
+            filters['role'] = role
+
+        users, total = await self.user_repo.get_all(
+            skip=skip,
+            limit=limit,
+            filters=filters,
+            order_by='created_at',
+            descending=True,
+        )
 
         return PaginatedResponse(
             items=[UserPublic.model_validate(user) for user in users],
@@ -42,26 +44,38 @@ class UserService:
 
         return UserPublic.model_validate(user)
 
-    async def update_user(
+    async def update_own_profile(
         self,
         user_id: int,
         user_data: UserUpdate,
-        current_user: User,
     ) -> UserPublic:
-        """Обновить данные пользователя"""
+        """Обновить свой профиль (только first_name, last_name)"""
         user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError('User not found')
 
-        if current_user.id != user_id and current_user.role != UserRole.ADMIN:
-            raise ValueError('Cannot edit this user')
-
         update_dict = user_data.model_dump(exclude_unset=True)
-        if 'email' in update_dict:
-            if await self.user_repo.is_email_taken(
-                update_dict['email'], exclude_user_id=user_id
-            ):
-                raise ValueError('Email already taken')
+        allowed_fields = {'first_name', 'last_name'}
+        filtered_dict = {k: v for k, v in update_dict.items() if k in allowed_fields}
+
+        if not filtered_dict:
+            return UserPublic.model_validate(user)
+
+        updated_user = await self.user_repo.update(user_id, filtered_dict)
+        if not updated_user:
+            raise ValueError('User not found')
+
+        return UserPublic.model_validate(updated_user)
+
+    async def update_user_by_admin(
+        self,
+        user_id: int,
+        user_data: UserUpdate,
+    ) -> UserPublic:
+        """Обновить пользователя (администратор)"""
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise ValueError('User not found')
 
         updated_user = await self.user_repo.update(user_id, user_data)
         if not updated_user:
@@ -69,28 +83,6 @@ class UserService:
 
         return UserPublic.model_validate(updated_user)
 
-    async def assign_teacher_role(
-        self,
-        user_id: int,
-        current_user: User,
-    ) -> UserPublic:
-        """Назначить пользователю роль преподавателя"""
-        if current_user.role != UserRole.ADMIN:
-            raise PermissionError('Admin privileges required')
-
-        user = await self.user_repo.get_by_id(user_id)
-        if not user:
-            raise ValueError('User not found')
-
-        if user.role in [UserRole.TEACHER, UserRole.ADMIN]:
-            raise ValueError('User is already a teacher or admin')
-
-        updated_user = await self.user_repo.assign_teacher_role(user_id)
-        if not updated_user:
-            raise ValueError('User not found')
-
-        return UserPublic.model_validate(updated_user)
-
     async def get_current_user(self, user_id: int) -> Optional[User]:
-        """Получить текущего пользователя по ID (для зависимостей)"""
+        """Получить текущего пользователя по ID"""
         return await self.user_repo.get_by_id(user_id)
