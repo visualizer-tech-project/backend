@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, func, select
@@ -139,9 +139,7 @@ class CareerTrackRepository(
         return result.all(), total
 
     async def get_track_with_courses(
-            self,
-            track_id: int,
-            user_id: Optional[int] = None
+        self, track_id: int, user_id: Optional[int] = None
     ) -> Optional[Dict]:
         """
         Получить карьерный трек со всеми курсами и их прогрессом.
@@ -182,15 +180,16 @@ class CareerTrackRepository(
 
             if user_id:
                 user_progress = next(
-                    (p for p in course.progress if p.user_id == user_id),
-                    None
+                    (p for p in course.progress if p.user_id == user_id), None
                 )
                 course_data['progress'] = user_progress
                 course_data['is_completed'] = (
-                        user_progress and user_progress.status == UserProgressStatus.COMPLETED
+                    user_progress
+                    and user_progress.status == UserProgressStatus.COMPLETED
                 )
                 course_data['is_in_progress'] = (
-                        user_progress and user_progress.status == UserProgressStatus.IN_PROGRESS
+                    user_progress
+                    and user_progress.status == UserProgressStatus.IN_PROGRESS
                 )
 
             track_courses.append(course_data)

@@ -55,7 +55,7 @@ class CareerTrackPublic(BaseModelSchema):
     def courses_count(self) -> int:
         return self._courses_count
 
-    model_config = {"from_attributes": True}
+    model_config = {'from_attributes': True}
 
 
 class CareerTrackCoursePublic(BaseModelSchema):

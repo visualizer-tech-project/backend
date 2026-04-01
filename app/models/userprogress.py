@@ -1,7 +1,6 @@
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
-from zoneinfo import ZoneInfo
 
 from sqlmodel import Field, Relationship, UniqueConstraint
 

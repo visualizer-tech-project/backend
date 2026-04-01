@@ -1,11 +1,11 @@
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
 from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models import UserProgressStatus, Prerequisite
+from app.models import Prerequisite, UserProgressStatus
 from app.models.course import Course
 from app.models.program import Program
 from app.repositories.base import BaseRepository
@@ -72,10 +72,10 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
         return result.first() is not None
 
     async def get_program_with_courses(
-            self,
-            program_id: int,
-            user_id: Optional[int] = None,
-            include_courses: bool = True
+        self,
+        program_id: int,
+        user_id: Optional[int] = None,
+        include_courses: bool = True,
     ) -> Optional[Dict]:
         """
         Получить программу со всеми курсами и их прогрессом.
@@ -93,8 +93,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
 
         if include_courses:
             query = query.options(
-                selectinload(Program.courses)
-                .selectinload(Course.progress)
+                selectinload(Program.courses).selectinload(Course.progress)
             )
 
         result = await self.session.exec(query)
@@ -127,8 +126,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
                 }
                 if user_id:
                     user_progress = next(
-                        (p for p in course.progress if p.user_id == user_id),
-                        None
+                        (p for p in course.progress if p.user_id == user_id), None
                     )
                     course_data['progress'] = user_progress
 
@@ -140,25 +138,26 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
 
                 courses_data.append(course_data)
 
-            response.update({
-                'courses': courses_data,
-                'courses_count': len(program.courses),
-                'required_courses_count': required_count,
-                'elective_courses_count': elective_count,
-                'completed_courses_count': completed_count,
-                'in_progress_courses_count': in_progress_count,
-                'completion_percentage': (
-                    (completed_count / len(program.courses) * 100)
-                    if program.courses else 0
-                ),
-            })
+            response.update(
+                {
+                    'courses': courses_data,
+                    'courses_count': len(program.courses),
+                    'required_courses_count': required_count,
+                    'elective_courses_count': elective_count,
+                    'completed_courses_count': completed_count,
+                    'in_progress_courses_count': in_progress_count,
+                    'completion_percentage': (
+                        (completed_count / len(program.courses) * 100)
+                        if program.courses
+                        else 0
+                    ),
+                }
+            )
 
         return response
 
     async def _get_prerequisite_by_courses(
-            self,
-            course_id: int,
-            prerequisite_course_id: int
+        self, course_id: int, prerequisite_course_id: int
     ) -> Optional[Prerequisite]:
         """
         Вспомогательный метод для проверки существования пререквизита.
@@ -167,7 +166,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
         query = select(Prerequisite).where(
             and_(
                 Prerequisite.course_id == course_id,
-                Prerequisite.prerequisite_course_id == prerequisite_course_id
+                Prerequisite.prerequisite_course_id == prerequisite_course_id,
             )
         )
         result = await self.session.exec(query)

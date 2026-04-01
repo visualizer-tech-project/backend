@@ -50,7 +50,11 @@ class UserProgressRepository(
         total = await self.session.scalar(count_query) or 0
 
         if limit is not None:
-            query = base_query.offset(skip).limit(limit).order_by(UserProgress.updated_at.desc())
+            query = (
+                base_query.offset(skip)
+                .limit(limit)
+                .order_by(UserProgress.updated_at.desc())
+            )
         else:
             query = base_query.offset(skip).order_by(UserProgress.updated_at.desc())
 

@@ -3,21 +3,23 @@ from typing import List, Optional
 from app.models.user import User
 from app.repositories.careertrack import CareerTrackRepository
 from app.repositories.course import CourseRepository
+from app.schemas.base import PageInfo, PaginatedResponse
 from app.schemas.careertrack import (
-    CareerTrackCreate,
-    CareerTrackUpdate,
-    CareerTrackPublic,
-    CareerTrackWithCourses,
     AddCourseToTrack,
+    CareerTrackCreate,
+    CareerTrackPublic,
+    CareerTrackUpdate,
+    CareerTrackWithCourses,
     TrackCourseItem,
 )
-from app.schemas.base import PageInfo, PaginatedResponse
 
 
 class CareerTrackService:
     """Сервис управления карьерными треками"""
 
-    def __init__(self, track_repo: CareerTrackRepository, course_repo: CourseRepository):
+    def __init__(
+        self, track_repo: CareerTrackRepository, course_repo: CourseRepository
+    ):
         self.track_repo = track_repo
         self.course_repo = course_repo
 
@@ -35,7 +37,7 @@ class CareerTrackService:
             tracks, total = await self.track_repo.get_all(
                 skip=skip,
                 limit=limit,
-                order_by="created_at",
+                order_by='created_at',
                 descending=True,
             )
 
@@ -48,7 +50,7 @@ class CareerTrackService:
         """Получить карьерный трек по ID"""
         track = await self.track_repo.get_by_id(track_id)
         if not track:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
         courses_count = await self.track_repo.get_courses_count(track_id)
 
@@ -75,7 +77,7 @@ class CareerTrackService:
             limit_courses,
         )
         if not track_with_courses:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
         return track_with_courses
 
@@ -86,7 +88,7 @@ class CareerTrackService:
     ) -> CareerTrackPublic:
         """Создать новый карьерный трек"""
         if await self.track_repo.is_title_taken(track_data.title):
-            raise ValueError("Track with this title already exists")
+            raise ValueError('Track with this title already exists')
 
         track = await self.track_repo.create(track_data, current_user.id)
 
@@ -101,19 +103,19 @@ class CareerTrackService:
         """Обновить карьерный трек"""
         track = await self.track_repo.get_by_id(track_id)
         if not track:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
         update_dict = track_data.model_dump(exclude_unset=True)
-        if "title" in update_dict:
+        if 'title' in update_dict:
             if await self.track_repo.is_title_taken(
-                update_dict["title"],
+                update_dict['title'],
                 exclude_track_id=track_id,
             ):
-                raise ValueError("Track with this title already exists")
+                raise ValueError('Track with this title already exists')
 
         updated_track = await self.track_repo.update(track_id, track_data)
         if not updated_track:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
         courses_count = await self.track_repo.get_courses_count(track_id)
 
@@ -131,7 +133,7 @@ class CareerTrackService:
         """Удалить карьерный трек"""
         deleted = await self.track_repo.delete(track_id)
         if not deleted:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
     async def get_track_courses(
         self,
@@ -140,7 +142,7 @@ class CareerTrackService:
         """Получить курсы в карьерном треке"""
         track = await self.track_repo.get_by_id(track_id)
         if not track:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
         return await self.track_repo.get_courses_with_order(track_id)
 
@@ -153,11 +155,11 @@ class CareerTrackService:
         """Добавить курс в карьерный трек"""
         track = await self.track_repo.get_by_id(track_id)
         if not track:
-            raise ValueError("Career track not found")
+            raise ValueError('Career track not found')
 
         course = await self.course_repo.get_by_id(add_data.course_id)
         if not course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
         track_course = await self.track_repo.add_course(
             track_id,
@@ -166,13 +168,13 @@ class CareerTrackService:
         )
 
         if not track_course:
-            raise ValueError("Course already in track")
+            raise ValueError('Course already in track')
 
         return {
-            "career_track_id": track_course.career_track_id,
-            "course_id": track_course.course_id,
-            "order_index": track_course.order_index,
-            "created_at": track_course.created_at,
+            'career_track_id': track_course.career_track_id,
+            'course_id': track_course.course_id,
+            'order_index': track_course.order_index,
+            'created_at': track_course.created_at,
         }
 
     async def remove_course_from_track(
@@ -183,4 +185,4 @@ class CareerTrackService:
         """Удалить курс из карьерного трека"""
         removed = await self.track_repo.remove_course(track_id, course_id)
         if not removed:
-            raise ValueError("Course not in track")
+            raise ValueError('Course not in track')

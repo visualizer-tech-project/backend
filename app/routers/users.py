@@ -1,26 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 
-from app.models.user import User
-from app.schemas.user import UserPublic, UserUpdate
-from app.schemas.base import PaginatedResponse
-from app.services.user import UserService
 from app.dependencies import (
-    get_user_service,
     get_current_active_user,
+    get_user_service,
     require_admin,
 )
+from app.models.user import User
+from app.schemas.base import PaginatedResponse
+from app.schemas.user import UserPublic, UserUpdate
+from app.services.user import UserService
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix='/users', tags=['users'])
 
 
 @router.get(
-    "/",
+    '/',
     response_model=PaginatedResponse[UserPublic],
-    summary="Получить список пользователей",
+    summary='Получить список пользователей',
     responses={
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        500: {"description": "Внутренняя ошибка сервера"},
+        401: {'description': 'Не авторизован'},
+        403: {'description': 'Недостаточно прав'},
+        500: {'description': 'Внутренняя ошибка сервера'},
     },
 )
 async def get_users(
@@ -34,14 +34,14 @@ async def get_users(
 
 
 @router.get(
-    "/{user_id}",
+    '/{user_id}',
     response_model=UserPublic,
-    summary="Получить пользователя по ID",
+    summary='Получить пользователя по ID',
     responses={
-        401: {"description": "Не авторизован"},
-        403: {"description": "Нет доступа к данному пользователю"},
-        404: {"description": "Пользователь не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
+        401: {'description': 'Не авторизован'},
+        403: {'description': 'Нет доступа к данному пользователю'},
+        404: {'description': 'Пользователь не найден'},
+        500: {'description': 'Внутренняя ошибка сервера'},
     },
 )
 async def get_user_by_id(
@@ -56,22 +56,22 @@ async def get_user_by_id(
 
 
 @router.put(
-    "/{user_id}",
+    '/{user_id}',
     response_model=UserPublic,
-    summary="Обновить данные пользователя",
+    summary='Обновить данные пользователя',
     responses={
-        400: {"description": "Некорректные данные"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Нет прав на редактирование"},
-        404: {"description": "Пользователь не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
+        400: {'description': 'Некорректные данные'},
+        401: {'description': 'Не авторизован'},
+        403: {'description': 'Нет прав на редактирование'},
+        404: {'description': 'Пользователь не найден'},
+        500: {'description': 'Внутренняя ошибка сервера'},
     },
 )
 async def update_user(
     user_id: int,
     user_data: UserUpdate,
     user_service: UserService = Depends(get_user_service),
-    current_user: User = Security(get_current_active_user, scopes=["write:users"]),
+    current_user: User = Security(get_current_active_user, scopes=['write:users']),
 ) -> UserPublic:
     """Обновить данные пользователя."""
     try:
@@ -83,22 +83,24 @@ async def update_user(
 
 
 @router.post(
-    "/{user_id}/assign-teacher",
+    '/{user_id}/assign-teacher',
     response_model=UserPublic,
-    summary="Назначить роль преподавателя",
+    summary='Назначить роль преподавателя',
     description="Изменяет роль пользователя с 'student' на 'teacher'",
     responses={
-        400: {"description": "Пользователь уже является преподавателем или администратором"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Пользователь не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
+        400: {
+            'description': 'Пользователь уже является преподавателем или администратором'
+        },
+        401: {'description': 'Не авторизован'},
+        403: {'description': 'Недостаточно прав'},
+        404: {'description': 'Пользователь не найден'},
+        500: {'description': 'Внутренняя ошибка сервера'},
     },
 )
 async def assign_teacher_role(
     user_id: int,
     user_service: UserService = Depends(get_user_service),
-    current_user: User = Security(require_admin, scopes=["admin:assign-teacher"]),
+    current_user: User = Security(require_admin, scopes=['admin:assign-teacher']),
 ) -> UserPublic:
     """Назначить пользователю роль преподавателя. Только для администраторов."""
     try:

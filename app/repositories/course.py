@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Dict
+from typing import Dict, List, Optional, Set
 
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, func, select
@@ -164,8 +164,7 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
         return result.all(), total
 
     async def get_courses_with_prerequisites(
-            self,
-            course_ids: List[int]
+        self, course_ids: List[int]
     ) -> Dict[int, List[Course]]:
         """
         Получить словарь курсов с их пререквизитами.
@@ -183,8 +182,9 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
             select(Course)
             .where(Course.id.in_(course_ids))
             .options(
-                selectinload(Course.prerequisites)
-                .selectinload(Prerequisite.prerequisite_course)
+                selectinload(Course.prerequisites).selectinload(
+                    Prerequisite.prerequisite_course
+                )
             )
         )
 
@@ -203,11 +203,11 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
         return courses_with_prereqs
 
     async def get_available_courses(
-            self,
-            user_id: int,
-            program_id: Optional[int] = None,
-            skip: int = 0,
-            limit: Optional[int] = None
+        self,
+        user_id: int,
+        program_id: Optional[int] = None,
+        skip: int = 0,
+        limit: Optional[int] = None,
     ) -> tuple[List[Course], int]:
         """
         Получить курсы, доступные для пользователя (с учетом пройденных пререквизитов).
@@ -227,7 +227,7 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
             .where(
                 and_(
                     UserProgress.user_id == user_id,
-                    UserProgress.status == UserProgressStatus.COMPLETED
+                    UserProgress.status == UserProgressStatus.COMPLETED,
                 )
             )
             .subquery()
@@ -263,14 +263,16 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
                 available_courses.append(course)
 
         total = len(available_courses)
-        paginated_courses = available_courses[skip:skip + limit] if limit else available_courses[skip:]
+        paginated_courses = (
+            available_courses[skip : skip + limit]
+            if limit
+            else available_courses[skip:]
+        )
 
         return paginated_courses, total
 
     async def get_courses_by_ids_with_progress(
-            self,
-            course_ids: List[int],
-            user_id: int
+        self, course_ids: List[int], user_id: int
     ) -> List[Dict]:
         """
         Получить курсы по списку ID с прогрессом пользователя.
@@ -289,9 +291,10 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
             select(Course)
             .where(Course.id.in_(course_ids))
             .options(
-                selectinload(Course.prerequisites)
-                .selectinload(Prerequisite.prerequisite_course),
-                selectinload(Course.progress)
+                selectinload(Course.prerequisites).selectinload(
+                    Prerequisite.prerequisite_course
+                ),
+                selectinload(Course.progress),
             )
         )
 
@@ -301,8 +304,7 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
         courses_with_progress = []
         for course in courses:
             user_progress = next(
-                (p for p in course.progress if p.user_id == user_id),
-                None
+                (p for p in course.progress if p.user_id == user_id), None
             )
 
             prerequisites = [
@@ -311,13 +313,17 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
                 if prereq.prerequisite_course
             ]
 
-            courses_with_progress.append({
-                'course': course,
-                'progress': user_progress,
-                'prerequisites': prerequisites,
-                'is_completed': user_progress and user_progress.status == UserProgressStatus.COMPLETED,
-                'is_in_progress': user_progress and user_progress.status == UserProgressStatus.IN_PROGRESS,
-                'grade': user_progress.grade if user_progress else None,
-            })
+            courses_with_progress.append(
+                {
+                    'course': course,
+                    'progress': user_progress,
+                    'prerequisites': prerequisites,
+                    'is_completed': user_progress
+                    and user_progress.status == UserProgressStatus.COMPLETED,
+                    'is_in_progress': user_progress
+                    and user_progress.status == UserProgressStatus.IN_PROGRESS,
+                    'grade': user_progress.grade if user_progress else None,
+                }
+            )
 
         return courses_with_progress

@@ -1,17 +1,17 @@
 from typing import Optional
 
 from app.models.user import User, UserRole
-from app.repositories.userprogress import UserProgressRepository
 from app.repositories.course import CourseRepository
 from app.repositories.user import UserRepository
+from app.repositories.userprogress import UserProgressRepository
+from app.schemas.base import PageInfo, PaginatedResponse
 from app.schemas.userprogress import (
     ProgressCreate,
+    ProgressStatus,
     ProgressUpdate,
     UserProgressPublic,
     UserProgressWithDetails,
-    ProgressStatus,
 )
-from app.schemas.base import PageInfo, PaginatedResponse
 
 
 class ProgressService:
@@ -39,10 +39,10 @@ class ProgressService:
         """Получить прогресс пользователя по курсам"""
         user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            raise ValueError('User not found')
 
         if current_user.role == UserRole.STUDENT and current_user.id != user_id:
-            raise PermissionError("Access denied")
+            raise PermissionError('Access denied')
 
         progress_list, total = await self.progress_repo.get_user_progress_with_details(
             user_id=user_id,
@@ -70,15 +70,15 @@ class ProgressService:
 
         user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            raise ValueError('User not found')
 
         course = await self.course_repo.get_by_id(course_id)
         if not course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
         existing = await self.progress_repo.get_by_user_and_course(user_id, course_id)
         if existing:
-            raise ValueError("Progress record already exists")
+            raise ValueError('Progress record already exists')
 
         progress_data.user_id = user_id
         progress_data.course_id = course_id
@@ -99,17 +99,17 @@ class ProgressService:
 
         existing = await self.progress_repo.get_by_user_and_course(user_id, course_id)
         if not existing:
-            raise ValueError("Progress record not found")
+            raise ValueError('Progress record not found')
 
         update_dict = progress_data.model_dump(exclude_unset=True)
 
         create_data = ProgressCreate(
             user_id=user_id,
             course_id=course_id,
-            status=update_dict.get("status", existing.status),
-            grade=update_dict.get("grade", existing.grade),
-            started_at=update_dict.get("started_at", existing.started_at),
-            completed_at=update_dict.get("completed_at", existing.completed_at),
+            status=update_dict.get('status', existing.status),
+            grade=update_dict.get('grade', existing.grade),
+            started_at=update_dict.get('started_at', existing.started_at),
+            completed_at=update_dict.get('completed_at', existing.completed_at),
         )
 
         progress = await self.progress_repo.create_or_update(create_data)
@@ -128,11 +128,11 @@ class ProgressService:
 
         progress = await self.progress_repo.get_by_user_and_course(user_id, course_id)
         if not progress:
-            raise ValueError("Progress record not found")
+            raise ValueError('Progress record not found')
 
         deleted = await self.progress_repo.delete(progress.id)
         if not deleted:
-            raise ValueError("Progress record not found")
+            raise ValueError('Progress record not found')
 
     async def mark_course_completed(
         self,

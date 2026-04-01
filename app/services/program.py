@@ -2,8 +2,8 @@ from typing import Optional
 
 from app.models.user import User
 from app.repositories.program import ProgramRepository
-from app.schemas.program import ProgramCreate, ProgramUpdate, ProgramPublic
 from app.schemas.base import PageInfo, PaginatedResponse
+from app.schemas.program import ProgramCreate, ProgramPublic, ProgramUpdate
 
 
 class ProgramService:
@@ -25,7 +25,7 @@ class ProgramService:
             programs, total = await self.program_repo.get_all(
                 skip=skip,
                 limit=limit,
-                order_by="created_at",
+                order_by='created_at',
                 descending=True,
             )
 
@@ -38,7 +38,7 @@ class ProgramService:
         """Получить программу по ID"""
         program = await self.program_repo.get_by_id(program_id)
         if not program:
-            raise ValueError("Program not found")
+            raise ValueError('Program not found')
 
         return ProgramPublic.model_validate(program)
 
@@ -49,7 +49,7 @@ class ProgramService:
     ) -> ProgramPublic:
         """Создать новую программу"""
         if await self.program_repo.is_title_taken(program_data.title):
-            raise ValueError("Program with this title already exists")
+            raise ValueError('Program with this title already exists')
 
         program = await self.program_repo.create(program_data, current_user.id)
 
@@ -64,18 +64,18 @@ class ProgramService:
         """Обновить программу"""
         program = await self.program_repo.get_by_id(program_id)
         if not program:
-            raise ValueError("Program not found")
+            raise ValueError('Program not found')
 
         update_dict = program_data.model_dump(exclude_unset=True)
-        if "title" in update_dict:
+        if 'title' in update_dict:
             if await self.program_repo.is_title_taken(
-                update_dict["title"], exclude_program_id=program_id
+                update_dict['title'], exclude_program_id=program_id
             ):
-                raise ValueError("Program with this title already exists")
+                raise ValueError('Program with this title already exists')
 
         updated_program = await self.program_repo.update(program_id, program_data)
         if not updated_program:
-            raise ValueError("Program not found")
+            raise ValueError('Program not found')
 
         return ProgramPublic.model_validate(updated_program)
 
@@ -83,7 +83,7 @@ class ProgramService:
         """Удалить программу"""
         deleted = await self.program_repo.delete(program_id)
         if not deleted:
-            raise ValueError("Program not found")
+            raise ValueError('Program not found')
 
     async def copy_program(
         self,
@@ -94,10 +94,10 @@ class ProgramService:
         """Скопировать программу для нового потока"""
         source_program = await self.program_repo.get_by_id(program_id)
         if not source_program:
-            raise ValueError("Source program not found")
+            raise ValueError('Source program not found')
 
         if await self.program_repo.is_title_taken(new_title):
-            raise ValueError("Program with this title already exists")
+            raise ValueError('Program with this title already exists')
 
         new_program = await self.program_repo.copy_program(
             source_program_id=program_id,
@@ -106,6 +106,6 @@ class ProgramService:
         )
 
         if not new_program:
-            raise ValueError("Failed to copy program")
+            raise ValueError('Failed to copy program')
 
         return ProgramPublic.model_validate(new_program)
