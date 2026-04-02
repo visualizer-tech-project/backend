@@ -16,7 +16,7 @@ class ProgramService:
         self,
         title: Optional[str] = None,
         skip: int = 0,
-        limit: int = 20,
+        limit: Optional[int] = None,
     ) -> PaginatedResponse[ProgramPublic]:
         """Получить список программ"""
         filters = {}
