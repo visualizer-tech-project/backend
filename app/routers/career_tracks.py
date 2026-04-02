@@ -38,12 +38,11 @@ async def get_track_by_id(
 @router.get('/{track_id}/courses', response_model=list[TrackCourseItem])
 async def get_track_courses(
     track_id: int,
-    skip: int = 0,
-    limit: int = 100,
+    filters: CareerTrackFilters = Depends(),
     service: CareerTrackService = Depends(get_career_track_service),
 ) -> list[TrackCourseItem]:
     try:
-        return await service.get_track_courses(track_id, skip, limit)
+        return await service.get_track_courses(track_id, filters.skip, filters.limit)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
