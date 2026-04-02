@@ -3,13 +3,13 @@ from typing import List, Optional
 from app.models.user import User
 from app.repositories.course import CourseRepository
 from app.repositories.program import ProgramRepository
+from app.schemas.base import PageInfo, PaginatedResponse
 from app.schemas.course import (
     CourseCreate,
-    CourseUpdate,
     CoursePublic,
     CourseType,
+    CourseUpdate,
 )
-from app.schemas.base import PageInfo, PaginatedResponse
 from app.schemas.prerequisite import PrerequisiteCreate, PrerequisitePublic
 
 
@@ -31,26 +31,19 @@ class CourseService:
         """Получить список курсов"""
         filters = {}
         if program_id:
-            filters["program_id"] = program_id
+            filters['program_id'] = program_id
         if course_type:
-            filters["type"] = course_type
-
+            filters['type'] = course_type
         if title:
-            courses, total = await self.course_repo.search(
-                query_str=title,
-                program_id=program_id,
-                course_type=course_type,
-                skip=skip,
-                limit=limit,
-            )
-        else:
-            courses, total = await self.course_repo.get_all(
-                skip=skip,
-                limit=limit,
-                filters=filters,
-                order_by="created_at",
-                descending=True,
-            )
+            filters['title'] = title
+
+        courses, total = await self.course_repo.get_all(
+            skip=skip,
+            limit=limit,
+            filters=filters,
+            order_by='created_at',
+            descending=True,
+        )
 
         return PaginatedResponse(
             items=[CoursePublic.model_validate(course) for course in courses],
@@ -61,7 +54,7 @@ class CourseService:
         """Получить курс по ID"""
         course = await self.course_repo.get_by_id(course_id)
         if not course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
         return CoursePublic.model_validate(course)
 
@@ -73,21 +66,16 @@ class CourseService:
         """Создать новый курс"""
         program = await self.program_repo.get_by_id(course_data.program_id)
         if not program:
-            raise ValueError("Program not found")
+            raise ValueError('Program not found')
 
         if await self.course_repo.is_title_taken_in_program(
             course_data.title,
             course_data.program_id,
         ):
-            raise ValueError("Course with this title already exists in program")
+            raise ValueError('Course with this title already exists in program')
 
-        course_dict = {
-            "title": course_data.title,
-            "description": course_data.description,
-            "type": course_data.type,
-            "program_id": course_data.program_id,
-            "user_id": current_user.id,
-        }
+        course_dict = course_data.model_dump()
+        course_dict['user_id'] = current_user.id
 
         course = await self.course_repo.create(course_dict)
 
@@ -102,20 +90,20 @@ class CourseService:
         """Обновить курс"""
         course = await self.course_repo.get_by_id(course_id)
         if not course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
         update_dict = course_data.model_dump(exclude_unset=True)
-        if "title" in update_dict:
+        if 'title' in update_dict:
             if await self.course_repo.is_title_taken_in_program(
-                update_dict["title"],
+                update_dict['title'],
                 course.program_id,
                 exclude_course_id=course_id,
             ):
-                raise ValueError("Course with this title already exists in program")
+                raise ValueError('Course with this title already exists in program')
 
         updated_course = await self.course_repo.update(course_id, course_data)
         if not updated_course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
         return CoursePublic.model_validate(updated_course)
 
@@ -123,21 +111,28 @@ class CourseService:
         """Удалить курс"""
         deleted = await self.course_repo.delete(course_id)
         if not deleted:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
     async def get_prerequisites(
         self,
         course_id: int,
     ) -> List[CoursePublic]:
         """Получить все пререквизиты курса"""
-        course = await self.course_repo.get_with_prerequisites(course_id)
+        course = await self.course_repo.get_by_id(course_id)
         if not course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
-        return [
-            CoursePublic.model_validate(prereq.prerequisite_course)
-            for prereq in course.prerequisites
-        ]
+        prerequisites, _ = await self.course_repo.get_prerequisites_by_course(course_id)
+
+        result = []
+        for prereq in prerequisites:
+            prereq_course = await self.course_repo.get_by_id(
+                prereq.prerequisite_course_id
+            )
+            if prereq_course:
+                result.append(CoursePublic.model_validate(prereq_course))
+
+        return result
 
     async def add_prerequisite(
         self,
@@ -148,24 +143,26 @@ class CourseService:
         """Добавить пререквизит для курса"""
         course = await self.course_repo.get_by_id(course_id)
         if not course:
-            raise ValueError("Course not found")
+            raise ValueError('Course not found')
 
         prerequisite_course_id = prerequisite_data.prerequisite_course_id
 
         prerequisite_course = await self.course_repo.get_by_id(prerequisite_course_id)
         if not prerequisite_course:
-            raise ValueError("Prerequisite course not found")
+            raise ValueError('Prerequisite course not found')
 
-        if await self.course_repo.would_create_cycle(course_id, prerequisite_course_id):
-            raise ValueError("Cyclic dependency detected")
+        if course_id == prerequisite_course_id:
+            raise ValueError('Cannot set self as prerequisite')
 
-        prerequisite = await self.course_repo.add_prerequisite(
-            course_id,
-            prerequisite_course_id,
+        existing = await self.course_repo.get_prerequisite(
+            course_id, prerequisite_course_id
         )
+        if existing:
+            raise ValueError('Prerequisite already exists')
 
-        if not prerequisite:
-            raise ValueError("Prerequisite already exists or invalid")
+        prerequisite = await self.course_repo.create_prerequisite(
+            course_id, prerequisite_course_id
+        )
 
         return PrerequisitePublic.model_validate(prerequisite)
 
@@ -175,9 +172,8 @@ class CourseService:
         prerequisite_course_id: int,
     ) -> None:
         """Удалить пререквизит у курса"""
-        removed = await self.course_repo.remove_prerequisite(
-            course_id,
-            prerequisite_course_id,
+        removed = await self.course_repo.delete_prerequisite(
+            course_id, prerequisite_course_id
         )
         if not removed:
-            raise ValueError("Prerequisite relation not found")
+            raise ValueError('Prerequisite relation not found')

@@ -21,7 +21,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_all(
         self,
         skip: int = 0,
-        limit: int = 20,
+        limit: Optional[int] = None,
         filters: Optional[Dict[str, Any]] = None,
         order_by: Optional[str] = None,
         descending: bool = False,
@@ -50,7 +50,10 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 query = query.order_by(order_field.desc())
             else:
                 query = query.order_by(order_field)
-        query = query.offset(skip).limit(limit)
+        if limit is not None:
+            query = query.offset(skip).limit(limit)
+        else:
+            query = query.offset(skip)
         result = await self.session.exec(query)
         items = result.all()
         return items, total

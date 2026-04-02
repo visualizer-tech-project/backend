@@ -1,24 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies import get_program_service
 from app.models.user import User
-from app.schemas.program import ProgramCreate, ProgramUpdate, ProgramPublic
 from app.schemas.base import PaginatedResponse
+from app.schemas.program import ProgramCreate, ProgramPublic, ProgramUpdate
 from app.services.program import ProgramService
-from app.dependencies import (
-    get_program_service,
-    require_write_programs,
-)
 
-router = APIRouter(prefix="/programs", tags=["programs"])
+# Временная заглушка для текущего пользователя
+DUMMY_USER = User(id=1, role='admin')
+
+router = APIRouter(prefix='/programs', tags=['programs'])
 
 
 @router.get(
-    "/",
+    '/',
     response_model=PaginatedResponse[ProgramPublic],
-    summary="Получить список образовательных программ",
-    responses={
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Получить список образовательных программ',
 )
 async def get_programs(
     title: str = None,
@@ -31,13 +28,9 @@ async def get_programs(
 
 
 @router.get(
-    "/{program_id}",
+    '/{program_id}',
     response_model=ProgramPublic,
-    summary="Получить программу по ID",
-    responses={
-        404: {"description": "Программа не найдена"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Получить программу по ID',
 )
 async def get_program_by_id(
     program_id: int,
@@ -51,64 +44,45 @@ async def get_program_by_id(
 
 
 @router.post(
-    "/",
+    '/',
     response_model=ProgramPublic,
     status_code=status.HTTP_201_CREATED,
-    summary="Создать новую программу",
-    responses={
-        400: {"description": "Некорректные данные"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Создать новую программу',
 )
 async def create_program(
     program_data: ProgramCreate,
     program_service: ProgramService = Depends(get_program_service),
-    current_user: User = Security(require_write_programs, scopes=["write:programs"]),
 ) -> ProgramPublic:
     """Создать новую образовательную программу."""
     try:
-        return await program_service.create_program(program_data, current_user)
+        return await program_service.create_program(program_data, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.put(
-    "/{program_id}",
+    '/{program_id}',
     response_model=ProgramPublic,
-    summary="Обновить программу",
-    responses={
-        400: {"description": "Некорректные данные"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Программа не найдена"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Обновить программу',
 )
 async def update_program(
     program_id: int,
     program_data: ProgramUpdate,
     program_service: ProgramService = Depends(get_program_service),
-    current_user: User = Security(require_write_programs, scopes=["write:programs"]),
 ) -> ProgramPublic:
     """Обновить программу."""
     try:
-        return await program_service.update_program(program_id, program_data, current_user)
+        return await program_service.update_program(
+            program_id, program_data, DUMMY_USER
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete(
-    "/{program_id}",
+    '/{program_id}',
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Удалить программу",
-    responses={
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Программа не найдена"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Удалить программу',
 )
 async def delete_program(
     program_id: int,
@@ -122,29 +96,23 @@ async def delete_program(
 
 
 @router.post(
-    "/{program_id}/copy",
+    '/{program_id}/copy',
     response_model=ProgramPublic,
     status_code=status.HTTP_201_CREATED,
-    summary="Копировать программу для нового потока/года",
-    responses={
-        400: {"description": "Некорректные данные"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Исходная программа не найдена"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Копировать программу для нового потока/года',
 )
 async def copy_program(
     program_id: int,
     copy_request: dict,
     program_service: ProgramService = Depends(get_program_service),
-    current_user: User = Security(require_write_programs, scopes=["write:programs"]),
 ) -> ProgramPublic:
     """Скопировать программу со всеми курсами для нового потока."""
     try:
-        new_title = copy_request.get("title")
+        new_title = copy_request.get('title')
         if not new_title:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Title is required")
-        return await program_service.copy_program(program_id, new_title, current_user)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail='Title is required'
+            )
+        return await program_service.copy_program(program_id, new_title, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

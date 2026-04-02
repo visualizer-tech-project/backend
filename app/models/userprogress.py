@@ -1,7 +1,6 @@
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
-from zoneinfo import ZoneInfo
 
 from sqlmodel import Field, Relationship, UniqueConstraint
 
@@ -33,7 +32,3 @@ class UserProgress(BaseModel, table=True):
 
     user: 'User' = Relationship(back_populates='progress')
     course: 'Course' = Relationship(back_populates='progress')
-
-
-def get_current_datetime() -> datetime:
-    return datetime.now(ZoneInfo('UTC'))
