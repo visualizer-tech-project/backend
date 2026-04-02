@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from app.schemas.base import BaseModelSchema, BaseSchema
 from app.schemas.course import CoursePublic
@@ -48,7 +48,14 @@ class CareerTrackPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
     user_id: int
-    courses_count: int = 0
+    _courses_count: int = 0
+
+    @computed_field
+    @property
+    def courses_count(self) -> int:
+        return self._courses_count
+
+    model_config = {'from_attributes': True}
 
 
 class CareerTrackCoursePublic(BaseModelSchema):

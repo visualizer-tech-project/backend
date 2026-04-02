@@ -1,25 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies import get_course_service
 from app.models.user import User
-from app.schemas.course import CourseCreate, CourseUpdate, CoursePublic, CourseType
 from app.schemas.base import PaginatedResponse
+from app.schemas.course import CourseCreate, CoursePublic, CourseType, CourseUpdate
 from app.schemas.prerequisite import PrerequisiteCreate, PrerequisitePublic
 from app.services.course import CourseService
-from app.dependencies import (
-    get_course_service,
-    require_write_courses,
-)
 
-router = APIRouter(prefix="/courses", tags=["courses"])
+# Временная заглушка для текущего пользователя
+DUMMY_USER = User(id=1, role='admin')
+
+router = APIRouter(prefix='/courses', tags=['courses'])
 
 
 @router.get(
-    "/",
+    '/',
     response_model=PaginatedResponse[CoursePublic],
-    summary="Получить список курсов",
-    responses={
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Получить список курсов',
 )
 async def get_courses(
     program_id: int = None,
@@ -34,13 +31,9 @@ async def get_courses(
 
 
 @router.get(
-    "/{course_id}",
+    '/{course_id}',
     response_model=CoursePublic,
-    summary="Получить курс по ID",
-    responses={
-        404: {"description": "Курс не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Получить курс по ID',
 )
 async def get_course_by_id(
     course_id: int,
@@ -54,64 +47,43 @@ async def get_course_by_id(
 
 
 @router.post(
-    "/",
+    '/',
     response_model=CoursePublic,
     status_code=status.HTTP_201_CREATED,
-    summary="Создать новый курс",
-    responses={
-        400: {"description": "Некорректные данные или program_id не существует"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Создать новый курс',
 )
 async def create_course(
     course_data: CourseCreate,
     course_service: CourseService = Depends(get_course_service),
-    current_user: User = Security(require_write_courses, scopes=["write:courses"]),
 ) -> CoursePublic:
     """Создать новый курс."""
     try:
-        return await course_service.create_course(course_data, current_user)
+        return await course_service.create_course(course_data, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.put(
-    "/{course_id}",
+    '/{course_id}',
     response_model=CoursePublic,
-    summary="Обновить курс",
-    responses={
-        400: {"description": "Некорректные данные"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Курс не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Обновить курс',
 )
 async def update_course(
     course_id: int,
     course_data: CourseUpdate,
     course_service: CourseService = Depends(get_course_service),
-    current_user: User = Security(require_write_courses, scopes=["write:courses"]),
 ) -> CoursePublic:
     """Обновить курс."""
     try:
-        return await course_service.update_course(course_id, course_data, current_user)
+        return await course_service.update_course(course_id, course_data, DUMMY_USER)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete(
-    "/{course_id}",
+    '/{course_id}',
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Удалить курс",
-    responses={
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Курс не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Удалить курс',
 )
 async def delete_course(
     course_id: int,
@@ -125,13 +97,9 @@ async def delete_course(
 
 
 @router.get(
-    "/{course_id}/prerequisites",
+    '/{course_id}/prerequisites',
     response_model=list[CoursePublic],
-    summary="Получить все пререквизиты для курса",
-    responses={
-        404: {"description": "Курс не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Получить все пререквизиты для курса',
 )
 async def get_prerequisites(
     course_id: int,
@@ -145,49 +113,37 @@ async def get_prerequisites(
 
 
 @router.post(
-    "/{course_id}/prerequisites",
+    '/{course_id}/prerequisites',
     response_model=PrerequisitePublic,
     status_code=status.HTTP_201_CREATED,
-    summary="Добавить пререквизит для курса",
-    responses={
-        400: {"description": "Некорректные данные (циклическая зависимость, дубликат)"},
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Курс не найден"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Добавить пререквизит для курса',
 )
 async def add_prerequisite(
     course_id: int,
     prerequisite_data: PrerequisiteCreate,
     course_service: CourseService = Depends(get_course_service),
-    current_user: User = Security(require_write_courses, scopes=["write:courses"]),
 ) -> PrerequisitePublic:
     """Добавить пререквизит для курса."""
     try:
-        return await course_service.add_prerequisite(course_id, prerequisite_data, current_user)
+        return await course_service.add_prerequisite(
+            course_id, prerequisite_data, DUMMY_USER
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete(
-    "/{course_id}/prerequisites/{prerequisite_id}",
+    '/{course_id}/prerequisites/{prerequisite_course_id}',
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Удалить пререквизит у курса",
-    responses={
-        401: {"description": "Не авторизован"},
-        403: {"description": "Недостаточно прав"},
-        404: {"description": "Связь не найдена"},
-        500: {"description": "Внутренняя ошибка сервера"},
-    },
+    summary='Удалить пререквизит у курса',
 )
 async def remove_prerequisite(
     course_id: int,
-    prerequisite_id: int,
+    prerequisite_course_id: int,
     course_service: CourseService = Depends(get_course_service),
 ) -> None:
     """Удалить пререквизит у курса."""
     try:
-        await course_service.remove_prerequisite(course_id, prerequisite_id)
+        await course_service.remove_prerequisite(course_id, prerequisite_course_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
