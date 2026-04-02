@@ -59,3 +59,14 @@ class ListResponse(BaseSchema, Generic[T]):
 
     info: PaginationInfo
     items: list[T]
+
+
+class PageInfo(BaseSchema):
+    total: int
+    offset: int
+    limit: int
+
+
+class PaginatedResponse(BaseSchema, Generic[T]):
+    items: list[T]
+    page_info: PageInfo

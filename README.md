@@ -51,22 +51,22 @@ cp .env.example .env
 ### Создание миграции
 ```bash```
 # Автоматическое создание миграции на основе изменений в моделях
-alembic revision --autogenerate -m "описание изменений"
+uv run alembic revision --autogenerate -m "описание изменений"
 
 # Пустая миграция для ручного заполнения
-alembic revision -m "описание изменений"
+uv run alembic revision -m "описание изменений"
 
 # Применить все миграции
-alembic upgrade head
+uv run alembic upgrade head
 
 # Применить следующую миграцию
-alembic upgrade +1
+uv run alembic upgrade +1
 
 # Откатить последнюю миграцию
-alembic downgrade -1
+uv run alembic downgrade -1
 
 # Откатить до конкретной версии
-alembic downgrade <revision_id>
+uv run alembic downgrade <revision_id>
 
 # Откатить все миграции (очистить базу)
-alembic downgrade base
+uv run alembic downgrade base
