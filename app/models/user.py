@@ -1,41 +1,69 @@
 from enum import Enum
-from typing import TYPE_CHECKING, List
+from typing import Optional
 
-from sqlmodel import Field, Relationship
+from pydantic import EmailStr, Field
+from sqlmodel import Field as SQLField
+from sqlmodel import Relationship
 
-from app.models.base import BaseModel
-
-if TYPE_CHECKING:
-    from app.models.careertrack import CareerTrack
-    from app.models.course import Course
-    from app.models.program import Program
-    from app.models.userprogress import UserProgress
+from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
 
 
 class UserRole(str, Enum):
+    """Роли пользователей"""
+
     ADMIN = 'admin'
     STUDENT = 'student'
     TEACHER = 'teacher'
 
 
-class User(BaseModel, table=True):
+class User(BaseSQLModel, table=True):
     __tablename__ = 'users'
 
-    email: str = Field(unique=True, index=True, max_length=255, nullable=False)
-    hashed_password: str = Field(nullable=False)
-    first_name: str = Field(max_length=100, nullable=False)
-    last_name: str = Field(max_length=100, nullable=False)
-    role: UserRole = Field(default=UserRole.STUDENT, nullable=False)
+    email: str = SQLField(unique=True, index=True, max_length=255, nullable=False)
+    hashed_password: str = SQLField(nullable=False)
+    first_name: str = SQLField(max_length=100, nullable=False)
+    last_name: str = SQLField(max_length=100, nullable=False)
+    role: UserRole = SQLField(default=UserRole.STUDENT, nullable=False)
 
-    programs: List['Program'] = Relationship(
-        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    programs: list['Program'] = Relationship(back_populates='user', cascade_delete=True)
+    courses: list['Course'] = Relationship(back_populates='user', cascade_delete=True)
+    progress: list['UserProgress'] = Relationship(
+        back_populates='user', cascade_delete=True
     )
-    courses: List['Course'] = Relationship(
-        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
+    career_tracks: list['CareerTrack'] = Relationship(
+        back_populates='user', cascade_delete=True
     )
-    progress: List['UserProgress'] = Relationship(
-        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
-    )
-    career_tracks: List['CareerTrack'] = Relationship(
-        back_populates='user', sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
-    )
+
+
+class UserCreate(BaseSchema):
+    """Схема для регистрации пользователя"""
+
+    email: EmailStr = Field(..., max_length=255)
+    password: str = Field(..., min_length=6, max_length=128)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    role: UserRole = Field(default=UserRole.STUDENT)
+
+
+class UserUpdate(BaseSchema):
+    """Схема для обновления пользователя"""
+
+    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    role: Optional[UserRole] = Field(None)
+
+
+class LoginRequest(BaseSchema):
+    """Схема для входа в систему"""
+
+    email: EmailStr
+    password: str
+
+
+class UserPublic(BaseModelSchema):
+    """Публичная информация о пользователе (наследует id, created_at, updated_at)"""
+
+    email: EmailStr
+    first_name: str
+    last_name: str
+    role: UserRole

@@ -1,18 +1,89 @@
-from app.models.careertrack import CareerTrack, CareerTrackCourse
-from app.models.course import Course
-from app.models.prerequisite import Prerequisite
-from app.models.program import Program
-from app.models.user import User, UserRole
-from app.models.userprogress import UserProgress, UserProgressStatus
+from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from app.models.careertrack import (
+    AddCourseToTrack,
+    CareerTrack,
+    CareerTrackCourse,
+    CareerTrackCoursePublic,
+    CareerTrackCreate,
+    CareerTrackPublic,
+    CareerTrackUpdate,
+    CareerTrackWithCourses,
+    ReorderCourses,
+    TrackCourseItem,
+    UpdateCourseOrder,
+)
+from app.models.course import (
+    Course,
+    CourseCreate,
+    CoursePublic,
+    CourseType,
+    CourseUpdate,
+    CourseWithPrerequisites,
+)
+from app.models.prerequisite import Prerequisite, PrerequisiteCreate, PrerequisitePublic
+from app.models.program import (
+    Program,
+    ProgramCopyRequest,
+    ProgramCreate,
+    ProgramPublic,
+    ProgramUpdate,
+)
+from app.models.user import (
+    LoginRequest,
+    User,
+    UserCreate,
+    UserPublic,
+    UserRole,
+    UserUpdate,
+)
+from app.models.userprogress import (
+    ProgressCreate,
+    ProgressStatus,
+    ProgressUpdate,
+    UserProgress,
+    UserProgressPublic,
+    UserProgressWithDetails,
+)
 
 __all__ = [
+    'BaseSQLModel',
+    'BaseSchema',
+    'BaseModelSchema',
     'User',
     'UserRole',
+    'UserCreate',
+    'UserUpdate',
+    'UserPublic',
+    'LoginRequest',
     'Program',
+    'ProgramCreate',
+    'ProgramUpdate',
+    'ProgramPublic',
+    'ProgramCopyRequest',
     'Course',
+    'CourseType',
+    'CourseCreate',
+    'CourseUpdate',
+    'CoursePublic',
+    'CourseWithPrerequisites',
     'Prerequisite',
-    'UserProgress',
-    'UserProgressStatus',
+    'PrerequisiteCreate',
+    'PrerequisitePublic',
     'CareerTrack',
     'CareerTrackCourse',
+    'CareerTrackCreate',
+    'CareerTrackUpdate',
+    'CareerTrackPublic',
+    'CareerTrackCoursePublic',
+    'CareerTrackWithCourses',
+    'AddCourseToTrack',
+    'UpdateCourseOrder',
+    'ReorderCourses',
+    'TrackCourseItem',
+    'UserProgress',
+    'ProgressStatus',
+    'ProgressCreate',
+    'ProgressUpdate',
+    'UserProgressPublic',
+    'UserProgressWithDetails',
 ]

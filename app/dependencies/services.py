@@ -3,6 +3,7 @@ from fastapi import Depends
 from app.dependencies.session import SessionDep
 from app.repositories.careertrack import CareerTrackRepository
 from app.repositories.course import CourseRepository
+from app.repositories.prerequisite import PrerequisiteRepository
 from app.repositories.program import ProgramRepository
 from app.repositories.user import UserRepository
 from app.repositories.userprogress import UserProgressRepository
@@ -25,6 +26,10 @@ async def get_course_repo(session: SessionDep) -> CourseRepository:
     return CourseRepository(session)
 
 
+async def get_prerequisite_repo(session: SessionDep) -> PrerequisiteRepository:
+    return PrerequisiteRepository(session)
+
+
 async def get_career_track_repo(session: SessionDep) -> CareerTrackRepository:
     return CareerTrackRepository(session)
 
@@ -41,15 +46,16 @@ async def get_user_service(
 
 async def get_program_service(
     program_repo: ProgramRepository = Depends(get_program_repo),
+    course_repo: CourseRepository = Depends(get_course_repo),
 ) -> ProgramService:
-    return ProgramService(program_repo)
-
+    return ProgramService(program_repo, course_repo)
 
 async def get_course_service(
     course_repo: CourseRepository = Depends(get_course_repo),
     program_repo: ProgramRepository = Depends(get_program_repo),
+    prerequisite_repo: PrerequisiteRepository = Depends(get_prerequisite_repo),
 ) -> CourseService:
-    return CourseService(course_repo, program_repo)
+    return CourseService(course_repo, program_repo, prerequisite_repo)
 
 
 async def get_career_track_service(
