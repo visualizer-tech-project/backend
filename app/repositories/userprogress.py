@@ -32,7 +32,7 @@ class UserProgressRepository(
         self,
         user_id: int,
         skip: int = 0,
-        limit: Optional[int] = 20,
+        limit: Optional[int] = None,
         status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
         """Получить прогресс пользователя по всем курсам."""
