@@ -85,10 +85,10 @@ class CareerTrackService:
         )
 
     async def get_track_with_courses(
-            self,
-            track_id: int,
-            skip_courses: int = 0,
-            limit_courses: Optional[int] = None,
+        self,
+        track_id: int,
+        skip_courses: int = 0,
+        limit_courses: Optional[int] = None,
     ) -> CareerTrackWithCourses:
         """Получить карьерный трек со списком курсов"""
         result = await self.track_repo.get_track_with_courses(track_id)
@@ -102,7 +102,9 @@ class CareerTrackService:
         for idx, course_data in enumerate(courses_data):
             if idx < skip_courses:
                 continue
-            if limit_courses is not None and len(track_courses) >= limit_courses:  # ← проверка
+            if (
+                limit_courses is not None and len(track_courses) >= limit_courses
+            ):  # ← проверка
                 break
 
             course = course_data['course']
@@ -195,10 +197,10 @@ class CareerTrackService:
             raise ValueError('Career track not found')
 
     async def get_track_courses(
-            self,
-            track_id: int,
-            skip: int = 0,
-            limit: Optional[int] = None,
+        self,
+        track_id: int,
+        skip: int = 0,
+        limit: Optional[int] = None,
     ) -> List[TrackCourseItem]:
         """Получить курсы в карьерном треке"""
         track = await self.track_repo.get_by_id(track_id)

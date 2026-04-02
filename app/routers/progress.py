@@ -50,9 +50,7 @@ async def create_progress(
 ) -> UserProgressPublic:
     """Отметить прогресс по курсу для пользователя."""
     try:
-        return await progress_service.create_progress(
-            user_id, course_id, progress_data
-        )
+        return await progress_service.create_progress(user_id, course_id, progress_data)
     except ValueError as e:
         if 'already exists' in str(e):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -72,9 +70,7 @@ async def update_progress(
 ) -> UserProgressPublic:
     """Обновить прогресс по курсу для пользователя."""
     try:
-        return await progress_service.update_progress(
-            user_id, course_id, progress_data
-        )
+        return await progress_service.update_progress(user_id, course_id, progress_data)
     except ValueError as e:
         if 'not found' in str(e):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

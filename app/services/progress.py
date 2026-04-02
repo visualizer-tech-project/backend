@@ -64,7 +64,7 @@ class ProgressService:
                     course_title=course.title if course else None,
                     course_type=course.type.value if course else None,
                     program_id=course.program_id if course else None,
-                    user_name=f"{user.first_name} {user.last_name}",
+                    user_name=f'{user.first_name} {user.last_name}',
                     user_email=user.email,
                 )
             )

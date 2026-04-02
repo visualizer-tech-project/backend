@@ -132,9 +132,7 @@ class ProgramService:
                 'program_id': new_program.id,
                 'user_id': current_user.id,
             }
-            await self.program_repo.session.add(
-                self.program_repo.model(**course_dict)
-            )
+            await self.program_repo.session.add(self.program_repo.model(**course_dict))
 
         await self.program_repo.session.commit()
 

@@ -1,14 +1,16 @@
 from typing import TYPE_CHECKING
 
-from sqlmodel import CheckConstraint, Field, Relationship, UniqueConstraint
+from pydantic import Field
+from sqlmodel import CheckConstraint, Relationship, UniqueConstraint
+from sqlmodel import Field as SQLField
 
-from app.models.base import BaseModel
+from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
 
 if TYPE_CHECKING:
     from app.models.course import Course
 
 
-class Prerequisite(BaseModel, table=True):
+class Prerequisite(BaseSQLModel, table=True):
     __tablename__ = 'prerequisites'
     __table_args__ = (
         UniqueConstraint(
@@ -19,8 +21,8 @@ class Prerequisite(BaseModel, table=True):
         ),
     )
 
-    course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
-    prerequisite_course_id: int = Field(
+    course_id: int = SQLField(foreign_key='courses.id', nullable=False, index=True)
+    prerequisite_course_id: int = SQLField(
         foreign_key='courses.id', nullable=False, index=True
     )
 
@@ -31,7 +33,6 @@ class Prerequisite(BaseModel, table=True):
             'viewonly': True,
         },
     )
-
     prerequisite_course: 'Course' = Relationship(
         back_populates='prerequisite_for',
         sa_relationship_kwargs={
@@ -39,3 +40,16 @@ class Prerequisite(BaseModel, table=True):
             'viewonly': True,
         },
     )
+
+
+class PrerequisiteCreate(BaseSchema):
+    """Схема для создания пререквизита"""
+
+    prerequisite_course_id: int = Field(..., gt=0)
+
+
+class PrerequisitePublic(BaseModelSchema):
+    """Публичная информация о пререквизите"""
+
+    course_id: int
+    prerequisite_course_id: int
