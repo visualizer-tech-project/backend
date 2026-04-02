@@ -32,7 +32,7 @@ class ProgressService:
         status: Optional[ProgressStatus] = None,
         program_id: Optional[int] = None,
         skip: int = 0,
-        limit: int = 20,
+        limit: Optional[int] = None,
     ) -> PaginatedResponse[UserProgressWithDetails]:
         """Получить прогресс пользователя по курсам"""
         user = await self.user_repo.get_by_id(user_id)

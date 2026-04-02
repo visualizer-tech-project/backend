@@ -31,7 +31,7 @@ class CareerTrackService:
         self,
         title: Optional[str] = None,
         skip: int = 0,
-        limit: int = 20,
+        limit: Optional[int] = None,
     ) -> PaginatedResponse[CareerTrackPublic]:
         """Получить список карьерных треков"""
         filters = {}

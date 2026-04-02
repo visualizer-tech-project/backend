@@ -16,7 +16,7 @@ class UserService:
         self,
         role: Optional[UserRole] = None,
         skip: int = 0,
-        limit: int = 20,
+        limit: Optional[int] = None,
     ) -> PaginatedResponse[UserPublic]:
         """Получить список пользователей"""
         filters = {}
