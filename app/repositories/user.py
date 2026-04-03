@@ -30,11 +30,3 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             order_by='created_at',
             descending=True,
         )
-
-    async def get_by_ids(self, ids: List[int]) -> List[User]:
-        """Получить пользователей по списку ID."""
-        if not ids:
-            return []
-        query = select(User).where(User.id.in_(ids))
-        result = await self.session.exec(query)
-        return result.all()
