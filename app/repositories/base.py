@@ -1,8 +1,9 @@
 import math
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Generic, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel
-from sqlmodel import SQLModel, func, select
+from sqlalchemy import func
+from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.base import ListResponse, PaginationInfo
@@ -10,6 +11,18 @@ from app.models.base import ListResponse, PaginationInfo
 ModelType = TypeVar('ModelType', bound=SQLModel)
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
 UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
+
+DEFAULT_PAGE = 1
+DEFAULT_LIMIT = 10
+MAX_LIMIT = 100
+MIN_LIMIT = 1
+
+
+class FilterCondition:
+
+    def __init__(self, field: str, value):
+        self.field = field
+        self.value = value
 
 
 class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -29,66 +42,76 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return await self.session.get(self.model, item_id)
 
     async def get_all(
-        self,
-        skip: int = 0,
-        limit: Optional[int] = None,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[str] = None,
-        descending: bool = False,
+            self,
+            skip: int = 0,
+            limit: Optional[int] = None,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
     ) -> tuple[List[ModelType], int]:
         """
-        Получить список записей с пагинацией и фильтрацией.
+        Получить список записей с пагинацией и фильтрацией для основной модели.
+        """
+        return await self.get_all_for_model(
+            self.model, skip, limit, filters, order_by, descending
+        )
+
+    async def get_all_for_model(
+            self,
+            model: Type[ModelType],
+            skip: int = 0,
+            limit: Optional[int] = None,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
+    ) -> tuple[List[ModelType], int]:
+        """
+        Универсальный метод для получения списка записей любой модели.
 
         Returns:
             Кортеж (список записей, общее количество)
         """
-        query = select(self.model)
+        query = select(model)
 
         if filters:
-            for field, value in filters.items():
-                if hasattr(self.model, field) and value is not None:
-                    query = query.where(getattr(self.model, field) == value)
+            for filter_cond in filters:
+                if hasattr(model, filter_cond.field) and filter_cond.value is not None:
+                    query = query.where(getattr(model, filter_cond.field) == filter_cond.value)
 
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query) or 0
 
-        if order_by and hasattr(self.model, order_by):
-            order_field = getattr(self.model, order_by)
+        if order_by and hasattr(model, order_by):
+            order_field = getattr(model, order_by)
             if descending:
                 query = query.order_by(order_field.desc())
             else:
                 query = query.order_by(order_field)
 
-        if limit is not None:
-            query = query.offset(skip).limit(limit)
-        else:
-            query = query.offset(skip)
+        if limit:
+            query = query.limit(limit)
+        query = query.offset(skip)
 
         result = await self.session.exec(query)
         items = result.all()
         return items, total
 
     async def get_paginated(
-        self,
-        page: int = 1,
-        limit: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[str] = None,
-        descending: bool = False,
+            self,
+            page: int = DEFAULT_PAGE,
+            limit: int = DEFAULT_LIMIT,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
     ) -> ListResponse[ModelType]:
         """
         Получить список записей с пагинацией (page-based).
-
-        Args:
-            page: Номер страницы (начиная с 1)
-            limit: Количество записей на странице
-            filters: Словарь фильтров
-            order_by: Поле для сортировки
-            descending: Направление сортировки
-
-        Returns:
-            ListResponse с информацией о пагинации
         """
+        if limit < MIN_LIMIT:
+            limit = DEFAULT_LIMIT
+        if limit > MAX_LIMIT:
+            limit = MAX_LIMIT
+
         offset = (page - 1) * limit
 
         items, total = await self.get_all(
@@ -115,7 +138,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return await self.save(db_obj)
 
     async def update(
-        self, item_id: int, update_data: UpdateSchemaType
+            self, item_id: int, update_data: UpdateSchemaType
     ) -> Optional[ModelType]:
         """Обновить существующую запись."""
         db_obj = await self.get_by_id(item_id)
