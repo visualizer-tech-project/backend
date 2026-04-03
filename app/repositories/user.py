@@ -1,10 +1,9 @@
 from typing import List, Optional
 
-from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.user import User, UserCreate, UserRole, UserUpdate
-from app.repositories.base import BaseRepository
+from app.repositories.base import BaseRepository, FilterCondition
 
 
 class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
@@ -13,7 +12,8 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """Получить пользователя по email."""
-        items, _ = await self.get_all(filters={'email': email}, limit=1)
+        filters = [FilterCondition('email', email)]
+        items, _ = await self.get_all(filters=filters, limit=1)
         return items[0] if items else None
 
     async def get_by_role(
@@ -23,10 +23,11 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
         limit: Optional[int] = None,
     ) -> tuple[List[User], int]:
         """Получить пользователей по роли."""
+        filters = [FilterCondition('role', role)]
         return await self.get_all(
             skip=skip,
             limit=limit,
-            filters={'role': role},
+            filters=filters,
             order_by='created_at',
             descending=True,
         )
