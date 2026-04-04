@@ -1,11 +1,11 @@
-from app.models.base import PageInfo, PaginatedResponse
-from app.models.filters import ProgressFilters
+from app.models.base import ListResponse, PaginationInfo
+from app.schemas.filters import ProgressFilters
 from app.models.userprogress import (
     ProgressCreate,
     ProgressUpdate,
     UserProgressPublic,
-    UserProgressWithDetails,
 )
+from app.schemas.userprogress import UserProgressWithDetails
 from app.repositories.course import CourseRepository
 from app.repositories.user import UserRepository
 from app.repositories.userprogress import UserProgressRepository
@@ -26,7 +26,7 @@ class ProgressService:
         self,
         user_id: int,
         filters: ProgressFilters,
-    ) -> PaginatedResponse[UserProgressWithDetails]:
+    ) -> ListResponse[UserProgressWithDetails]:
         user = await self._user_repo.get_by_id(user_id)
         if not user:
             raise ValueError('User not found')
@@ -36,30 +36,29 @@ class ProgressService:
             skip=filters.skip,
             limit=filters.limit,
             status=filters.status,
-            program_id=filters.program_id,
         )
 
         course_ids = [p.course_id for p in progress_list]
         courses = await self._course_repo.get_by_ids(course_ids) if course_ids else []
         courses_by_id = {c.id: c for c in courses}
 
-        result_items = []
+        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
+        pages_num = (total + filters.limit - 1) // filters.limit if filters.limit else 1
+
+        items = []
         for progress in progress_list:
             course = courses_by_id.get(progress.course_id)
-            result_items.append(
+            items.append(
                 UserProgressWithDetails(
-                    **UserProgressPublic.model_validate(progress).model_dump(),
-                    course_title=course.title if course else None,
-                    course_type=course.type.value if course else None,
-                    program_id=course.program_id if course else None,
-                    user_name=f"{user.first_name} {user.last_name}",
-                    user_email=user.email,
+                    progress=UserProgressPublic.model_validate(progress),
+                    course=course,
+                    user=user,
                 )
             )
 
-        return PaginatedResponse(
-            items=result_items,
-            page_info=PageInfo(total=total, offset=filters.skip, limit=filters.limit),
+        return ListResponse(
+            info=PaginationInfo(page=page, pages_num=pages_num, total=total),
+            items=items,
         )
 
     async def create_progress(
@@ -80,11 +79,10 @@ class ProgressService:
         if existing:
             raise ValueError('Progress record already exists')
 
-        create_dict = progress_data.model_dump()
-        create_dict['user_id'] = user_id
-        create_dict['course_id'] = course_id
+        progress_data.user_id = user_id
+        progress_data.course_id = course_id
 
-        progress = await self._progress_repo.create(create_dict)
+        progress = await self._progress_repo.create_progress(progress_data)
 
         return UserProgressPublic.model_validate(progress)
 
@@ -98,7 +96,9 @@ class ProgressService:
         if not existing:
             raise ValueError('Progress record not found')
 
-        updated_progress = await self._progress_repo.update(existing.id, progress_data)
+        updated_progress = await self._progress_repo.update_progress(
+            user_id, course_id, progress_data
+        )
         if not updated_progress:
             raise ValueError('Progress record not found')
 

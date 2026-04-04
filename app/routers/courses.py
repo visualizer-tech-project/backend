@@ -1,20 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_course_service
-from app.models.base import PaginatedResponse
+from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
-from app.models.filters import CourseFilters
-from app.models.prerequisite import PrerequisiteCreate, PrerequisitePublic
+from app.models.prerequisite import PrerequisitePublic
+from app.schemas.filters import CourseFilters
+from app.models.prerequisite import PrerequisiteCreate
 from app.services.course import CourseService
 
 router = APIRouter(prefix='/courses', tags=['courses'])
 
 
-@router.get('/', response_model=PaginatedResponse[CoursePublic])
+@router.get('/', response_model=ListResponse[CoursePublic])
 async def get_courses(
     filters: CourseFilters = Depends(),
     service: CourseService = Depends(get_course_service),
-) -> PaginatedResponse[CoursePublic]:
+) -> ListResponse[CoursePublic]:
     return await service.get_courses(filters)
 
 

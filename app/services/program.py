@@ -1,12 +1,13 @@
 from app.dependencies.current_user import get_current_user_id
-from app.models.base import PageInfo, PaginatedResponse
-from app.models.filters import ProgramFilters
+from app.models.base import ListResponse
 from app.models.program import (
     ProgramCreate,
     ProgramPublic,
     ProgramUpdate,
-    ProgramCopyRequest,
 )
+from app.schemas.filters import ProgramFilters
+from app.schemas.program import ProgramCopyRequest
+from app.repositories.base import FilterCondition
 from app.repositories.program import ProgramRepository
 from app.repositories.course import CourseRepository
 
@@ -23,21 +24,23 @@ class ProgramService:
     async def get_programs(
         self,
         filters: ProgramFilters,
-    ) -> PaginatedResponse[ProgramPublic]:
-        filter_dict = filters.model_dump(exclude={'skip', 'limit'}, exclude_none=True)
+    ) -> ListResponse[ProgramPublic]:
+        filter_conditions = []
+        if filters.title:
+            filter_conditions.append(FilterCondition('title', filters.title))
 
-        programs, total = await self._program_repo.get_all(
-            skip=filters.skip,
+        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
+
+        result = await self._program_repo.get_paginated(
+            page=page,
             limit=filters.limit,
-            filters=filter_dict if filter_dict else None,
+            filters=filter_conditions if filter_conditions else None,
             order_by='created_at',
             descending=True,
         )
 
-        return PaginatedResponse(
-            items=[ProgramPublic.model_validate(program) for program in programs],
-            page_info=PageInfo(total=total, offset=filters.skip, limit=filters.limit),
-        )
+        result.items = [ProgramPublic.model_validate(item) for item in result.items]
+        return result
 
     async def get_program_by_id(self, program_id: int) -> ProgramPublic:
         program = await self._program_repo.get_by_id(program_id)

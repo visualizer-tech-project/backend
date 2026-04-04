@@ -1,7 +1,8 @@
 from app.dependencies.current_user import get_current_user_id
-from app.models.base import PageInfo, PaginatedResponse
-from app.models.filters import UserFilters
+from app.models.base import ListResponse
 from app.models.user import UserPublic, UserUpdate, UserRole
+from app.schemas.filters import UserFilters
+from app.repositories.base import FilterCondition
 from app.repositories.user import UserRepository
 
 
@@ -9,21 +10,23 @@ class UserService:
     def __init__(self, user_repo: UserRepository) -> None:
         self._user_repo = user_repo
 
-    async def get_users(self, filters: UserFilters) -> PaginatedResponse[UserPublic]:
-        filter_dict = filters.model_dump(exclude={'skip', 'limit'}, exclude_none=True)
+    async def get_users(self, filters: UserFilters) -> ListResponse[UserPublic]:
+        filter_conditions = []
+        if filters.role:
+            filter_conditions.append(FilterCondition('role', filters.role))
 
-        users, total = await self._user_repo.get_all(
-            skip=filters.skip,
+        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
+
+        result = await self._user_repo.get_paginated(
+            page=page,
             limit=filters.limit,
-            filters=filter_dict if filter_dict else None,
+            filters=filter_conditions if filter_conditions else None,
             order_by='created_at',
             descending=True,
         )
 
-        return PaginatedResponse(
-            items=[UserPublic.model_validate(user) for user in users],
-            page_info=PageInfo(total=total, offset=filters.skip, limit=filters.limit),
-        )
+        result.items = [UserPublic.model_validate(item) for item in result.items]
+        return result
 
     async def get_user_by_id(self, user_id: int) -> UserPublic:
         user = await self._user_repo.get_by_id(user_id)
@@ -59,7 +62,6 @@ class UserService:
         return UserPublic.model_validate(updated_user)
 
     async def assign_teacher(self, user_id: int) -> UserPublic:
-        """Назначить пользователю роль преподавателя."""
         user = await self._user_repo.get_by_id(user_id)
         if not user:
             raise ValueError('User not found')

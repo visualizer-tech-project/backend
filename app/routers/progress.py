@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_progress_service
 from app.models.base import PaginatedResponse
-from app.models.filters import ProgressFilters
+from app.schemas.filters import ProgressFilters
 from app.models.userprogress import (
     ProgressCreate,
     ProgressUpdate,
