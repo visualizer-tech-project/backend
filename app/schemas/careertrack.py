@@ -1,8 +1,7 @@
-from typing import List
-
-from pydantic import Field
-
+from typing import List, Optional, Any
+from pydantic import Field, computed_field
 from app.models.base import BaseSchema
+from app.models.course import CoursePublic
 
 
 class AddCourseToTrack(BaseSchema):
@@ -19,3 +18,17 @@ class UpdateCourseOrder(BaseSchema):
 class ReorderCourses(BaseSchema):
     """Схема для полной перестановки курсов"""
     course_ids: List[int]
+
+
+class TrackCourseItem(BaseSchema):
+    career_track_course: Any = Field(..., exclude=True)
+
+    @computed_field
+    @property
+    def order_index(self) -> int:
+        return self.career_track_course.order_index
+
+    @computed_field
+    @property
+    def course(self) -> CoursePublic:
+        return CoursePublic.model_validate(self.career_track_course.course)

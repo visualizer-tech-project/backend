@@ -1,26 +1,26 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_career_track_service
-from app.models.base import PaginatedResponse
+from app.models.base import ListResponse
 from app.models.careertrack import (
-    AddCourseToTrack,
     CareerTrackCoursePublic,
     CareerTrackCreate,
     CareerTrackPublic,
     CareerTrackUpdate,
     TrackCourseItem,
 )
-from app.models.filters import CareerTrackFilters
+from app.schemas.careertrack import AddCourseToTrack
+from app.schemas.filters import CareerTrackFilters
 from app.services.careertrack import CareerTrackService
 
 router = APIRouter(prefix='/career-tracks', tags=['career-tracks'])
 
 
-@router.get('/', response_model=PaginatedResponse[CareerTrackPublic])
+@router.get('/', response_model=ListResponse[CareerTrackPublic])
 async def get_tracks(
     filters: CareerTrackFilters = Depends(),
     service: CareerTrackService = Depends(get_career_track_service),
-) -> PaginatedResponse[CareerTrackPublic]:
+) -> ListResponse[CareerTrackPublic]:
     return await service.get_tracks(filters)
 
 

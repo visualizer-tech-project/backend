@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_user_service
-from app.models.base import PaginatedResponse
-from app.models.filters import UserFilters
+from app.models.base import ListResponse
 from app.models.user import UserPublic, UserUpdate
+from app.schemas.filters import UserFilters
 from app.services.user import UserService
 
 router = APIRouter(prefix='/users', tags=['users'])
 
 
-@router.get('/', response_model=PaginatedResponse[UserPublic])
+@router.get('/', response_model=ListResponse[UserPublic])
 async def get_users(
     filters: UserFilters = Depends(),
     service: UserService = Depends(get_user_service),
-) -> PaginatedResponse[UserPublic]:
+) -> ListResponse[UserPublic]:
     return await service.get_users(filters)
 
 

@@ -1,10 +1,11 @@
 from typing import List, Optional
 
 from app.dependencies.current_user import get_current_user_id
-from app.models.base import PageInfo, PaginatedResponse
+from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
-from app.models.filters import CourseFilters
-from app.models.prerequisite import PrerequisiteCreate, PrerequisitePublic
+from app.models.prerequisite import PrerequisitePublic, PrerequisiteCreate
+from app.schemas.filters import CourseFilters
+from app.repositories.base import FilterCondition
 from app.repositories.course import CourseRepository
 from app.repositories.program import ProgramRepository
 from app.repositories.prerequisite import PrerequisiteRepository
@@ -24,21 +25,27 @@ class CourseService:
     async def get_courses(
         self,
         filters: CourseFilters,
-    ) -> PaginatedResponse[CoursePublic]:
-        filter_dict = filters.model_dump(exclude={'skip', 'limit'}, exclude_none=True)
+    ) -> ListResponse[CoursePublic]:
+        filter_conditions = []
+        if filters.program_id:
+            filter_conditions.append(FilterCondition('program_id', filters.program_id))
+        if filters.type:
+            filter_conditions.append(FilterCondition('type', filters.type))
+        if filters.title:
+            filter_conditions.append(FilterCondition('title', filters.title))
 
-        courses, total = await self._course_repo.get_all(
-            skip=filters.skip,
+        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
+
+        result = await self._course_repo.get_paginated(
+            page=page,
             limit=filters.limit,
-            filters=filter_dict if filter_dict else None,
+            filters=filter_conditions if filter_conditions else None,
             order_by='created_at',
             descending=True,
         )
 
-        return PaginatedResponse(
-            items=[CoursePublic.model_validate(course) for course in courses],
-            page_info=PageInfo(total=total, offset=filters.skip, limit=filters.limit),
-        )
+        result.items = [CoursePublic.model_validate(item) for item in result.items]
+        return result
 
     async def get_course_by_id(self, course_id: int) -> CoursePublic:
         course = await self._course_repo.get_by_id(course_id)
@@ -94,7 +101,7 @@ class CourseService:
         if not course:
             raise ValueError('Course not found')
 
-        prerequisites, _ = await self._prerequisite_repo.get_by_course(course_id)
+        prerequisites = await self._prerequisite_repo.get_by_course(course_id)
 
         if not prerequisites:
             return []
@@ -125,11 +132,11 @@ class CourseService:
         if existing:
             raise ValueError('Prerequisite already exists')
 
-        prerequisite = await self._prerequisite_repo.create_prerequisite(course_id, prereq_course_id)
+        prerequisite = await self._prerequisite_repo.add_prerequisite(course_id, prereq_course_id)
 
         return PrerequisitePublic.model_validate(prerequisite)
 
     async def remove_prerequisite(self, course_id: int, prerequisite_course_id: int) -> None:
-        removed = await self._prerequisite_repo.delete_prerequisite(course_id, prerequisite_course_id)
+        removed = await self._prerequisite_repo.remove_prerequisite(course_id, prerequisite_course_id)
         if not removed:
             raise ValueError('Prerequisite relation not found')

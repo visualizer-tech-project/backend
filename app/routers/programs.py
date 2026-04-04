@@ -1,19 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_program_service
-from app.models.base import PaginatedResponse
-from app.models.filters import ProgramFilters
-from app.models.program import ProgramCreate, ProgramPublic, ProgramUpdate, ProgramCopyRequest
+from app.models.base import ListResponse
+from app.models.program import ProgramCreate, ProgramPublic, ProgramUpdate
+from app.schemas.filters import ProgramFilters
+from app.schemas.program import ProgramCopyRequest
 from app.services.program import ProgramService
 
 router = APIRouter(prefix='/programs', tags=['programs'])
 
 
-@router.get('/', response_model=PaginatedResponse[ProgramPublic])
+@router.get('/', response_model=ListResponse[ProgramPublic])
 async def get_programs(
     filters: ProgramFilters = Depends(),
     service: ProgramService = Depends(get_program_service),
-) -> PaginatedResponse[ProgramPublic]:
+) -> ListResponse[ProgramPublic]:
     return await service.get_programs(filters)
 
 
