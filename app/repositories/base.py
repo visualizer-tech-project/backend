@@ -13,6 +13,7 @@ CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
 UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
 
 DEFAULT_PAGE = 1
+DEFAULT_SKIP = 0
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 100
 MIN_LIMIT = 1

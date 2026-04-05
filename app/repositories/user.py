@@ -4,6 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.user import User, UserCreate, UserRole, UserUpdate
 from app.repositories.base import BaseRepository, FilterCondition
+from app.repositories.base import DEFAULT_SKIP, DEFAULT_LIMIT
 
 
 class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
@@ -19,8 +20,8 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
     async def get_by_role(
         self,
         role: UserRole,
-        skip: int = 0,
-        limit: Optional[int] = None,
+        skip: int = DEFAULT_SKIP,
+        limit: Optional[int] = DEFAULT_LIMIT,
     ) -> tuple[List[User], int]:
         """Получить пользователей по роли."""
         filters = [FilterCondition('role', role)]

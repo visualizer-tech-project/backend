@@ -9,6 +9,7 @@ from app.models.userprogress import (
     UserProgress,
 )
 from app.repositories.base import BaseRepository, FilterCondition
+from app.repositories.base import DEFAULT_SKIP, DEFAULT_LIMIT
 
 
 class UserProgressRepository(
@@ -31,8 +32,8 @@ class UserProgressRepository(
     async def get_by_user(
             self,
             user_id: int,
-            skip: int = 0,
-            limit: Optional[int] = None,
+            skip: int = DEFAULT_SKIP,
+            limit: Optional[int] = DEFAULT_LIMIT,
             status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
         """Получить прогресс пользователя по всем курсам."""
@@ -51,8 +52,8 @@ class UserProgressRepository(
     async def get_by_course(
             self,
             course_id: int,
-            skip: int = 0,
-            limit: Optional[int] = 20,
+            skip: int = DEFAULT_SKIP,
+            limit: Optional[int] = DEFAULT_LIMIT,
             status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
         """Получить прогресс всех пользователей по курсу."""

@@ -8,7 +8,7 @@ from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
 
 if TYPE_CHECKING:
     from app.models.course import Course
-    from app.models.user import User
+    from app.models.user import User, UserPublic
     from app.models.course import CoursePublic
 
 
@@ -36,12 +36,8 @@ class CareerTrackCourse(BaseSQLModel, table=True):
 
 
 class CareerTrackCreate(BaseSchema):
+    """Схема для создания/обновления карьерного трека"""
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
-class CareerTrackUpdate(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None)
 
 
@@ -49,17 +45,12 @@ class CareerTrackPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
     user_id: int
+    user: Optional[UserPublic] = None
 
     @computed_field
     @property
     def courses_count(self) -> int:
         return getattr(self, '_courses_count', 0)
-
-
-class CareerTrackCoursePublic(BaseModelSchema):
-    career_track_id: int
-    course_id: int
-    order_index: int
 
 
 class TrackCourseItem(BaseSchema):
@@ -69,12 +60,3 @@ class TrackCourseItem(BaseSchema):
 
 class CareerTrackWithCourses(CareerTrackPublic):
     courses: List[TrackCourseItem] = []
-
-
-def rebuild_models():
-    from app.models.course import CoursePublic
-    TrackCourseItem.model_rebuild()
-    CareerTrackWithCourses.model_rebuild()
-
-
-rebuild_models()
