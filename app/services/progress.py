@@ -1,4 +1,4 @@
-from app.models.base import ListResponse, PaginationInfo
+from app.models.base import ListResponse
 from app.schemas.filters import ProgressFilters
 from app.models.userprogress import (
     ProgressCreate,
@@ -31,23 +31,14 @@ class ProgressService:
         if not user:
             raise ValueError('User not found')
 
-        progress_list, total = await self._progress_repo.get_by_user(
+        result = await self._progress_repo.get_filtered_paginated_by_user(
             user_id=user_id,
-            skip=filters.skip,
-            limit=filters.limit,
-            status=filters.status,
+            filters=filters,
         )
 
-        course_ids = [p.course_id for p in progress_list]
-        courses = await self._course_repo.get_by_ids(course_ids) if course_ids else []
-        courses_by_id = {c.id: c for c in courses}
-
-        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
-        pages_num = (total + filters.limit - 1) // filters.limit if filters.limit else 1
-
         items = []
-        for progress in progress_list:
-            course = courses_by_id.get(progress.course_id)
+        for progress in result.items:
+            course = await self._course_repo.get_by_id(progress.course_id)
             items.append(
                 UserProgressWithDetails(
                     progress=UserProgressPublic.model_validate(progress),
@@ -57,7 +48,7 @@ class ProgressService:
             )
 
         return ListResponse(
-            info=PaginationInfo(page=page, pages_num=pages_num, total=total),
+            info=result.info,
             items=items,
         )
 

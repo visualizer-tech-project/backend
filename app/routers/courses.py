@@ -3,9 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
-from app.models.prerequisite import PrerequisitePublic
+from app.models.prerequisite import PrerequisitePublic, PrerequisiteCreate
 from app.schemas.filters import CourseFilters
-from app.models.prerequisite import PrerequisiteCreate
 from app.services.course import CourseService
 
 router = APIRouter(prefix='/courses', tags=['courses'])
@@ -50,7 +49,9 @@ async def update_course(
     try:
         return await service.update_course(course_id, course_data)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        if 'not found' in str(e):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete('/{course_id}', status_code=status.HTTP_204_NO_CONTENT)

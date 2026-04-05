@@ -7,8 +7,9 @@ from app.models.careertrack import (
     CareerTrackCourse,
     CareerTrackCreate,
 )
-from app.repositories.base import BaseRepository, FilterCondition
-from app.repositories.base import DEFAULT_SKIP, DEFAULT_LIMIT
+from app.repositories.base import BaseRepository, FilterCondition, ListResponse
+from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
+from app.schemas.filters import CareerTrackFilters
 
 
 class CareerTrackRepository(
@@ -18,18 +19,16 @@ class CareerTrackRepository(
         super().__init__(CareerTrack, session)
 
     async def get_by_title(self, title: str) -> Optional[CareerTrack]:
-        """Получить карьерный трек по названию."""
         filters = [FilterCondition('title', title)]
-        items, _ = await self.get_all(filters=filters, limit=1)
+        items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
     async def get_by_user(
             self,
             user_id: int,
             skip: int = DEFAULT_SKIP,
-            limit: Optional[int] = DEFAULT_LIMIT,
+            limit: int = DEFAULT_LIMIT,
     ) -> tuple[List[CareerTrack], int]:
-        """Получить треки, созданные пользователем."""
         filters = [FilterCondition('user_id', user_id)]
         return await self.get_all(
             skip=skip,
@@ -39,10 +38,26 @@ class CareerTrackRepository(
             descending=True,
         )
 
+    async def get_filtered_paginated(
+            self,
+            filters: CareerTrackFilters,
+    ) -> ListResponse[CareerTrack]:
+        filter_conditions = []
+
+        if filters.title:
+            filter_conditions.append(FilterCondition('title', filters.title, 'contains'))
+
+        return await self.get_paginated(
+            skip=filters.skip,
+            limit=filters.limit,
+            filters=filter_conditions if filter_conditions else None,
+            order_by='created_at',
+            descending=True,
+        )
+
     async def get_track_course(
             self, track_id: int, course_id: int
     ) -> Optional[CareerTrackCourse]:
-        """Получить связь трека с курсом."""
         filters = [
             FilterCondition('career_track_id', track_id),
             FilterCondition('course_id', course_id),
@@ -50,7 +65,7 @@ class CareerTrackRepository(
         items, _ = await self.get_all_for_model(
             model=CareerTrackCourse,
             filters=filters,
-            limit=1,
+            limit=DEFAULT_LIMIT,
         )
         return items[0] if items else None
 
@@ -58,9 +73,8 @@ class CareerTrackRepository(
             self,
             track_id: int,
             skip: int = DEFAULT_SKIP,
-            limit: Optional[int] = DEFAULT_LIMIT,
+            limit: int = DEFAULT_LIMIT,
     ) -> tuple[List[CareerTrackCourse], int]:
-        """Получить все связи трека с курсами."""
         filters = [FilterCondition('career_track_id', track_id)]
         return await self.get_all_for_model(
             model=CareerTrackCourse,
@@ -74,7 +88,6 @@ class CareerTrackRepository(
     async def add_course_to_track(
             self, track_id: int, course_id: int, order_index: int
     ) -> CareerTrackCourse:
-        """Создать связь трека с курсом."""
         track_course = CareerTrackCourse(
             career_track_id=track_id,
             course_id=course_id,
@@ -85,7 +98,6 @@ class CareerTrackRepository(
     async def update_course_order(
             self, track_id: int, course_id: int, new_order_index: int
     ) -> Optional[CareerTrackCourse]:
-        """Обновить порядок курса в треке."""
         track_course = await self.get_track_course(track_id, course_id)
         if not track_course:
             return None
@@ -93,7 +105,6 @@ class CareerTrackRepository(
         return await self.save(track_course)
 
     async def remove_course_from_track(self, track_id: int, course_id: int) -> bool:
-        """Удалить связь трека с курсом."""
         track_course = await self.get_track_course(track_id, course_id)
         if not track_course:
             return False
