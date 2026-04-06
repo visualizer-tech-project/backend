@@ -1,15 +1,12 @@
 from typing import TYPE_CHECKING, List, Optional
-
 from pydantic import computed_field
-from sqlmodel import Column, Relationship, Text, UniqueConstraint
-from sqlmodel import Field
+from sqlmodel import Field, Column, Relationship, Text, UniqueConstraint
 
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
-    from app.models.course import Course
+    from app.models.course import Course, CoursePublic
     from app.models.user import User, UserPublic
-    from app.models.course import CoursePublic
 
 
 class CareerTrack(BaseSQLModel, table=True):
@@ -35,26 +32,29 @@ class CareerTrackCourse(BaseSQLModel, table=True):
     course: 'Course' = Relationship(back_populates='career_track_courses')
 
 
-class CareerTrackCreate(BaseSchema):
-    title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
-class CareerTrackUpdate(BaseSchema):
+class CareerTrackBase(BaseSchema):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None)
 
 
+class CareerTrackCreate(CareerTrackBase):
+    title: str = Field(..., min_length=1, max_length=255)
+
+
+class CareerTrackUpdate(CareerTrackBase):
+    pass
+
+
 class CareerTrackCoursePublic(BaseModelSchema):
-    career_track_id: int
-    course_id: int
+    career_track_id: int = Field(foreign_key="career_tracks.id")
+    course_id: int = Field(foreign_key="courses.id")
     order_index: int
 
 
 class CareerTrackPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
-    user_id: int
+    user_id: int = Field(foreign_key="users.id")
     user: Optional['UserPublic'] = None
 
     @computed_field

@@ -1,14 +1,13 @@
 from typing import TYPE_CHECKING, List, Optional
+from datetime import datetime
 
-from sqlmodel import Column, Relationship, Text
-from sqlmodel import Field
+from sqlmodel import Field, Column, Relationship, Text
 
-from app.models.user import UserPublic
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.course import Course
-    from app.models.user import User
+    from app.models.user import User, UserPublic
 
 
 class Program(BaseSQLModel, table=True):
@@ -22,18 +21,21 @@ class Program(BaseSQLModel, table=True):
     courses: List['Course'] = Relationship(back_populates='program', cascade_delete=True)
 
 
-class ProgramCreate(BaseSchema):
-    title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
-class ProgramUpdate(BaseSchema):
+class ProgramBase(BaseSchema):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None)
+
+
+class ProgramCreate(ProgramBase):
+    title: str = Field(..., min_length=1, max_length=255)
+
+
+class ProgramUpdate(ProgramBase):
+    pass
 
 
 class ProgramPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
-    user: Optional[UserPublic] = None
-    
+    user_id: int = Field(foreign_key="users.id")
+    user: Optional['UserPublic'] = None

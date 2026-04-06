@@ -1,4 +1,4 @@
-from app.models.base import BaseSQLModel, BaseModelSchema, BaseSchema, PaginationInfo, ListResponse
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema, PaginationInfo, ListResponse
 from app.models.user import User, UserRole, UserCreate, UserUpdate, UserPublic
 from app.models.program import Program, ProgramCreate, ProgramUpdate, ProgramPublic
 from app.models.course import Course, CourseType, CourseCreate, CourseUpdate, CoursePublic
@@ -12,19 +12,12 @@ from app.models.userprogress import (
 )
 
 __all__ = [
-    # base
-    'BaseSQLModel', 'BaseModelSchema', 'BaseSchema', 'PaginationInfo', 'ListResponse',
-    # user
+    'BaseSQLModel', 'BaseSchema', 'BaseModelSchema', 'PaginationInfo', 'ListResponse',
     'User', 'UserRole', 'UserCreate', 'UserUpdate', 'UserPublic',
-    # program
     'Program', 'ProgramCreate', 'ProgramUpdate', 'ProgramPublic',
-    # course
     'Course', 'CourseType', 'CourseCreate', 'CourseUpdate', 'CoursePublic',
-    # prerequisite
     'Prerequisite', 'PrerequisiteCreate', 'PrerequisitePublic',
-    # careertrack
     'CareerTrack', 'CareerTrackCourse', 'CareerTrackCreate', 'CareerTrackUpdate',
     'CareerTrackCoursePublic', 'CareerTrackPublic', 'CareerTrackWithCourses', 'TrackCourseItem',
-    # userprogress
     'UserProgress', 'ProgressStatus', 'ProgressCreate', 'ProgressUpdate', 'UserProgressPublic',
 ]
