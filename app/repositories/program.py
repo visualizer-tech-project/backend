@@ -2,11 +2,12 @@ from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.program import Program, ProgramCreate, ProgramUpdate
+from app.models.program import Program, ProgramCreate
 from app.repositories.base import BaseRepository, FilterCondition
+from app.repositories.base import DEFAULT_SKIP, DEFAULT_LIMIT
 
 
-class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
+class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramCreate]):
     def __init__(self, session: AsyncSession):
         super().__init__(Program, session)
 
@@ -17,7 +18,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
         return items[0] if items else None
 
     async def get_by_user(
-        self, user_id: int, skip: int = 0, limit: Optional[int] = None
+        self, user_id: int, skip: int = DEFAULT_SKIP, limit: Optional[int] = DEFAULT_LIMIT
     ) -> tuple[List[Program], int]:
         """Получить программы, созданные пользователем."""
         filters = [FilterCondition('user_id', user_id)]

@@ -2,11 +2,12 @@ from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.course import Course, CourseCreate, CourseType, CourseUpdate
+from app.models.course import Course, CourseCreate, CourseType
 from app.repositories.base import BaseRepository, FilterCondition
+from app.repositories.base import DEFAULT_SKIP, DEFAULT_LIMIT
 
 
-class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
+class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
     def __init__(self, session: AsyncSession):
         super().__init__(Course, session)
 
@@ -19,8 +20,8 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
     async def get_by_program(
             self,
             program_id: int,
-            skip: int = 0,
-            limit: Optional[int] = None,
+            skip: int = DEFAULT_SKIP,
+            limit: Optional[int] = DEFAULT_LIMIT,
             course_type: Optional[CourseType] = None,
     ) -> tuple[List[Course], int]:
         """Получить курсы по программе."""
@@ -37,8 +38,8 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
     async def get_by_user(
             self,
             user_id: int,
-            skip: int = 0,
-            limit: Optional[int] = None,
+            skip: int = DEFAULT_SKIP,
+            limit: Optional[int] = DEFAULT_LIMIT,
     ) -> tuple[List[Course], int]:
         """Получить курсы, созданные пользователем."""
         filters = [FilterCondition('user_id', user_id)]

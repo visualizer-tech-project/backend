@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Optional
 from sqlmodel import Column, Relationship, Text
 from sqlmodel import Field
 
+from app.models.user import UserPublic
 from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
 
 if TYPE_CHECKING:
@@ -26,12 +27,7 @@ class ProgramCreate(BaseSchema):
     description: Optional[str] = Field(None)
 
 
-class ProgramUpdate(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
 class ProgramPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
-    user_id: int
+    user: Optional[UserPublic] = None

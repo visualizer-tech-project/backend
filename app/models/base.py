@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Generic, TypeVar
 from typing import Optional
 
 from pydantic import BaseModel
+from pydantic.v1.generics import GenericModel
 from sqlalchemy import func
 from sqlmodel import Field, SQLModel
 
@@ -43,8 +43,6 @@ class PaginationInfo(SQLModel):
     total: int
 
 
-T = TypeVar('T')
-
-class ListResponse(BaseModel, Generic[T]):
+class ListResponse[T: BaseModel](GenericModel):
     info: PaginationInfo
     items: list[T]

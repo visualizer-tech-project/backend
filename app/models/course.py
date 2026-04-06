@@ -1,10 +1,13 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
+from pydantic import computed_field
 from sqlmodel import Column, Relationship, Text
 from sqlmodel import Field
 
 from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from app.models.program import ProgramPublic
+from app.models.user import UserPublic
 
 if TYPE_CHECKING:
     from app.models.careertrack import CareerTrackCourse
@@ -53,16 +56,11 @@ class Course(BaseSQLModel, table=True):
 
 
 class CourseCreate(BaseSchema):
+    """Схема для создания/обновления курса"""
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(None)
     type: CourseType
     program_id: int = Field(..., gt=0)
-
-
-class CourseUpdate(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-    type: Optional[CourseType] = Field(None)
 
 
 class CoursePublic(BaseModelSchema):
@@ -71,3 +69,5 @@ class CoursePublic(BaseModelSchema):
     type: CourseType
     program_id: int
     user_id: int
+    program: Optional[ProgramPublic] = None
+    user: Optional[UserPublic] = None
