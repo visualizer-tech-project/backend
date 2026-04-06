@@ -7,7 +7,6 @@ from app.models.program import (
 )
 from app.schemas.filters import ProgramFilters
 from app.schemas.program import ProgramCopyRequest
-from app.repositories.base import FilterCondition
 from app.repositories.program import ProgramRepository
 from app.repositories.course import CourseRepository
 
@@ -25,20 +24,7 @@ class ProgramService:
         self,
         filters: ProgramFilters,
     ) -> ListResponse[ProgramPublic]:
-        filter_conditions = []
-        if filters.title:
-            filter_conditions.append(FilterCondition('title', filters.title))
-
-        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
-
-        result = await self._program_repo.get_paginated(
-            page=page,
-            limit=filters.limit,
-            filters=filter_conditions if filter_conditions else None,
-            order_by='created_at',
-            descending=True,
-        )
-
+        result = await self._program_repo.get_filtered_paginated(filters)
         result.items = [ProgramPublic.model_validate(item) for item in result.items]
         return result
 

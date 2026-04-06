@@ -1,5 +1,5 @@
 import math
-from typing import Generic, List, Optional, Type, TypeVar
+from typing import Generic, List, Optional, Type, TypeVar, Any
 
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -7,23 +7,27 @@ from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.base import ListResponse, PaginationInfo
+from app.core.constants import (
+    DEFAULT_SKIP,
+    DEFAULT_LIMIT,
+    MAX_LIMIT,
+    MIN_LIMIT,
+    FILTER_OPERATOR_EQ,
+    FILTER_OPERATOR_CONTAINS,
+    FILTER_OPERATOR_STARTSWITH,
+    FILTER_OPERATOR_IEXACT,
+)
 
 ModelType = TypeVar('ModelType', bound=SQLModel)
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
 UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
 
-DEFAULT_PAGE = 1
-DEFAULT_SKIP = 0
-DEFAULT_LIMIT = 10
-MAX_LIMIT = 100
-MIN_LIMIT = 1
-
 
 class FilterCondition:
-
-    def __init__(self, field: str, value):
+    def __init__(self, field: str, value: Any, operator: str = FILTER_OPERATOR_EQ):
         self.field = field
         self.value = value
+        self.operator = operator
 
 
 class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -32,64 +36,57 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.session = session
 
     async def save(self, db_obj: ModelType) -> ModelType:
-        """Сохранить объект в БД (add + commit + refresh)."""
         self.session.add(db_obj)
         await self.session.commit()
         await self.session.refresh(db_obj)
         return db_obj
 
     async def get_by_id(self, item_id: int) -> Optional[ModelType]:
-        """Получить запись по ID."""
         return await self.session.get(self.model, item_id)
+
+    def _apply_filters(self, query, model: Type[ModelType], filters: Optional[List[FilterCondition]] = None):
+        if not filters:
+            return query
+
+        for filter_cond in filters:
+            if not hasattr(model, filter_cond.field) or filter_cond.value is None:
+                continue
+
+            field = getattr(model, filter_cond.field)
+
+            if filter_cond.operator == FILTER_OPERATOR_CONTAINS:
+                query = query.where(field.contains(filter_cond.value))
+            elif filter_cond.operator == FILTER_OPERATOR_STARTSWITH:
+                query = query.where(field.startswith(filter_cond.value))
+            elif filter_cond.operator == FILTER_OPERATOR_IEXACT:
+                query = query.where(func.lower(field) == func.lower(filter_cond.value))
+            else:
+                query = query.where(field == filter_cond.value)
+
+        return query
 
     async def get_all(
             self,
-            skip: int = 0,
-            limit: Optional[int] = None,
+            skip: int = DEFAULT_SKIP,
+            limit: int = DEFAULT_LIMIT,
             filters: Optional[List[FilterCondition]] = None,
             order_by: Optional[str] = None,
             descending: bool = False,
     ) -> tuple[List[ModelType], int]:
-        """
-        Получить список записей с пагинацией и фильтрацией для основной модели.
-        """
-        return await self.get_all_for_model(
-            self.model, skip, limit, filters, order_by, descending
-        )
-
-    async def get_all_for_model(
-            self,
-            model: Type[ModelType],
-            skip: int = 0,
-            limit: Optional[int] = None,
-            filters: Optional[List[FilterCondition]] = None,
-            order_by: Optional[str] = None,
-            descending: bool = False,
-    ) -> tuple[List[ModelType], int]:
-        """
-        Универсальный метод для получения списка записей любой модели.
-
-        Returns:
-            Кортеж (список записей, общее количество)
-        """
-        query = select(model)
-
-        if filters:
-            for filter_cond in filters:
-                if hasattr(model, filter_cond.field) and filter_cond.value is not None:
-                    query = query.where(getattr(model, filter_cond.field) == filter_cond.value)
+        query = select(self.model)
+        query = self._apply_filters(query, self.model, filters)
 
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query) or 0
 
-        if order_by and hasattr(model, order_by):
-            order_field = getattr(model, order_by)
+        if order_by and hasattr(self.model, order_by):
+            order_field = getattr(self.model, order_by)
             if descending:
                 query = query.order_by(order_field.desc())
             else:
                 query = query.order_by(order_field)
 
-        if limit:
+        if limit > 0:
             query = query.limit(limit)
         query = query.offset(skip)
 
@@ -99,31 +96,27 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get_paginated(
             self,
-            page: int = DEFAULT_PAGE,
+            skip: int = DEFAULT_SKIP,
             limit: int = DEFAULT_LIMIT,
             filters: Optional[List[FilterCondition]] = None,
             order_by: Optional[str] = None,
             descending: bool = False,
     ) -> ListResponse[ModelType]:
-        """
-        Получить список записей с пагинацией (page-based).
-        """
         if limit < MIN_LIMIT:
             limit = DEFAULT_LIMIT
         if limit > MAX_LIMIT:
             limit = MAX_LIMIT
 
-        offset = (page - 1) * limit
-
         items, total = await self.get_all(
-            skip=offset,
+            skip=skip,
             limit=limit,
             filters=filters,
             order_by=order_by,
             descending=descending,
         )
 
-        pages_num = math.ceil(total / limit) if limit > 0 else 1
+        page = (skip // limit) + 1 if limit > 0 else 1
+        pages_num = (total + limit - 1) // limit if limit > 0 and total > 0 else 1
 
         pagination_info = PaginationInfo(
             total=total,
@@ -134,14 +127,12 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return ListResponse(info=pagination_info, items=items)
 
     async def create(self, create_data: CreateSchemaType) -> ModelType:
-        """Создать новую запись."""
         db_obj = self.model(**create_data.model_dump())
         return await self.save(db_obj)
 
     async def update(
             self, item_id: int, update_data: UpdateSchemaType
     ) -> Optional[ModelType]:
-        """Обновить существующую запись."""
         db_obj = await self.get_by_id(item_id)
         if not db_obj:
             return None
@@ -153,7 +144,6 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return await self.save(db_obj)
 
     async def delete(self, item_id: int) -> bool:
-        """Удалить запись по ID."""
         db_obj = await self.get_by_id(item_id)
         if not db_obj:
             return False
@@ -162,7 +152,6 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return True
 
     async def exists(self, **kwargs) -> bool:
-        """Проверить существование записи по условиям."""
         query = select(self.model)
         for field, value in kwargs.items():
             if hasattr(self.model, field):

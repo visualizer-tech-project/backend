@@ -3,15 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.dependencies import get_career_track_service
 from app.models.base import ListResponse
 from app.models.careertrack import (
-    CareerTrackCoursePublic,
     CareerTrackCreate,
     CareerTrackPublic,
     CareerTrackUpdate,
-    TrackCourseItem,
+    CareerTrackCoursePublic,
 )
-from app.schemas.careertrack import AddCourseToTrack
+from app.schemas.careertrack import AddCourseToTrack, TrackCourseItem
 from app.schemas.filters import CareerTrackFilters
 from app.services.careertrack import CareerTrackService
+from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 
 router = APIRouter(prefix='/career-tracks', tags=['career-tracks'])
 
@@ -38,11 +38,12 @@ async def get_track_by_id(
 @router.get('/{track_id}/courses', response_model=list[TrackCourseItem])
 async def get_track_courses(
     track_id: int,
-    filters: CareerTrackFilters = Depends(),
+    skip: int = DEFAULT_SKIP,
+    limit: int = DEFAULT_LIMIT,
     service: CareerTrackService = Depends(get_career_track_service),
 ) -> list[TrackCourseItem]:
     try:
-        return await service.get_track_courses(track_id, filters.skip, filters.limit)
+        return await service.get_track_courses(track_id, skip, limit)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -67,7 +68,9 @@ async def update_track(
     try:
         return await service.update_track(track_id, track_data)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        if 'not found' in str(e):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete('/{track_id}', status_code=status.HTTP_204_NO_CONTENT)

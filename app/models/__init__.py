@@ -4,8 +4,8 @@ from app.models.program import Program, ProgramCreate, ProgramPublic
 from app.models.course import Course, CourseType, CourseCreate, CoursePublic
 from app.models.prerequisite import Prerequisite, PrerequisiteCreate, PrerequisitePublic
 from app.models.careertrack import (
-    CareerTrack, CareerTrackCourse, CareerTrackCreate,
-    CareerTrackPublic, CareerTrackWithCourses, TrackCourseItem,
+    CareerTrack, CareerTrackCourse, CareerTrackCreate, CareerTrackUpdate,
+    CareerTrackCoursePublic, CareerTrackPublic, CareerTrackWithCourses, TrackCourseItem,
 )
 from app.models.userprogress import (
     UserProgress, ProgressStatus, ProgressCreate, ProgressUpdate, UserProgressPublic,
@@ -23,8 +23,8 @@ __all__ = [
     # prerequisite
     'Prerequisite', 'PrerequisiteCreate', 'PrerequisitePublic',
     # careertrack
-    'CareerTrack', 'CareerTrackCourse', 'CareerTrackCreate',
-    'CareerTrackPublic', 'CareerTrackWithCourses', 'TrackCourseItem',
+    'CareerTrack', 'CareerTrackCourse', 'CareerTrackCreate', 'CareerTrackUpdate',
+    'CareerTrackCoursePublic', 'CareerTrackPublic', 'CareerTrackWithCourses', 'TrackCourseItem',
     # userprogress
     'UserProgress', 'ProgressStatus', 'ProgressCreate', 'ProgressUpdate', 'UserProgressPublic',
 ]

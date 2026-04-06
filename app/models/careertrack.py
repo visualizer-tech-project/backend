@@ -41,11 +41,22 @@ class CareerTrackCreate(BaseSchema):
     description: Optional[str] = Field(None)
 
 
+class CareerTrackUpdate(BaseSchema):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None)
+
+
+class CareerTrackCoursePublic(BaseModelSchema):
+    career_track_id: int
+    course_id: int
+    order_index: int
+
+
 class CareerTrackPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
     user_id: int
-    user: Optional[UserPublic] = None
+    user: Optional['UserPublic'] = None
 
     @computed_field
     @property

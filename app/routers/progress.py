@@ -1,25 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_progress_service
-from app.models.base import PaginatedResponse
+from app.models.base import ListResponse
 from app.schemas.filters import ProgressFilters
 from app.models.userprogress import (
     ProgressCreate,
     ProgressUpdate,
     UserProgressPublic,
-    UserProgressWithDetails,
 )
+from app.schemas.userprogress import UserProgressWithDetails
 from app.services.progress import ProgressService
 
 router = APIRouter(prefix='/users', tags=['progress'])
 
 
-@router.get('/{user_id}/progress', response_model=PaginatedResponse[UserProgressWithDetails])
+@router.get('/{user_id}/progress', response_model=ListResponse[UserProgressWithDetails])
 async def get_user_progress(
     user_id: int,
     filters: ProgressFilters = Depends(),
     service: ProgressService = Depends(get_progress_service),
-) -> PaginatedResponse[UserProgressWithDetails]:
+) -> ListResponse[UserProgressWithDetails]:
     try:
         return await service.get_user_progress(user_id, filters)
     except ValueError as e:
