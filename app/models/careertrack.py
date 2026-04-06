@@ -9,6 +9,12 @@ if TYPE_CHECKING:
     from app.models.user import User, UserPublic
 
 
+class CareerTrackCourseBase(BaseSchema):
+    career_track_id: int = Field(foreign_key="career_tracks.id")
+    course_id: int = Field(foreign_key="courses.id")
+    order_index: int
+
+
 class CareerTrack(BaseSQLModel, table=True):
     __tablename__ = 'career_tracks'
 
@@ -20,16 +26,16 @@ class CareerTrack(BaseSQLModel, table=True):
     courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track', cascade_delete=True)
 
 
-class CareerTrackCourse(BaseSQLModel, table=True):
+class CareerTrackCourse(BaseSQLModel, CareerTrackCourseBase, table=True):
     __tablename__ = 'career_track_courses'
     __table_args__ = (UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),)
 
-    career_track_id: int = Field(foreign_key='career_tracks.id', nullable=False, index=True)
-    course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
-    order_index: int = Field(default=0, nullable=False)
-
     career_track: 'CareerTrack' = Relationship(back_populates='courses')
     course: 'Course' = Relationship(back_populates='career_track_courses')
+
+
+class CareerTrackCoursePublic(CareerTrackCourseBase, BaseModelSchema):
+    pass
 
 
 class CareerTrackBase(BaseSchema):
@@ -43,12 +49,6 @@ class CareerTrackCreate(CareerTrackBase):
 
 class CareerTrackUpdate(CareerTrackBase):
     pass
-
-
-class CareerTrackCoursePublic(BaseModelSchema):
-    career_track_id: int = Field(foreign_key="career_tracks.id")
-    course_id: int = Field(foreign_key="courses.id")
-    order_index: int
 
 
 class CareerTrackPublic(BaseModelSchema):

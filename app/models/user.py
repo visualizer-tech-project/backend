@@ -17,7 +17,18 @@ class UserRole(str, Enum):
     TEACHER = 'teacher'
 
 
-class User(BaseSQLModel, table=True):
+class UserBaseFields(BaseSchema):
+    email: EmailStr = Field(..., max_length=255)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    role: UserRole = Field(default=UserRole.STUDENT)
+
+
+class UserBase(UserBaseFields):
+    pass
+
+
+class User(BaseSQLModel, UserBase, table=True):
     __tablename__ = 'users'
 
     email: str = Field(unique=True, index=True, max_length=255, nullable=False)
@@ -32,14 +43,7 @@ class User(BaseSQLModel, table=True):
     career_tracks: list['CareerTrack'] = Relationship(back_populates='user', cascade_delete=True)
 
 
-class UserBase(BaseSchema):
-    email: EmailStr = Field(..., max_length=255)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    role: UserRole = Field(default=UserRole.STUDENT)
-
-
-class UserCreate(UserBase):
+class UserCreate(UserBaseFields):
     password: str = Field(..., min_length=6, max_length=128)
 
 

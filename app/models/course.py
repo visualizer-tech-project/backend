@@ -17,7 +17,15 @@ class CourseType(str, Enum):
     ELECTIVE = 'elective'
 
 
-class Course(BaseSQLModel, table=True):
+class CourseBase(BaseSchema):
+    title: str
+    description: Optional[str] = None
+    type: CourseType
+    program_id: int = Field(foreign_key="programs.id")
+    user_id: int = Field(foreign_key="users.id")
+
+
+class Course(BaseSQLModel, CourseBase, table=True):
     __tablename__ = 'courses'
 
     title: str = Field(unique=True, index=True, max_length=255, nullable=False)
@@ -50,27 +58,18 @@ class Course(BaseSQLModel, table=True):
     )
 
 
-class CourseBase(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-    type: Optional[CourseType] = None
-
-
 class CourseCreate(CourseBase):
     title: str = Field(..., min_length=1, max_length=255)
     type: CourseType
     program_id: int = Field(foreign_key="programs.id", gt=0)
 
 
-class CourseUpdate(CourseBase):
-    pass
+class CourseUpdate(BaseSchema):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None)
+    type: Optional[CourseType] = None
 
 
-class CoursePublic(BaseModelSchema):
-    title: str
-    description: Optional[str] = None
-    type: CourseType
-    program_id: int = Field(foreign_key="programs.id")
-    user_id: int = Field(foreign_key="users.id")
+class CoursePublic(CourseBase, BaseModelSchema):
     program: Optional['ProgramPublic'] = None
     user: Optional['UserPublic'] = None

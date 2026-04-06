@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, List, Optional
-from datetime import datetime
 
 from sqlmodel import Field, Column, Relationship, Text
 
@@ -10,7 +9,16 @@ if TYPE_CHECKING:
     from app.models.user import User, UserPublic
 
 
-class Program(BaseSQLModel, table=True):
+class ProgramBaseFields(BaseSchema):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None)
+
+
+class ProgramBase(ProgramBaseFields):
+    user_id: int = Field(foreign_key="users.id")
+
+
+class Program(BaseSQLModel, ProgramBase, table=True):
     __tablename__ = 'programs'
 
     title: str = Field(unique=True, index=True, max_length=255, nullable=False)
@@ -21,21 +29,13 @@ class Program(BaseSQLModel, table=True):
     courses: List['Course'] = Relationship(back_populates='program', cascade_delete=True)
 
 
-class ProgramBase(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
-class ProgramCreate(ProgramBase):
+class ProgramCreate(ProgramBaseFields):
     title: str = Field(..., min_length=1, max_length=255)
 
 
-class ProgramUpdate(ProgramBase):
+class ProgramUpdate(ProgramBaseFields):
     pass
 
 
-class ProgramPublic(BaseModelSchema):
-    title: str
-    description: Optional[str] = None
-    user_id: int = Field(foreign_key="users.id")
+class ProgramPublic(ProgramBase, BaseModelSchema):
     user: Optional['UserPublic'] = None
