@@ -6,13 +6,13 @@ from app.models.careertrack import (
     CareerTrack,
     CareerTrackCourse,
     CareerTrackCreate,
-    CareerTrackUpdate,
 )
 from app.repositories.base import BaseRepository, FilterCondition
+from app.repositories.base import DEFAULT_SKIP, DEFAULT_LIMIT
 
 
 class CareerTrackRepository(
-    BaseRepository[CareerTrack, CareerTrackCreate, CareerTrackUpdate]
+    BaseRepository[CareerTrack, CareerTrackCreate, CareerTrackCreate]
 ):
     def __init__(self, session: AsyncSession):
         super().__init__(CareerTrack, session)
@@ -26,8 +26,8 @@ class CareerTrackRepository(
     async def get_by_user(
             self,
             user_id: int,
-            skip: int = 0,
-            limit: Optional[int] = None,
+            skip: int = DEFAULT_SKIP,
+            limit: Optional[int] = DEFAULT_LIMIT,
     ) -> tuple[List[CareerTrack], int]:
         """Получить треки, созданные пользователем."""
         filters = [FilterCondition('user_id', user_id)]
@@ -57,8 +57,8 @@ class CareerTrackRepository(
     async def get_track_courses(
             self,
             track_id: int,
-            skip: int = 0,
-            limit: Optional[int] = None,
+            skip: int = DEFAULT_SKIP,
+            limit: Optional[int] = DEFAULT_LIMIT,
     ) -> tuple[List[CareerTrackCourse], int]:
         """Получить все связи трека с курсами."""
         filters = [FilterCondition('career_track_id', track_id)]

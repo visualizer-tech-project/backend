@@ -77,20 +77,22 @@ class UserProgress(BaseSQLModel, table=True):
                 self.completed_at = now
 
 
-class ProgressCreate(BaseSchema):
-    user_id: int
-    course_id: int
+class ProgressBase(BaseSchema):
+    """Базовые поля прогресса"""
     status: ProgressStatus
     grade: Optional[int] = Field(None, ge=0, le=100)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
     @model_validator(mode='after')
-    def validate_dates(self) -> 'ProgressCreate':
+    def validate_dates(self) -> 'ProgressBase':
         if self.started_at and self.completed_at and self.completed_at < self.started_at:
             raise ValueError('completed_at не может быть раньше started_at')
         return self
 
+class ProgressCreate(ProgressBase):
+    user_id: int
+    course_id: int
 
 class ProgressUpdate(BaseSchema):
     status: Optional[ProgressStatus] = None
@@ -104,11 +106,6 @@ class ProgressUpdate(BaseSchema):
             raise ValueError('completed_at не может быть раньше started_at')
         return self
 
-
-class UserProgressPublic(BaseModelSchema):
+class UserProgressPublic(ProgressBase, BaseModelSchema):
     user_id: int
     course_id: int
-    status: ProgressStatus
-    grade: Optional[int] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
