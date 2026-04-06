@@ -56,6 +56,7 @@ class Course(BaseSQLModel, table=True):
 
 
 class CourseCreate(BaseSchema):
+    """Схема для создания/обновления курса"""
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(None)
     type: CourseType

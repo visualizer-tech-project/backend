@@ -36,6 +36,7 @@ class CareerTrackCourse(BaseSQLModel, table=True):
 
 
 class CareerTrackCreate(BaseSchema):
+    """Схема для создания/обновления карьерного трека"""
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(None)
 

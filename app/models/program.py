@@ -27,11 +27,6 @@ class ProgramCreate(BaseSchema):
     description: Optional[str] = Field(None)
 
 
-class ProgramUpdate(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
 class ProgramPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
