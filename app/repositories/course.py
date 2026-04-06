@@ -2,13 +2,13 @@ from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.course import Course, CourseCreate, CourseType
+from app.models.course import Course, CourseCreate, CourseType, CourseUpdate
 from app.repositories.base import BaseRepository, FilterCondition, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import CourseFilters
 
 
-class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
+class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
     def __init__(self, session: AsyncSession):
         super().__init__(Course, session)
 

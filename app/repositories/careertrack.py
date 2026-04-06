@@ -6,6 +6,7 @@ from app.models.careertrack import (
     CareerTrack,
     CareerTrackCourse,
     CareerTrackCreate,
+    CareerTrackUpdate,
 )
 from app.repositories.base import BaseRepository, FilterCondition, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
@@ -13,7 +14,7 @@ from app.schemas.filters import CareerTrackFilters
 
 
 class CareerTrackRepository(
-    BaseRepository[CareerTrack, CareerTrackCreate, CareerTrackCreate]
+    BaseRepository[CareerTrack, CareerTrackCreate, CareerTrackUpdate]
 ):
     def __init__(self, session: AsyncSession):
         super().__init__(CareerTrack, session)
