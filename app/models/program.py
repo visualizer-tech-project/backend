@@ -31,3 +31,4 @@ class ProgramPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
     user: Optional[UserPublic] = None
+    

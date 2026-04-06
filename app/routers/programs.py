@@ -49,7 +49,9 @@ async def update_program(
     try:
         return await service.update_program(program_id, program_data)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        if 'not found' in str(e):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete('/{program_id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -72,4 +74,6 @@ async def copy_program(
     try:
         return await service.copy_program(program_id, copy_request)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        if 'not found' in str(e):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

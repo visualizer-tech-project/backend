@@ -63,6 +63,12 @@ class CourseCreate(BaseSchema):
     program_id: int = Field(..., gt=0)
 
 
+class CourseUpdate(BaseSchema):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None)
+    type: Optional[CourseType] = None
+
+
 class CoursePublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
