@@ -1,7 +1,7 @@
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema, PaginationInfo, ListResponse
 from app.models.user import User, UserRole, UserCreate, UserUpdate, UserPublic
-from app.models.program import Program, ProgramCreate, ProgramUpdate, ProgramPublic
-from app.models.course import Course, CourseType, CourseCreate, CourseUpdate, CoursePublic
+from app.models.program import Program, ProgramCreate, ProgramPublic
+from app.models.course import Course, CourseType, CourseCreate, CoursePublic
 from app.models.prerequisite import Prerequisite, PrerequisiteCreate, PrerequisitePublic
 from app.models.careertrack import (
     CareerTrack, CareerTrackCourse, CareerTrackCreate, CareerTrackUpdate,

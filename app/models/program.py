@@ -16,7 +16,16 @@ class ProgramBase(BaseSchema):
     user_id: int = Field(foreign_key="users.id")
 
 
-class Program(BaseSQLModel, table=True):
+class ProgramBaseFields(BaseSchema):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None)
+
+
+class ProgramBase(ProgramBaseFields):
+    user_id: int = Field(foreign_key="users.id")
+
+
+class Program(BaseSQLModel, ProgramBase, table=True):
     __tablename__ = 'programs'
 
     title: str = Field(unique=True, index=True, max_length=TITLE_MAX_LENGTH, nullable=False)
