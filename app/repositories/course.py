@@ -8,7 +8,7 @@ from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import CourseFilters
 
 
-class CourseRepository(BaseRepository[Course, CourseCreate, CourseUpdate]):
+class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
     def __init__(self, session: AsyncSession):
         super().__init__(Course, session)
 

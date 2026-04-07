@@ -8,7 +8,7 @@ from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import ProgramFilters
 
 
-class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramUpdate]):
+class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramCreate]):
     def __init__(self, session: AsyncSession):
         super().__init__(Program, session)
 
