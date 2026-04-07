@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.course import Course, CourseCreate, CourseType
+from app.models.course import Course, CourseCreate, CourseType, CourseUpdate
 from app.repositories.base import BaseRepository, FilterCondition, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import CourseFilters

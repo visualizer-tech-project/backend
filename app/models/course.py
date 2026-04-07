@@ -1,19 +1,14 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
+from sqlmodel import Field, Column, Relationship, Text
 
-from pydantic import computed_field
-from sqlmodel import Column, Relationship, Text
-from sqlmodel import Field
-
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
-from app.models.program import ProgramPublic
-from app.models.user import UserPublic
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.careertrack import CareerTrackCourse
     from app.models.prerequisite import Prerequisite
-    from app.models.program import Program
-    from app.models.user import User
+    from app.models.program import Program, ProgramPublic
+    from app.models.user import User, UserPublic
     from app.models.userprogress import UserProgress
 
 
@@ -22,7 +17,15 @@ class CourseType(str, Enum):
     ELECTIVE = 'elective'
 
 
-class Course(BaseSQLModel, table=True):
+class CourseBase(BaseSchema):
+    title: str
+    description: Optional[str] = None
+    type: CourseType
+    program_id: int = Field(foreign_key="programs.id")
+    user_id: int = Field(foreign_key="users.id")
+
+
+class Course(BaseSQLModel, CourseBase, table=True):
     __tablename__ = 'courses'
 
     title: str = Field(unique=True, index=True, max_length=255, nullable=False)
@@ -55,12 +58,10 @@ class Course(BaseSQLModel, table=True):
     )
 
 
-class CourseCreate(BaseSchema):
-    """Схема для создания/обновления курса"""
+class CourseCreate(CourseBase):
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
     type: CourseType
-    program_id: int = Field(..., gt=0)
+    program_id: int = Field(foreign_key="programs.id", gt=0)
 
 
 class CourseUpdate(BaseSchema):
@@ -69,11 +70,6 @@ class CourseUpdate(BaseSchema):
     type: Optional[CourseType] = None
 
 
-class CoursePublic(BaseModelSchema):
-    title: str
-    description: Optional[str] = None
-    type: CourseType
-    program_id: int
-    user_id: int
-    program: Optional[ProgramPublic] = None
-    user: Optional[UserPublic] = None
+class CoursePublic(CourseBase, BaseModelSchema):
+    program: Optional['ProgramPublic'] = None
+    user: Optional['UserPublic'] = None

@@ -1,15 +1,18 @@
 from typing import TYPE_CHECKING, List, Optional
-
 from pydantic import computed_field
-from sqlmodel import Column, Relationship, Text, UniqueConstraint
-from sqlmodel import Field
+from sqlmodel import Field, Column, Relationship, Text, UniqueConstraint
 
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
-    from app.models.course import Course
+    from app.models.course import Course, CoursePublic
     from app.models.user import User, UserPublic
-    from app.models.course import CoursePublic
+
+
+class CareerTrackCourseBase(BaseSchema):
+    career_track_id: int = Field(foreign_key="career_tracks.id")
+    course_id: int = Field(foreign_key="courses.id")
+    order_index: int
 
 
 class CareerTrack(BaseSQLModel, table=True):
@@ -23,39 +26,35 @@ class CareerTrack(BaseSQLModel, table=True):
     courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track', cascade_delete=True)
 
 
-class CareerTrackCourse(BaseSQLModel, table=True):
+class CareerTrackCourse(BaseSQLModel, CareerTrackCourseBase, table=True):
     __tablename__ = 'career_track_courses'
     __table_args__ = (UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),)
-
-    career_track_id: int = Field(foreign_key='career_tracks.id', nullable=False, index=True)
-    course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
-    order_index: int = Field(default=0, nullable=False)
 
     career_track: 'CareerTrack' = Relationship(back_populates='courses')
     course: 'Course' = Relationship(back_populates='career_track_courses')
 
 
-class CareerTrackCreate(BaseSchema):
-    """Схема для создания/обновления карьерного трека"""
-    title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
+class CareerTrackCoursePublic(CareerTrackCourseBase, BaseModelSchema):
+    pass
 
 
-class CareerTrackUpdate(BaseSchema):
+class CareerTrackBase(BaseSchema):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None)
 
 
-class CareerTrackCoursePublic(BaseModelSchema):
-    career_track_id: int
-    course_id: int
-    order_index: int
+class CareerTrackCreate(CareerTrackBase):
+    title: str = Field(..., min_length=1, max_length=255)
+
+
+class CareerTrackUpdate(CareerTrackBase):
+    pass
 
 
 class CareerTrackPublic(BaseModelSchema):
     title: str
     description: Optional[str] = None
-    user_id: int
+    user_id: int = Field(foreign_key="users.id")
     user: Optional['UserPublic'] = None
 
     @computed_field

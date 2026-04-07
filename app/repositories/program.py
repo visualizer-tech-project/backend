@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.program import Program, ProgramCreate
+from app.models.program import Program, ProgramCreate, ProgramUpdate
 from app.repositories.base import BaseRepository, FilterCondition, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import ProgramFilters

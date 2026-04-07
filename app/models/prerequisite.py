@@ -1,9 +1,6 @@
 from typing import TYPE_CHECKING
-
-from sqlmodel import CheckConstraint, Relationship, UniqueConstraint
-from sqlmodel import Field
-
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from sqlmodel import Field, CheckConstraint, Relationship, UniqueConstraint
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.course import Course
@@ -30,9 +27,9 @@ class Prerequisite(BaseSQLModel, table=True):
 
 
 class PrerequisiteCreate(BaseSchema):
-    prerequisite_course_id: int = Field(..., gt=0)
+    prerequisite_course_id: int = Field(foreign_key="courses.id", gt=0)
 
 
 class PrerequisitePublic(BaseModelSchema):
-    course_id: int
-    prerequisite_course_id: int
+    course_id: int = Field(foreign_key="courses.id")
+    prerequisite_course_id: int = Field(foreign_key="courses.id")
