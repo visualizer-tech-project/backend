@@ -1,12 +1,11 @@
 from datetime import datetime, timezone
 from typing import Optional, TypeVar, Generic
 
-from pydantic import BaseModel
 from pydantic.v1.generics import GenericModel
 from sqlalchemy import func
 from sqlmodel import Field, SQLModel
 
-T = TypeVar('T', bound=BaseModel)
+T = TypeVar('T', bound=SQLModel)
 
 
 class BaseSQLModel(SQLModel):

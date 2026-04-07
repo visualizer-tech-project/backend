@@ -6,7 +6,6 @@ from app.models.prerequisite import Prerequisite, PrerequisiteCreate
 from app.repositories.base import BaseRepository, FilterCondition
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 
-#todo:добавить апдейт
 class PrerequisiteRepository(
     BaseRepository[Prerequisite, PrerequisiteCreate]
 ):
