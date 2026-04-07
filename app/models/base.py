@@ -47,3 +47,6 @@ class PaginationInfo(SQLModel):
 class ListResponse(GenericModel, Generic[T]):
     info: PaginationInfo
     items: list[T]
+
+    class Config:
+        arbitrary_types_allowed = True
