@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -86,7 +87,7 @@ class UserProgressRepository(
         )
 
     async def create_progress(self, progress_data: ProgressCreate) -> UserProgress:
-        progress = UserProgress.create_with_defaults(
+        progress = UserProgress(
             user_id=progress_data.user_id,
             course_id=progress_data.course_id,
             status=progress_data.status,
@@ -94,20 +95,21 @@ class UserProgressRepository(
             started_at=progress_data.started_at,
             completed_at=progress_data.completed_at,
         )
+        if progress.status == ProgressStatus.IN_PROGRESS and progress.started_at is None:
+            progress.started_at = datetime.now(timezone.utc)
         return await self.save(progress)
 
-    async def update_progress(
-            self, user_id: int, course_id: int, progress_data: ProgressUpdate
-    ) -> Optional[UserProgress]:
+    async def update_progress(self, user_id: int, course_id: int, progress_data: ProgressUpdate):
         existing = await self.get_by_user_and_course(user_id, course_id)
         if not existing:
             return None
 
         update_dict = progress_data.model_dump(exclude_unset=True)
-        for field, value in update_dict.items():
-            setattr(existing, field, value)
 
         if 'status' in update_dict:
-            existing.update_status_with_dates(update_dict['status'])
+            existing.update_status(update_dict.pop('status'))
+
+        for field, value in update_dict.items():
+            setattr(existing, field, value)
 
         return await self.save(existing)

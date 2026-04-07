@@ -2,6 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 from sqlmodel import Field, Column, Relationship, Text
 
+from app.core.constants import TITLE_FIELD_CONFIG, TITLE_MAX_LENGTH
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
@@ -18,20 +19,20 @@ class CourseType(str, Enum):
 
 
 class CourseBase(BaseSchema):
-    title: str
+    title: str = Field(**TITLE_FIELD_CONFIG)
     description: Optional[str] = None
     type: CourseType
-    program_id: int = Field(foreign_key="programs.id")
-    user_id: int = Field(foreign_key="users.id")
+    program_id: int
+    user_id: int
 
 
-class Course(BaseSQLModel, CourseBase, table=True):
+class Course(CourseBase, BaseSQLModel, table=True):
     __tablename__ = 'courses'
 
-    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
+    title: str = Field(unique=True, index=True, max_length=TITLE_MAX_LENGTH, nullable=False)
     description: str = Field(sa_column=Column(Text, nullable=True))
-    program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
     type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
+    program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
     program: 'Program' = Relationship(back_populates='courses')
@@ -59,15 +60,15 @@ class Course(BaseSQLModel, CourseBase, table=True):
 
 
 class CourseCreate(CourseBase):
-    title: str = Field(..., min_length=1, max_length=255)
-    type: CourseType
-    program_id: int = Field(foreign_key="programs.id", gt=0)
+    pass
 
 
 class CourseUpdate(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
+    description: Optional[str] = None
     type: Optional[CourseType] = None
+    program_id: Optional[int] = Field(None, gt=0)
+    user_id: Optional[int] = Field(None, gt=0)
 
 
 class CoursePublic(CourseBase, BaseModelSchema):
