@@ -2,6 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship
+from app.core.constants import NAME_FIELD_CONFIG  # если вынесли в константы
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
@@ -17,18 +18,14 @@ class UserRole(str, Enum):
     TEACHER = 'teacher'
 
 
-class UserBaseFields(BaseSchema):
+class UserBase(BaseSchema):
     email: EmailStr = Field(..., max_length=255)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
     role: UserRole = Field(default=UserRole.STUDENT)
 
 
-class UserBase(UserBaseFields):
-    pass
-
-
-class User(BaseSQLModel, UserBase, table=True):
+class User(BaseSQLModel, table=True):
     __tablename__ = 'users'
 
     email: str = Field(unique=True, index=True, max_length=255, nullable=False)
@@ -43,7 +40,7 @@ class User(BaseSQLModel, UserBase, table=True):
     career_tracks: list['CareerTrack'] = Relationship(back_populates='user', cascade_delete=True)
 
 
-class UserCreate(UserBaseFields):
+class UserCreate(UserBase):
     password: str = Field(..., min_length=6, max_length=128)
 
 

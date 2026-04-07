@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from sqlmodel import Field, Column, Relationship, Text
 
+from app.core.constants import TITLE_FIELD_CONFIG, TITLE_MAX_LENGTH
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
@@ -9,19 +10,16 @@ if TYPE_CHECKING:
     from app.models.user import User, UserPublic
 
 
-class ProgramBaseFields(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-
-
-class ProgramBase(ProgramBaseFields):
+class ProgramBase(BaseSchema):
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
+    description: Optional[str] = None
     user_id: int = Field(foreign_key="users.id")
 
 
-class Program(BaseSQLModel, ProgramBase, table=True):
+class Program(BaseSQLModel, table=True):
     __tablename__ = 'programs'
 
-    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
+    title: str = Field(unique=True, index=True, max_length=TITLE_MAX_LENGTH, nullable=False)
     description: str = Field(sa_column=Column(Text, nullable=True))
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
@@ -29,13 +27,14 @@ class Program(BaseSQLModel, ProgramBase, table=True):
     courses: List['Course'] = Relationship(back_populates='program', cascade_delete=True)
 
 
-class ProgramCreate(ProgramBaseFields):
-    title: str = Field(..., min_length=1, max_length=255)
+class ProgramCreate(ProgramBase):
+    title: str = Field(..., **TITLE_FIELD_CONFIG)
 
 
-class ProgramUpdate(ProgramBaseFields):
+class ProgramUpdate(ProgramBase):
     pass
 
 
 class ProgramPublic(ProgramBase, BaseModelSchema):
+    title: str
     user: Optional['UserPublic'] = None

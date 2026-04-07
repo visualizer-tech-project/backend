@@ -158,3 +158,32 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 query = query.where(getattr(self.model, field) == value)
         result = await self.session.exec(query.limit(1))
         return result.first() is not None
+
+    async def get_all_for_model(
+            self,
+            model: Type[ModelType],
+            skip: int = DEFAULT_SKIP,
+            limit: int = DEFAULT_LIMIT,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
+    ) -> tuple[List[ModelType], int]:
+        query = select(model)
+        query = self._apply_filters(query, model, filters)
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_query) or 0
+
+        if order_by and hasattr(model, order_by):
+            order_field = getattr(model, order_by)
+            if descending:
+                query = query.order_by(order_field.desc())
+            else:
+                query = query.order_by(order_field)
+
+        if limit > 0:
+            query = query.limit(limit)
+        query = query.offset(skip)
+
+        result = await self.session.exec(query)
+        return result.all(), total
