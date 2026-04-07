@@ -2,12 +2,12 @@ from typing import List, Optional
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.prerequisite import Prerequisite, PrerequisiteCreate
+from app.models.prerequisite import Prerequisite, PrerequisiteCreate, PrerequisiteUpdate
 from app.repositories.base import BaseRepository, FilterCondition
-from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
+from app.core.constants import DEFAULT_LIMIT
 
 class PrerequisiteRepository(
-    BaseRepository[Prerequisite, PrerequisiteCreate]
+    BaseRepository[Prerequisite, PrerequisiteCreate, PrerequisiteUpdate]
 ):
     def __init__(self, session: AsyncSession):
         super().__init__(Prerequisite, session)

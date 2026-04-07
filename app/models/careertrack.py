@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, List, Optional
 from pydantic import computed_field
 from sqlmodel import Field, Column, Relationship, Text, UniqueConstraint
 
+from app.core.constants import TITLE_FIELD_CONFIG
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
@@ -39,24 +40,22 @@ class CareerTrackCoursePublic(CareerTrackCourseBase, BaseModelSchema):
 
 
 class CareerTrackBase(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
     description: Optional[str] = Field(None)
+    user_id: int = Field(foreign_key="users.id")
 
 
 class CareerTrackCreate(CareerTrackBase):
-    title: str = Field(..., min_length=1, max_length=255)
+    title: str = Field(..., **TITLE_FIELD_CONFIG)
 
 
 class CareerTrackUpdate(CareerTrackBase):
     pass
 
 
-class CareerTrackPublic(BaseModelSchema):
-    title: str
-    description: Optional[str] = None
-    user_id: int = Field(foreign_key="users.id")
+class CareerTrackPublic(CareerTrackBase, BaseModelSchema):
     user: Optional['UserPublic'] = None
-
+    title: str
     @computed_field
     @property
     def courses_count(self) -> int:

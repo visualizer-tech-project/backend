@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, TypeVar, Generic
+from typing import Generic, Optional, TypeVar
 
 from pydantic.v1.generics import GenericModel
 from sqlalchemy import func
@@ -29,13 +29,10 @@ class BaseSchema(SQLModel):
         from_attributes = True
 
 
-class BaseModelSchema(SQLModel):
+class BaseModelSchema(BaseSchema):
     id: int
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class PaginationInfo(SQLModel):

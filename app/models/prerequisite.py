@@ -1,9 +1,13 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlmodel import Field, CheckConstraint, Relationship, UniqueConstraint
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.course import Course
+
+
+class PrerequisiteBase(BaseSchema):
+    prerequisite_course_id: int = Field(foreign_key="courses.id", gt=0)
 
 
 class Prerequisite(BaseSQLModel, table=True):
@@ -26,10 +30,12 @@ class Prerequisite(BaseSQLModel, table=True):
     )
 
 
-class PrerequisiteCreate(BaseSchema):
-    prerequisite_course_id: int = Field(foreign_key="courses.id", gt=0)
+class PrerequisiteCreate(PrerequisiteBase):
+    pass
+
+class PrerequisiteUpdate(BaseSchema):
+    prerequisite_course_id: Optional[int] = Field(None, foreign_key="courses.id", gt=0)
 
 
-class PrerequisitePublic(BaseModelSchema):
+class PrerequisitePublic(PrerequisiteBase, BaseModelSchema):
     course_id: int = Field(foreign_key="courses.id")
-    prerequisite_course_id: int = Field(foreign_key="courses.id")
