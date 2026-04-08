@@ -21,10 +21,6 @@ class ProgramBaseFields(BaseSchema):
     description: Optional[str] = Field(None)
 
 
-class ProgramBase(ProgramBaseFields):
-    user_id: int = Field(foreign_key="users.id")
-
-
 class Program(BaseSQLModel, ProgramBase, table=True):
     __tablename__ = 'programs'
 
@@ -45,5 +41,4 @@ class ProgramUpdate(ProgramBase):
 
 
 class ProgramPublic(ProgramBase, BaseModelSchema):
-    title: str
-    user: Optional['UserPublic'] = None
+    user: 'UserPublic'

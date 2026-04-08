@@ -19,21 +19,21 @@ class CourseType(str, Enum):
 
 
 class CourseBase(BaseSchema):
-    title: str = Field(**TITLE_FIELD_CONFIG)
-    description: Optional[str] = None
-    type: CourseType
-    program_id: int
-    user_id: int
+    title: str = Field(
+        unique=True,
+        index=True,
+        max_length=TITLE_MAX_LENGTH,
+        nullable=False,
+        **TITLE_FIELD_CONFIG
+    )
+    description: Optional[str] = Field(sa_column=Column(Text, nullable=True))
+    type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
+    program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
+    user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
 
 class Course(CourseBase, BaseSQLModel, table=True):
     __tablename__ = 'courses'
-
-    title: str = Field(unique=True, index=True, max_length=TITLE_MAX_LENGTH, nullable=False)
-    description: str = Field(sa_column=Column(Text, nullable=True))
-    type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
-    program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
-    user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
     program: 'Program' = Relationship(back_populates='courses')
     user: 'User' = Relationship(back_populates='courses')
@@ -64,13 +64,9 @@ class CourseCreate(CourseBase):
 
 
 class CourseUpdate(BaseSchema):
-    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
-    description: Optional[str] = None
-    type: Optional[CourseType] = None
-    program_id: Optional[int] = Field(None, gt=0)
-    user_id: Optional[int] = Field(None, gt=0)
+    pass
 
 
 class CoursePublic(CourseBase, BaseModelSchema):
-    program: Optional['ProgramPublic'] = None
-    user: Optional['UserPublic'] = None
+    program: 'ProgramPublic'
+    user: 'UserPublic'
