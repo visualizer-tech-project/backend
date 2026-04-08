@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.user import User, UserCreate, UserRole, UserUpdate
-from app.repositories.base import BaseRepository, FilterCondition, ListResponse
+from app.repositories.base import BaseRepository, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import UserFilters
 
@@ -12,8 +12,12 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
     def __init__(self, session: AsyncSession):
         super().__init__(User, session)
 
+    def _setup_filters(self):
+        self.add_filter('email')
+        self.add_filter('role')
+
     async def get_by_email(self, email: str) -> Optional[User]:
-        filters = [FilterCondition('email', email)]
+        filters = self._create_filter_conditions_from_dict({'email': email})
         items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
@@ -23,7 +27,7 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             skip: int = DEFAULT_SKIP,
             limit: int = DEFAULT_LIMIT,
     ) -> tuple[List[User], int]:
-        filters = [FilterCondition('role', role)]
+        filters = self._create_filter_conditions_from_dict({'role': role})
         return await self.get_all(
             skip=skip,
             limit=limit,
@@ -36,10 +40,7 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             self,
             filters: UserFilters,
     ) -> ListResponse[User]:
-        filter_conditions = []
-
-        if filters.role:
-            filter_conditions.append(FilterCondition('role', filters.role))
+        filter_conditions = self._create_filter_conditions_from_model(filters)
 
         return await self.get_paginated(
             skip=filters.skip,
