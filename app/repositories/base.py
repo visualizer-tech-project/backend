@@ -1,5 +1,4 @@
-import math
-from typing import Generic, List, Optional, Type, TypeVar, Any
+from typing import Generic, List, Optional, Type, TypeVar, Any, Dict, Callable
 
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -30,10 +29,92 @@ class FilterCondition:
         self.operator = operator
 
 
+class FilterConfig:
+    def __init__(
+            self,
+            field_name: str,
+            operator: str = FILTER_OPERATOR_EQ,
+            model_field_name: Optional[str] = None,
+            condition: Optional[Callable[[Any], bool]] = None,
+    ):
+        self.field_name = field_name
+        self.operator = operator
+        self.model_field_name = model_field_name or field_name
+        self.condition = condition
+
+
 class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType], session: AsyncSession):
         self.model = model
         self.session = session
+        self._filter_configs: Dict[str, FilterConfig] = {}
+        self._setup_filters()
+
+    def _setup_filters(self):
+        pass
+
+    def add_filter(
+            self,
+            field_name: str,
+            operator: str = FILTER_OPERATOR_EQ,
+            model_field_name: Optional[str] = None,
+            condition: Optional[Callable[[Any], bool]] = None,
+    ) -> None:
+        self._filter_configs[field_name] = FilterConfig(
+            field_name=field_name,
+            operator=operator,
+            model_field_name=model_field_name,
+            condition=condition,
+        )
+
+    def _create_filter_conditions_from_dict(
+            self,
+            filter_dict: Dict[str, Any],
+            skip_none: bool = True,
+            allowed_fields: Optional[List[str]] = None,
+    ) -> List[FilterCondition]:
+
+        conditions = []
+
+        for field_name, value in filter_dict.items():
+            if skip_none and value is None:
+                continue
+
+            if allowed_fields and field_name not in allowed_fields:
+                continue
+
+            config = self._filter_configs.get(field_name)
+            if not config:
+                if hasattr(self.model, field_name):
+                    conditions.append(FilterCondition(field_name, value))
+                continue
+            if config.condition and not config.condition(value):
+                continue
+
+            conditions.append(FilterCondition(
+                field=config.model_field_name,
+                value=value,
+                operator=config.operator,
+            ))
+
+        return conditions
+
+    def _create_filter_conditions_from_model(
+            self,
+            filter_model: Optional[BaseModel],
+            skip_none: bool = True,
+            allowed_fields: Optional[List[str]] = None,
+    ) -> List[FilterCondition]:
+
+        if not filter_model:
+            return []
+
+        filter_dict = filter_model.model_dump(exclude_unset=skip_none)
+        return self._create_filter_conditions_from_dict(
+            filter_dict,
+            skip_none=skip_none,
+            allowed_fields=allowed_fields
+        )
 
     async def save(self, db_obj: ModelType) -> ModelType:
         self.session.add(db_obj)

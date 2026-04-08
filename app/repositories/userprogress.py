@@ -9,7 +9,7 @@ from app.models.userprogress import (
     ProgressUpdate,
     UserProgress,
 )
-from app.repositories.base import BaseRepository, FilterCondition, ListResponse
+from app.repositories.base import BaseRepository, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import ProgressFilters
 
@@ -20,13 +20,18 @@ class UserProgressRepository(
     def __init__(self, session: AsyncSession):
         super().__init__(UserProgress, session)
 
+    def _setup_filters(self):
+        self.add_filter('user_id')
+        self.add_filter('course_id')
+        self.add_filter('status')
+
     async def get_by_user_and_course(
             self, user_id: int, course_id: int
     ) -> Optional[UserProgress]:
-        filters = [
-            FilterCondition('user_id', user_id),
-            FilterCondition('course_id', course_id),
-        ]
+        filters = self._create_filter_conditions_from_dict({
+            'user_id': user_id,
+            'course_id': course_id,
+        })
         items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
@@ -37,10 +42,11 @@ class UserProgressRepository(
             limit: int = DEFAULT_LIMIT,
             status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
-        filters = [FilterCondition('user_id', user_id)]
+        filter_dict = {'user_id': user_id}
         if status:
-            filters.append(FilterCondition('status', status))
+            filter_dict['status'] = status
 
+        filters = self._create_filter_conditions_from_dict(filter_dict)
         return await self.get_all(
             skip=skip,
             limit=limit,
@@ -54,10 +60,11 @@ class UserProgressRepository(
             user_id: int,
             filters: ProgressFilters,
     ) -> ListResponse[UserProgress]:
-        filter_conditions = [FilterCondition('user_id', user_id)]
-
+        filter_dict = {'user_id': user_id}
         if filters.status:
-            filter_conditions.append(FilterCondition('status', filters.status))
+            filter_dict['status'] = filters.status
+
+        filter_conditions = self._create_filter_conditions_from_dict(filter_dict)
 
         return await self.get_paginated(
             skip=filters.skip,
@@ -74,10 +81,11 @@ class UserProgressRepository(
             limit: int = DEFAULT_LIMIT,
             status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
-        filters = [FilterCondition('course_id', course_id)]
+        filter_dict = {'course_id': course_id}
         if status:
-            filters.append(FilterCondition('status', status))
+            filter_dict['status'] = status
 
+        filters = self._create_filter_conditions_from_dict(filter_dict)
         return await self.get_all(
             skip=skip,
             limit=limit,
