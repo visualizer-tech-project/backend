@@ -3,8 +3,9 @@ from typing import List, Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.prerequisite import Prerequisite, PrerequisiteCreate, PrerequisiteUpdate
-from app.repositories.base import BaseRepository, FilterCondition
+from app.repositories.base import BaseRepository
 from app.core.constants import DEFAULT_LIMIT
+
 
 class PrerequisiteRepository(
     BaseRepository[Prerequisite, PrerequisiteCreate, PrerequisiteUpdate]
@@ -12,25 +13,31 @@ class PrerequisiteRepository(
     def __init__(self, session: AsyncSession):
         super().__init__(Prerequisite, session)
 
+    def _setup_filters(self):
+        self.add_filter('course_id')
+        self.add_filter('prerequisite_course_id')
+
     async def get_by_course_pair(
         self, course_id: int, prerequisite_course_id: int
     ) -> Optional[Prerequisite]:
-        filters = [
-            FilterCondition('course_id', course_id),
-            FilterCondition('prerequisite_course_id', prerequisite_course_id),
-        ]
+        filters = self._create_filter_conditions_from_dict({
+            'course_id': course_id,
+            'prerequisite_course_id': prerequisite_course_id,
+        })
         items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
     async def get_by_course(self, course_id: int) -> List[Prerequisite]:
-        filters = [FilterCondition('course_id', course_id)]
+        filters = self._create_filter_conditions_from_dict({'course_id': course_id})
         items, _ = await self.get_all(filters=filters)
         return items
 
     async def get_by_prerequisite_course(
         self, prerequisite_course_id: int
     ) -> List[Prerequisite]:
-        filters = [FilterCondition('prerequisite_course_id', prerequisite_course_id)]
+        filters = self._create_filter_conditions_from_dict({
+            'prerequisite_course_id': prerequisite_course_id
+        })
         items, _ = await self.get_all(filters=filters)
         return items
 
