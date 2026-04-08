@@ -21,6 +21,3 @@ api_v1_router.include_router(progress_router)
 app.include_router(api_v1_router)
 
 
-@app.get('/')
-async def root() -> dict:
-    return {'message': 'EduMap API', 'version': '1.0.0', 'docs': '/docs'}

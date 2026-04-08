@@ -30,13 +30,13 @@ class CourseBase(BaseSchema):
     type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
     program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
+    program: 'Program' = Relationship(back_populates='courses')
+    user: 'User' = Relationship(back_populates='courses')
 
 
 class Course(CourseBase, BaseSQLModel, table=True):
     __tablename__ = 'courses'
 
-    program: 'Program' = Relationship(back_populates='courses')
-    user: 'User' = Relationship(back_populates='courses')
     prerequisites: List['Prerequisite'] = Relationship(
         back_populates='course',
         sa_relationship_kwargs={
@@ -68,5 +68,4 @@ class CourseUpdate(BaseSchema):
 
 
 class CoursePublic(CourseBase, BaseModelSchema):
-    program: 'ProgramPublic'
-    user: 'UserPublic'
+    pass
