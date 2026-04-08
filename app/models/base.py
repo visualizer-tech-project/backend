@@ -29,10 +29,8 @@ class BaseSchema(SQLModel):
         from_attributes = True
 
 
-class BaseModelSchema(BaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class BaseModelSchema(BaseSchema, BaseSQLModel):
+    pass
 
 
 class PaginationInfo(SQLModel):

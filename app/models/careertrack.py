@@ -16,12 +16,14 @@ class CareerTrackCourseBase(BaseSchema):
     order_index: int
 
 
-class CareerTrack(BaseSQLModel, table=True):
-    __tablename__ = 'career_tracks'
+class CareerTrackBase(BaseSchema):
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
+    description: Optional[str] = Field(None)
+    user_id: int = Field(foreign_key="users.id")
 
-    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
-    description: str = Field(sa_column=Column(Text, nullable=True))
-    user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
+
+class CareerTrack(BaseSQLModel, CareerTrackBase, table=True):
+    __tablename__ = 'career_tracks'
 
     user: 'User' = Relationship(back_populates='career_tracks')
     courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track', cascade_delete=True)
@@ -39,14 +41,8 @@ class CareerTrackCoursePublic(CareerTrackCourseBase, BaseModelSchema):
     pass
 
 
-class CareerTrackBase(BaseSchema):
-    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
-    description: Optional[str] = Field(None)
-    user_id: int = Field(foreign_key="users.id")
-
-
 class CareerTrackCreate(CareerTrackBase):
-    title: str = Field(..., **TITLE_FIELD_CONFIG)
+    pass
 
 
 class CareerTrackUpdate(CareerTrackBase):
@@ -55,6 +51,7 @@ class CareerTrackUpdate(CareerTrackBase):
 
 class CareerTrackPublic(CareerTrackBase, BaseModelSchema):
     user: 'UserPublic'
+
     @computed_field
     @property
     def courses_count(self) -> int:
