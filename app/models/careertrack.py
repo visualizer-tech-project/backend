@@ -54,8 +54,7 @@ class CareerTrackUpdate(CareerTrackBase):
 
 
 class CareerTrackPublic(CareerTrackBase, BaseModelSchema):
-    user: Optional['UserPublic'] = None
-    title: str
+    user: 'UserPublic'
     @computed_field
     @property
     def courses_count(self) -> int:

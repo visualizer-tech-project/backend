@@ -19,20 +19,16 @@ class UserRole(str, Enum):
 
 
 class UserBase(BaseSchema):
-    email: EmailStr = Field(..., max_length=255)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr = Field(max_length=255, unique=True, index=True)
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(max_length=100)
     role: UserRole = Field(default=UserRole.STUDENT)
 
 
-class User(BaseSQLModel, table=True):
+class User(UserBase, BaseSQLModel, table=True):
     __tablename__ = 'users'
 
-    email: str = Field(unique=True, index=True, max_length=255, nullable=False)
     hashed_password: str = Field(nullable=False)
-    first_name: str = Field(max_length=100, nullable=False)
-    last_name: str = Field(max_length=100, nullable=False)
-    role: UserRole = Field(default=UserRole.STUDENT, nullable=False)
 
     programs: list['Program'] = Relationship(back_populates='user', cascade_delete=True)
     courses: list['Course'] = Relationship(back_populates='user', cascade_delete=True)

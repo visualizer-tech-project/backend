@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.user import User
 
+class ProgressId(BaseSchema):
+    user_id: int = Field(foreign_key="users.id", gt=0)
+    course_id: int = Field(foreign_key="courses.id", gt=0)
 
 class ProgressStatus(str, Enum):
     NOT_STARTED = 'not_started'
@@ -30,18 +33,15 @@ class ProgressBase(BaseSchema):
             raise ValueError('completed_at не может быть раньше started_at')
         return self
 
-class ProgressCreate(ProgressBase):
-    user_id: int = Field(foreign_key="users.id", gt=0)
-    course_id: int = Field(foreign_key="courses.id", gt=0)
+class ProgressCreate(ProgressId, ProgressBase):
     status: ProgressStatus
 
 class ProgressUpdate(ProgressBase):
     pass
 
 
-class UserProgressPublic(ProgressBase, BaseModelSchema):
-    user_id: int
-    course_id: int
+class UserProgressPublic(ProgressBase, ProgressId, BaseModelSchema):
+    pass
 
 
 class UserProgress(BaseSQLModel, table=True):

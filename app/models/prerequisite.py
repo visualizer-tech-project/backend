@@ -5,20 +5,19 @@ from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 if TYPE_CHECKING:
     from app.models.course import Course
 
+class CourseId(BaseSchema):
+    course_id: int = Field(foreign_key="courses.id", gt=0)
 
 class PrerequisiteBase(BaseSchema):
     prerequisite_course_id: int = Field(foreign_key="courses.id", gt=0)
 
 
-class Prerequisite(BaseSQLModel, table=True):
+class Prerequisite(PrerequisiteBase, CourseId, BaseSQLModel, table=True):
     __tablename__ = 'prerequisites'
     __table_args__ = (
         UniqueConstraint('course_id', 'prerequisite_course_id', name='uq_course_prerequisite'),
         CheckConstraint('course_id != prerequisite_course_id', name='ck_no_self_prerequisite'),
     )
-
-    course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
-    prerequisite_course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
 
     course: 'Course' = Relationship(
         back_populates='prerequisites',
@@ -33,9 +32,9 @@ class Prerequisite(BaseSQLModel, table=True):
 class PrerequisiteCreate(PrerequisiteBase):
     pass
 
-class PrerequisiteUpdate(BaseSchema):
-    prerequisite_course_id: Optional[int] = Field(None, foreign_key="courses.id", gt=0)
+class PrerequisiteUpdate(PrerequisiteBase):
+    pass
 
 
-class PrerequisitePublic(PrerequisiteBase, BaseModelSchema):
-    course_id: int = Field(foreign_key="courses.id")
+class PrerequisitePublic(PrerequisiteBase, CourseId, BaseModelSchema):
+    pass
