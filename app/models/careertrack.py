@@ -1,39 +1,67 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
+from pydantic import computed_field
+from sqlmodel import Field, Column, Relationship, Text, UniqueConstraint
 
-from sqlmodel import Column, Field, Relationship, Text, UniqueConstraint
-
-from app.models.base import BaseModel
+from app.core.constants import TITLE_FIELD_CONFIG
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
-    from app.models.course import Course
-    from app.models.user import User
+    from app.models.course import Course, CoursePublic
+    from app.models.user import User, UserPublic
 
 
-class CareerTrack(BaseModel, table=True):
+class CareerTrackCourseBase(BaseSchema):
+    career_track_id: int = Field(foreign_key="career_tracks.id")
+    course_id: int = Field(foreign_key="courses.id")
+    order_index: int
+
+
+class CareerTrackBase(BaseSchema):
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
+    description: Optional[str] = Field(None)
+    user_id: int = Field(foreign_key="users.id")
+
+
+class CareerTrack(BaseSQLModel, CareerTrackBase, table=True):
     __tablename__ = 'career_tracks'
 
-    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
-    description: str = Field(sa_column=Column(Text, nullable=True))
-    user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
-
     user: 'User' = Relationship(back_populates='career_tracks')
-    courses: List['CareerTrackCourse'] = Relationship(
-        back_populates='career_track',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
-    )
+    courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track', cascade_delete=True)
 
 
-class CareerTrackCourse(BaseModel, table=True):
+class CareerTrackCourse(BaseSQLModel, CareerTrackCourseBase, table=True):
     __tablename__ = 'career_track_courses'
-    __table_args__ = (
-        UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),
-    )
-
-    career_track_id: int = Field(
-        foreign_key='career_tracks.id', nullable=False, index=True
-    )
-    course_id: int = Field(foreign_key='courses.id', nullable=False, index=True)
-    order_index: int = Field(default=0, nullable=False)
+    __table_args__ = (UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),)
 
     career_track: 'CareerTrack' = Relationship(back_populates='courses')
     course: 'Course' = Relationship(back_populates='career_track_courses')
+
+
+class CareerTrackCoursePublic(CareerTrackCourseBase, BaseModelSchema):
+    pass
+
+
+class CareerTrackCreate(CareerTrackBase):
+    pass
+
+
+class CareerTrackUpdate(CareerTrackBase):
+    pass
+
+
+class CareerTrackPublic(CareerTrackBase, BaseModelSchema):
+    user: 'UserPublic'
+
+    @computed_field
+    @property
+    def courses_count(self) -> int:
+        return getattr(self, '_courses_count', 0)
+
+
+class TrackCourseItem(BaseSchema):
+    order_index: int
+    course: 'CoursePublic'
+
+
+class CareerTrackWithCourses(CareerTrackPublic):
+    courses: List[TrackCourseItem] = []

@@ -1,27 +1,41 @@
-from typing import TYPE_CHECKING, List
+from enum import Enum
+from typing import TYPE_CHECKING, List, Optional
+from sqlmodel import Field, Column, Relationship, Text
 
-from sqlmodel import Column, Field, Relationship, Text
-
-from app.models.base import BaseModel
+from app.core.constants import TITLE_FIELD_CONFIG, TITLE_MAX_LENGTH
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.careertrack import CareerTrackCourse
     from app.models.prerequisite import Prerequisite
-    from app.models.program import Program
-    from app.models.user import User
+    from app.models.program import Program, ProgramPublic
+    from app.models.user import User, UserPublic
     from app.models.userprogress import UserProgress
 
 
-class Course(BaseModel, table=True):
-    __tablename__ = 'courses'
+class CourseType(str, Enum):
+    REQUIRED = 'required'
+    ELECTIVE = 'elective'
 
-    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
-    description: str = Field(sa_column=Column(Text, nullable=True))
+
+class CourseBase(BaseSchema):
+    title: str = Field(
+        unique=True,
+        index=True,
+        max_length=TITLE_MAX_LENGTH,
+        nullable=False,
+        **TITLE_FIELD_CONFIG
+    )
+    description: Optional[str] = Field(sa_column=Column(Text, nullable=True))
+    type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
     program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
-
     program: 'Program' = Relationship(back_populates='courses')
     user: 'User' = Relationship(back_populates='courses')
+
+
+class Course(CourseBase, BaseSQLModel, table=True):
+    __tablename__ = 'courses'
 
     prerequisites: List['Prerequisite'] = Relationship(
         back_populates='course',
@@ -30,7 +44,6 @@ class Course(BaseModel, table=True):
             'cascade': 'all, delete-orphan',
         },
     )
-
     prerequisite_for: List['Prerequisite'] = Relationship(
         back_populates='prerequisite_course',
         sa_relationship_kwargs={
@@ -38,13 +51,21 @@ class Course(BaseModel, table=True):
             'cascade': 'all, delete-orphan',
         },
     )
-
     career_track_courses: List['CareerTrackCourse'] = Relationship(
-        back_populates='course',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
+        back_populates='course', cascade_delete=True
+    )
+    progress: List['UserProgress'] = Relationship(
+        back_populates='course', cascade_delete=True
     )
 
-    progress: List['UserProgress'] = Relationship(
-        back_populates='course',
-        sa_relationship_kwargs={'cascade': 'all, delete-orphan'},
-    )
+
+class CourseCreate(CourseBase):
+    pass
+
+
+class CourseUpdate(BaseSchema):
+    pass
+
+
+class CoursePublic(CourseBase, BaseModelSchema):
+    pass
