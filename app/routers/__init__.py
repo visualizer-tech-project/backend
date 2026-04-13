@@ -1,4 +1,4 @@
-from app.routers.career_tracks import router as career_tracks_router
+from app.routers.careertrack import router as career_tracks_router
 from app.routers.courses import router as courses_router
 from app.routers.programs import router as programs_router
 from app.routers.progress import router as progress_router
