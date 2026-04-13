@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, List, Optional
-from pydantic import computed_field
+from pydantic import computed_field, ConfigDict
 from sqlmodel import Field, Column, Relationship, Text, UniqueConstraint
 
 from app.core.constants import TITLE_FIELD_CONFIG
@@ -46,7 +46,9 @@ class CareerTrackCreate(CareerTrackBase):
 
 
 class CareerTrackUpdate(CareerTrackBase):
-    pass
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
+    description: Optional[str] = None
+    user_id: Optional[int] = Field(None, foreign_key="users.id")
 
 
 class CareerTrackPublic(CareerTrackBase, BaseModelSchema):
@@ -62,6 +64,10 @@ class TrackCourseItem(BaseSchema):
     order_index: int
     course: 'CoursePublic'
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class CareerTrackWithCourses(CareerTrackPublic):
     courses: List[TrackCourseItem] = []
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

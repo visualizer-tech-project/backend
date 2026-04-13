@@ -2,7 +2,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship
-from app.core.constants import NAME_FIELD_CONFIG  # если вынесли в константы
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.careertrack import (
@@ -7,8 +5,9 @@ from app.models.careertrack import (
     CareerTrackPublic,
     CareerTrackUpdate,
     CareerTrackCoursePublic,
+    TrackCourseItem,
 )
-from app.schemas.careertrack import AddCourseToTrack, TrackCourseItem
+from app.schemas.careertrack import AddCourseToTrack
 from app.schemas.filters import CareerTrackFilters
 from app.repositories.careertrack import CareerTrackRepository
 from app.repositories.course import CourseRepository

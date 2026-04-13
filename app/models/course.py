@@ -2,14 +2,14 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 from sqlmodel import Field, Column, Relationship, Text
 
-from app.core.constants import TITLE_FIELD_CONFIG, TITLE_MAX_LENGTH
+from app.core.constants import TITLE_FIELD_CONFIG
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.careertrack import CareerTrackCourse
     from app.models.prerequisite import Prerequisite
-    from app.models.program import Program, ProgramPublic
-    from app.models.user import User, UserPublic
+    from app.models.program import Program
+    from app.models.user import User
     from app.models.userprogress import UserProgress
 
 
@@ -22,7 +22,6 @@ class CourseBase(BaseSchema):
     title: str = Field(
         unique=True,
         index=True,
-        max_length=TITLE_MAX_LENGTH,
         nullable=False,
         **TITLE_FIELD_CONFIG
     )
@@ -30,13 +29,13 @@ class CourseBase(BaseSchema):
     type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
     program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
-    program: 'Program' = Relationship(back_populates='courses')
-    user: 'User' = Relationship(back_populates='courses')
 
 
 class Course(CourseBase, BaseSQLModel, table=True):
     __tablename__ = 'courses'
 
+    program: 'Program' = Relationship(back_populates='courses')
+    user: 'User' = Relationship(back_populates='courses')
     prerequisites: List['Prerequisite'] = Relationship(
         back_populates='course',
         sa_relationship_kwargs={
@@ -64,7 +63,11 @@ class CourseCreate(CourseBase):
 
 
 class CourseUpdate(BaseSchema):
-    pass
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
+    description: Optional[str] = None
+    type: Optional[CourseType] = None
+    program_id: Optional[int] = Field(None, foreign_key='programs.id')
+    user_id: Optional[int] = Field(None, foreign_key='users.id')
 
 
 class CoursePublic(CourseBase, BaseModelSchema):

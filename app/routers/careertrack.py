@@ -7,8 +7,9 @@ from app.models.careertrack import (
     CareerTrackPublic,
     CareerTrackUpdate,
     CareerTrackCoursePublic,
+    TrackCourseItem,
 )
-from app.schemas.careertrack import AddCourseToTrack, TrackCourseItem
+from app.schemas.careertrack import AddCourseToTrack
 from app.schemas.filters import CareerTrackFilters
 from app.services.careertrack import CareerTrackService
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
