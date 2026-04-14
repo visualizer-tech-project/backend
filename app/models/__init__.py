@@ -1,30 +1,34 @@
-from app.models.base import BaseSQLModel, BaseModelSchema, BaseSchema, PaginationInfo, ListResponse
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema, PaginationInfo, ListResponse
 from app.models.user import User, UserRole, UserCreate, UserUpdate, UserPublic
 from app.models.program import Program, ProgramCreate, ProgramUpdate, ProgramPublic
 from app.models.course import Course, CourseType, CourseCreate, CourseUpdate, CoursePublic
 from app.models.prerequisite import Prerequisite, PrerequisiteCreate, PrerequisitePublic
 from app.models.careertrack import (
     CareerTrack, CareerTrackCourse, CareerTrackCreate, CareerTrackUpdate,
-    CareerTrackPublic, CareerTrackCoursePublic, CareerTrackWithCourses, TrackCourseItem,
+    CareerTrackCoursePublic, CareerTrackPublic, CareerTrackWithCourses, TrackCourseItem,
 )
 from app.models.userprogress import (
     UserProgress, ProgressStatus, ProgressCreate, ProgressUpdate, UserProgressPublic,
 )
+from app.models.refresh_session import RefreshSession  # ДОБАВИТЬ
+
+UserPublic.model_rebuild()
+ProgramPublic.model_rebuild()
+CoursePublic.model_rebuild()
+PrerequisitePublic.model_rebuild()
+CareerTrackPublic.model_rebuild()
+TrackCourseItem.model_rebuild()
+CareerTrackWithCourses.model_rebuild()
+UserProgressPublic.model_rebuild()
 
 __all__ = [
-    # base
-    'BaseSQLModel', 'BaseModelSchema', 'BaseSchema', 'PaginationInfo', 'ListResponse',
-    # user
+    'BaseSQLModel', 'BaseSchema', 'BaseModelSchema', 'PaginationInfo', 'ListResponse',
     'User', 'UserRole', 'UserCreate', 'UserUpdate', 'UserPublic',
-    # program
     'Program', 'ProgramCreate', 'ProgramUpdate', 'ProgramPublic',
-    # course
     'Course', 'CourseType', 'CourseCreate', 'CourseUpdate', 'CoursePublic',
-    # prerequisite
     'Prerequisite', 'PrerequisiteCreate', 'PrerequisitePublic',
-    # careertrack
     'CareerTrack', 'CareerTrackCourse', 'CareerTrackCreate', 'CareerTrackUpdate',
-    'CareerTrackPublic', 'CareerTrackCoursePublic', 'CareerTrackWithCourses', 'TrackCourseItem',
-    # userprogress
+    'CareerTrackCoursePublic', 'CareerTrackPublic', 'CareerTrackWithCourses', 'TrackCourseItem',
     'UserProgress', 'ProgressStatus', 'ProgressCreate', 'ProgressUpdate', 'UserProgressPublic',
+    'RefreshSession',  # ДОБАВИТЬ
 ]

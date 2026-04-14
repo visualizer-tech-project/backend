@@ -1,12 +1,14 @@
 from enum import Enum
-from typing import Optional
-
+from typing import TYPE_CHECKING, Optional
 from pydantic import EmailStr
-from sqlmodel import Field
-from sqlmodel import Relationship
+from sqlmodel import Field, Relationship
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
-
+if TYPE_CHECKING:
+    from app.models.program import Program
+    from app.models.course import Course
+    from app.models.userprogress import UserProgress
+    from app.models.careertrack import CareerTrack
 
 
 class UserRole(str, Enum):
@@ -15,14 +17,17 @@ class UserRole(str, Enum):
     TEACHER = 'teacher'
 
 
-class User(BaseSQLModel, table=True):
+class UserBase(BaseSchema):
+    email: EmailStr = Field(max_length=255, unique=True, index=True)
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(max_length=100)
+    role: UserRole = Field(default=UserRole.STUDENT)
+
+
+class User(UserBase, BaseSQLModel, table=True):
     __tablename__ = 'users'
 
-    email: str = Field(unique=True, index=True, max_length=255, nullable=False)
     hashed_password: str = Field(nullable=False)
-    first_name: str = Field(max_length=100, nullable=False)
-    last_name: str = Field(max_length=100, nullable=False)
-    role: UserRole = Field(default=UserRole.STUDENT, nullable=False)
 
     programs: list['Program'] = Relationship(back_populates='user', cascade_delete=True)
     courses: list['Course'] = Relationship(back_populates='user', cascade_delete=True)
@@ -30,26 +35,15 @@ class User(BaseSQLModel, table=True):
     career_tracks: list['CareerTrack'] = Relationship(back_populates='user', cascade_delete=True)
 
 
-
-class UserCreate(BaseSchema):
-    """Для создания пользователя"""
-    email: EmailStr = Field(..., max_length=255)
-    password: str = Field(..., min_length=6, max_length=128)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    role: UserRole = Field(default=UserRole.STUDENT)
+class UserCreate(UserBase):
+    hashed_password: str = Field(..., min_length=6, max_length=128, description='Хэш пароля')
 
 
 class UserUpdate(BaseSchema):
-    """Для обновления пользователя"""
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    role: Optional[UserRole] = Field(None)
+    role: Optional[UserRole] = None
 
 
-class UserPublic(BaseModelSchema):
-    """Публичный ответ о пользователе"""
-    email: EmailStr
-    first_name: str
-    last_name: str
-    role: UserRole
+class UserPublic(UserBase, BaseModelSchema):
+    pass

@@ -1,47 +1,33 @@
-from typing import List, Optional
-
 from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.careertrack import (
-    CareerTrackCoursePublic,
     CareerTrackCreate,
     CareerTrackPublic,
     CareerTrackUpdate,
+    CareerTrackCoursePublic,
+    TrackCourseItem,
 )
-from app.schemas.careertrack import AddCourseToTrack, TrackCourseItem
+from app.schemas.careertrack import AddCourseToTrack
 from app.schemas.filters import CareerTrackFilters
-from app.repositories.base import FilterCondition
 from app.repositories.careertrack import CareerTrackRepository
 from app.repositories.course import CourseRepository
+from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 
 
 class CareerTrackService:
     def __init__(
-        self,
-        track_repo: CareerTrackRepository,
-        course_repo: CourseRepository,
+            self,
+            track_repo: CareerTrackRepository,
+            course_repo: CourseRepository,
     ) -> None:
         self._track_repo = track_repo
         self._course_repo = course_repo
 
     async def get_tracks(
-        self,
-        filters: CareerTrackFilters,
+            self,
+            filters: CareerTrackFilters,
     ) -> ListResponse[CareerTrackPublic]:
-        filter_conditions = []
-        if filters.title:
-            filter_conditions.append(FilterCondition('title', filters.title))
-
-        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
-
-        result = await self._track_repo.get_paginated(
-            page=page,
-            limit=filters.limit,
-            filters=filter_conditions if filter_conditions else None,
-            order_by='created_at',
-            descending=True,
-        )
-
+        result = await self._track_repo.get_filtered_paginated(filters)
         result.items = [CareerTrackPublic.model_validate(item) for item in result.items]
         return result
 
@@ -52,18 +38,22 @@ class CareerTrackService:
         return CareerTrackPublic.model_validate(track)
 
     async def get_track_courses(
-        self,
-        track_id: int,
-        skip: int = 0,
-        limit: Optional[int] = None,
-    ) -> List[TrackCourseItem]:
+            self,
+            track_id: int,
+            skip: int = DEFAULT_SKIP,
+            limit: int = DEFAULT_LIMIT,
+    ) -> list[TrackCourseItem]:
         track = await self._track_repo.get_by_id(track_id)
         if not track:
             raise ValueError('Career track not found')
 
         track_courses, _ = await self._track_repo.get_track_courses(track_id, skip, limit)
 
-        return [TrackCourseItem(career_track_course=tc) for tc in track_courses]
+        items = []
+        for tc in track_courses:
+            items.append(TrackCourseItem(career_track_course=tc))
+
+        return items
 
     async def create_track(self, track_data: CareerTrackCreate) -> CareerTrackPublic:
         existing = await self._track_repo.get_by_title(track_data.title)
@@ -78,9 +68,9 @@ class CareerTrackService:
         return CareerTrackPublic.model_validate(track)
 
     async def update_track(
-        self,
-        track_id: int,
-        track_data: CareerTrackUpdate,
+            self,
+            track_id: int,
+            track_data: CareerTrackUpdate,
     ) -> CareerTrackPublic:
         track = await self._track_repo.get_by_id(track_id)
         if not track:
@@ -103,9 +93,9 @@ class CareerTrackService:
             raise ValueError('Career track not found')
 
     async def add_course_to_track(
-        self,
-        track_id: int,
-        add_data: AddCourseToTrack,
+            self,
+            track_id: int,
+            add_data: AddCourseToTrack,
     ) -> CareerTrackCoursePublic:
         track = await self._track_repo.get_by_id(track_id)
         if not track:

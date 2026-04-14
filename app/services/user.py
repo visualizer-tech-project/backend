@@ -2,7 +2,6 @@ from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.user import UserPublic, UserUpdate, UserRole
 from app.schemas.filters import UserFilters
-from app.repositories.base import FilterCondition
 from app.repositories.user import UserRepository
 
 
@@ -11,20 +10,7 @@ class UserService:
         self._user_repo = user_repo
 
     async def get_users(self, filters: UserFilters) -> ListResponse[UserPublic]:
-        filter_conditions = []
-        if filters.role:
-            filter_conditions.append(FilterCondition('role', filters.role))
-
-        page = (filters.skip // filters.limit) + 1 if filters.limit else 1
-
-        result = await self._user_repo.get_paginated(
-            page=page,
-            limit=filters.limit,
-            filters=filter_conditions if filter_conditions else None,
-            order_by='created_at',
-            descending=True,
-        )
-
+        result = await self._user_repo.get_filtered_paginated(filters)
         result.items = [UserPublic.model_validate(item) for item in result.items]
         return result
 

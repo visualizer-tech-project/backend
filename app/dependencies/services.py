@@ -12,6 +12,9 @@ from app.services.course import CourseService
 from app.services.program import ProgramService
 from app.services.progress import ProgressService
 from app.services.user import UserService
+from app.services.auth import AuthService
+from app.repositories.refresh_session import RefreshSessionRepository
+
 
 
 async def get_user_repo(session: SessionDep) -> UserRepository:
@@ -50,6 +53,7 @@ async def get_program_service(
 ) -> ProgramService:
     return ProgramService(program_repo, course_repo)
 
+
 async def get_course_service(
     course_repo: CourseRepository = Depends(get_course_repo),
     program_repo: ProgramRepository = Depends(get_program_repo),
@@ -71,3 +75,12 @@ async def get_progress_service(
     user_repo: UserRepository = Depends(get_user_repo),
 ) -> ProgressService:
     return ProgressService(progress_repo, course_repo, user_repo)
+
+async def get_refresh_session_repo(session: SessionDep) -> RefreshSessionRepository:
+    return RefreshSessionRepository(session)
+
+async def get_auth_service(
+    user_repo: UserRepository = Depends(get_user_repo),
+    refresh_session_repo: RefreshSessionRepository = Depends(get_refresh_session_repo),
+) -> AuthService:
+    return AuthService(user_repo, refresh_session_repo)

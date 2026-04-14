@@ -20,7 +20,7 @@ class ReorderCourses(BaseSchema):
     course_ids: List[int]
 
 
-class TrackCourseItem(BaseSchema):
+class TrackCourseItemWithDetails(BaseSchema):
     career_track_course: Any = Field(..., exclude=True)
 
     @computed_field

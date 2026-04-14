@@ -1,10 +1,9 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
+from sqlmodel import Field, Column, Relationship, Text
 
-from sqlmodel import Column, Relationship, Text
-from sqlmodel import Field
-
-from app.models.base import BaseModelSchema, BaseSchema, BaseSQLModel
+from app.core.constants import TITLE_FIELD_CONFIG
+from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.careertrack import CareerTrackCourse
@@ -19,14 +18,21 @@ class CourseType(str, Enum):
     ELECTIVE = 'elective'
 
 
-class Course(BaseSQLModel, table=True):
-    __tablename__ = 'courses'
-
-    title: str = Field(unique=True, index=True, max_length=255, nullable=False)
-    description: str = Field(sa_column=Column(Text, nullable=True))
-    program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
+class CourseBase(BaseSchema):
+    title: str = Field(
+        unique=True,
+        index=True,
+        nullable=False,
+        **TITLE_FIELD_CONFIG
+    )
+    description: Optional[str] = Field(sa_column=Column(Text, nullable=True))
     type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
+    program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
+
+
+class Course(CourseBase, BaseSQLModel, table=True):
+    __tablename__ = 'courses'
 
     program: 'Program' = Relationship(back_populates='courses')
     user: 'User' = Relationship(back_populates='courses')
@@ -52,22 +58,17 @@ class Course(BaseSQLModel, table=True):
     )
 
 
-class CourseCreate(BaseSchema):
-    title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-    type: CourseType
-    program_id: int = Field(..., gt=0)
+class CourseCreate(CourseBase):
+    pass
 
 
 class CourseUpdate(BaseSchema):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None)
-    type: Optional[CourseType] = Field(None)
-
-
-class CoursePublic(BaseModelSchema):
-    title: str
+    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
     description: Optional[str] = None
-    type: CourseType
-    program_id: int
-    user_id: int
+    type: Optional[CourseType] = None
+    program_id: Optional[int] = Field(None, foreign_key='programs.id')
+    user_id: Optional[int] = Field(None, foreign_key='users.id')
+
+
+class CoursePublic(CourseBase, BaseModelSchema):
+    pass

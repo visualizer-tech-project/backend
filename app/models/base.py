@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
-from typing import Generic, TypeVar
-from typing import Optional
+from typing import Generic, Optional, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func
 from sqlmodel import Field, SQLModel
+
+T = TypeVar('T', bound=SQLModel)
 
 
 class BaseSQLModel(SQLModel):
@@ -23,18 +24,12 @@ class BaseSQLModel(SQLModel):
     )
 
 
-class BaseModelSchema(BaseModel):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
+class BaseSchema(SQLModel):
+    model_config = ConfigDict(from_attributes=True)
 
 
-class BaseSchema(BaseModel):
-    class Config:
-        from_attributes = True
+class BaseModelSchema(BaseSchema, BaseSQLModel):
+    pass
 
 
 class PaginationInfo(SQLModel):
@@ -43,8 +38,8 @@ class PaginationInfo(SQLModel):
     total: int
 
 
-T = TypeVar('T')
-
 class ListResponse(BaseModel, Generic[T]):
     info: PaginationInfo
     items: list[T]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

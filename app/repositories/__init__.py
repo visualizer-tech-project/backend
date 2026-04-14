@@ -5,6 +5,7 @@ from app.repositories.prerequisite import PrerequisiteRepository
 from app.repositories.program import ProgramRepository
 from app.repositories.user import UserRepository
 from app.repositories.userprogress import UserProgressRepository
+from app.repositories.refresh_session import RefreshSessionRepository
 
 __all__ = [
     'BaseRepository',
@@ -14,4 +15,5 @@ __all__ = [
     'PrerequisiteRepository',
     'CareerTrackRepository',
     'UserProgressRepository',
+    'RefreshSessionRepository',
 ]

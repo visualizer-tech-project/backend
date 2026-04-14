@@ -37,7 +37,10 @@ uv
 | DB_USER             | string | Имя пользователя базы данных    |                       |
 | DB_PASSWORD         | string | Пароль пользователя базы данных |                       |
 | DB_NAME             | string | Имя базы данных                 |                       |
-
+| JWT_SECRET_KEY      | string | Секретный ключ для JWT (мин. 32 символа) |  |
+| JWT_ALGORITHM       | string | Алгоритм шифрования JWT         | HS256                 |
+| ACCESS_TOKEN_EXPIRE_MINUTES | int | Время жизни access токена в минутах | 15 |
+| REFRESH_TOKEN_EXPIRE_DAYS | int | Время жизни refresh токена в днях | 7 |
 
 Для запуска скопируйте `.env.example` в `.env` и заполните значения:
 ```bash```
