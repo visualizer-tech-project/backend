@@ -10,7 +10,7 @@ from app.models.careertrack import (
 from app.models.userprogress import (
     UserProgress, ProgressStatus, ProgressCreate, ProgressUpdate, UserProgressPublic,
 )
-from app.models.refresh_session import RefreshSession  # ДОБАВИТЬ
+from app.models.refresh_session import RefreshSession
 
 UserPublic.model_rebuild()
 ProgramPublic.model_rebuild()
@@ -30,5 +30,5 @@ __all__ = [
     'CareerTrack', 'CareerTrackCourse', 'CareerTrackCreate', 'CareerTrackUpdate',
     'CareerTrackCoursePublic', 'CareerTrackPublic', 'CareerTrackWithCourses', 'TrackCourseItem',
     'UserProgress', 'ProgressStatus', 'ProgressCreate', 'ProgressUpdate', 'UserProgressPublic',
-    'RefreshSession',  # ДОБАВИТЬ
+    'RefreshSession',
 ]

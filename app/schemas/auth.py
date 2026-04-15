@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, computed_field
+
+from app.models.user import UserRole
 
 
 class AuthBase(BaseModel):
@@ -41,4 +43,4 @@ class UserInfoBase(BaseModel):
 
 
 class MeResponse(UserInfoBase):
-    role: str = Field(..., description='Роль пользователя')
+    role: UserRole = Field(..., description='Роль пользователя')

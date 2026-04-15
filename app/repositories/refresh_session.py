@@ -2,10 +2,11 @@ from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, update
+from sqlmodel import update
 
 from app.models.refresh_session import RefreshSession
 from app.repositories.base import BaseRepository
+from app.core.constants import DEFAULT_LIMIT
 
 
 class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
@@ -13,19 +14,21 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
         super().__init__(RefreshSession, session)
 
     async def get_by_jti(self, jti: str) -> Optional[RefreshSession]:
-        query = select(RefreshSession).where(RefreshSession.jti == jti)
-        result = await self.session.exec(query)
-        return result.first()
+        filters = self._create_filter_conditions_from_dict({'jti': jti})
+        items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
+        return items[0] if items else None
 
     async def get_valid_by_user_id(self, user_id: int) -> List[RefreshSession]:
-        query = (
-            select(RefreshSession)
-            .where(RefreshSession.user_id == user_id)
-            .where(RefreshSession.is_valid == True)
-            .where(RefreshSession.expires_at > datetime.now(timezone.utc))
-        )
-        result = await self.session.exec(query)
-        return result.all()
+        filters = self._create_filter_conditions_from_dict({
+            'user_id': user_id,
+            'is_valid': True,
+        })
+        items, _ = await self.get_all(filters=filters)
+        valid_items = [
+            item for item in items
+            if item.expires_at > datetime.now(timezone.utc)
+        ]
+        return valid_items
 
     async def create_session(
         self,

@@ -106,3 +106,9 @@ def raise_conflict(detail: str = 'Resource already exists') -> None:
         status_code=status.HTTP_409_CONFLICT,
         detail=detail
     )
+
+def raise_server_error(detail: str = 'Internal server error') -> None:
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=detail
+    )

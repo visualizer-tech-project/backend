@@ -1,10 +1,9 @@
-import json
-
-from fastapi import APIRouter, Depends, Response, Request, status
+from fastapi import APIRouter, Depends, Response, Request, status, Cookie
 
 from app.core import responses
+from app.core.security import oauth2_scheme
 from app.dependencies.services import get_auth_service
-from app.models.user import UserPublic
+from app.models.user import User
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -14,7 +13,6 @@ from app.schemas.auth import (
     MeResponse,
 )
 from app.services.auth import AuthService
-from app.core.auth import jwt_bearer
 from app.core.constants import REFRESH_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_MAX_AGE
 
 router = APIRouter(prefix='/auth', tags=['auth'])
@@ -40,13 +38,9 @@ def clear_refresh_token_cookie(response: Response) -> None:
     )
 
 
-def get_refresh_token_from_cookie(request: Request) -> str | None:
-    return request.cookies.get(REFRESH_TOKEN_COOKIE_NAME)
-
-
 @router.post(
     '/register',
-    response_model=UserPublic,
+    response_model=User,
     status_code=status.HTTP_201_CREATED,
     responses={
         **responses.bad_request_responses,
@@ -57,10 +51,10 @@ def get_refresh_token_from_cookie(request: Request) -> str | None:
 async def register(
     register_data: RegisterRequest,
     auth_service: AuthService = Depends(get_auth_service),
-) -> UserPublic:
+) -> User:
     try:
         user = await auth_service.register(register_data)
-        return UserPublic.model_validate(user)
+        return user
     except ValueError as e:
         if 'already exists' in str(e):
             responses.raise_conflict(str(e))
@@ -76,13 +70,10 @@ async def register(
     }
 )
 async def login(
-    request: Request,
     response: Response,
+    login_data: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    body = await request.body()
-    login_data = LoginRequest(**json.loads(body))
-
     try:
         token_response = await auth_service.login(login_data)
         set_refresh_token_cookie(response, token_response.refresh_token)
@@ -100,12 +91,10 @@ async def login(
     }
 )
 async def refresh_token(
-    request: Request,
     response: Response,
+    refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> RefreshResponse:
-    refresh_token = get_refresh_token_from_cookie(request)
-
     if not refresh_token:
         responses.raise_unauthorized('Refresh token not found')
 
@@ -114,7 +103,6 @@ async def refresh_token(
         set_refresh_token_cookie(response, refresh_response.refresh_token)
         return refresh_response
     except ValueError as e:
-        clear_refresh_token_cookie(response)
         responses.raise_unauthorized(str(e))
 
 
@@ -124,22 +112,21 @@ async def refresh_token(
     responses={**responses.common_responses}
 )
 async def logout(
-    request: Request,
-    response: Response,
+    refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> LogoutResponse:
-    refresh_token = get_refresh_token_from_cookie(request)
-
-    clear_refresh_token_cookie(response)
-
     if not refresh_token:
         return LogoutResponse(success=True)
 
     try:
         success = await auth_service.logout(refresh_token)
-        return LogoutResponse(success=success)
+        if success:
+            response = Response()
+            clear_refresh_token_cookie(response)
+            return LogoutResponse(success=True)
+        return LogoutResponse(success=False)
     except Exception:
-        return LogoutResponse(success=True)
+        responses.raise_server_error()
 
 
 @router.get(
@@ -151,18 +138,11 @@ async def logout(
     }
 )
 async def get_me(
-    token: str = Depends(jwt_bearer),
+    token: str = Depends(oauth2_scheme),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> MeResponse:
     user = await auth_service.get_user_from_access_token(token)
-
     if not user:
         responses.raise_unauthorized('Invalid or expired token')
 
-    return MeResponse(
-        id=user.id,
-        email=user.email,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        role=user.role.value,
-    )
+    return MeResponse.model_validate(user)

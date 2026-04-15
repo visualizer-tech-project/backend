@@ -46,8 +46,6 @@ class CareerTrackCreate(CareerTrackBase):
 
 
 class CareerTrackUpdate(CareerTrackBase):
-    title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
-    description: Optional[str] = None
     user_id: Optional[int] = Field(None, foreign_key="users.id")
 
 

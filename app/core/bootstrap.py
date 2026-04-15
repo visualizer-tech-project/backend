@@ -3,7 +3,7 @@ from typing import Set
 
 from app.core.rbac import INITIAL_SUBJECTS, INITIAL_ACTIONS, INITIAL_PERMISSION_SCHEMA
 from app.core.settings import settings
-from app.core.security import hash_password
+from app.core.hasher import hash_password
 from app.models.user import User, UserCreate, UserRole
 from app.services.permission import PermissionService
 from app.services.role import RoleService
