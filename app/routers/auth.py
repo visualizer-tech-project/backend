@@ -1,7 +1,8 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi import APIRouter, Depends, Response, Request, status
 
+from app.core import responses
 from app.dependencies.services import get_auth_service
 from app.models.user import UserPublic
 from app.schemas.auth import (
@@ -43,7 +44,16 @@ def get_refresh_token_from_cookie(request: Request) -> str | None:
     return request.cookies.get(REFRESH_TOKEN_COOKIE_NAME)
 
 
-@router.post('/register', response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/register',
+    response_model=UserPublic,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        **responses.bad_request_responses,
+        **responses.conflict_responses,
+        **responses.common_responses,
+    }
+)
 async def register(
     register_data: RegisterRequest,
     auth_service: AuthService = Depends(get_auth_service),
@@ -53,11 +63,18 @@ async def register(
         return UserPublic.model_validate(user)
     except ValueError as e:
         if 'already exists' in str(e):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+            responses.raise_conflict(str(e))
+        responses.raise_bad_request(str(e))
 
 
-@router.post('/login', response_model=TokenResponse)
+@router.post(
+    '/login',
+    response_model=TokenResponse,
+    responses={
+        **responses.auth_responses,
+        **responses.common_responses,
+    }
+)
 async def login(
     request: Request,
     response: Response,
@@ -71,10 +88,17 @@ async def login(
         set_refresh_token_cookie(response, token_response.refresh_token)
         return token_response
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        responses.raise_unauthorized(str(e))
 
 
-@router.post('/refresh', response_model=RefreshResponse)
+@router.post(
+    '/refresh',
+    response_model=RefreshResponse,
+    responses={
+        **responses.auth_responses,
+        **responses.common_responses,
+    }
+)
 async def refresh_token(
     request: Request,
     response: Response,
@@ -83,10 +107,7 @@ async def refresh_token(
     refresh_token = get_refresh_token_from_cookie(request)
 
     if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Refresh token not found',
-        )
+        responses.raise_unauthorized('Refresh token not found')
 
     try:
         refresh_response = await auth_service.refresh(refresh_token)
@@ -94,10 +115,14 @@ async def refresh_token(
         return refresh_response
     except ValueError as e:
         clear_refresh_token_cookie(response)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        responses.raise_unauthorized(str(e))
 
 
-@router.post('/logout', response_model=LogoutResponse)
+@router.post(
+    '/logout',
+    response_model=LogoutResponse,
+    responses={**responses.common_responses}
+)
 async def logout(
     request: Request,
     response: Response,
@@ -117,7 +142,14 @@ async def logout(
         return LogoutResponse(success=True)
 
 
-@router.get('/me', response_model=MeResponse)
+@router.get(
+    '/me',
+    response_model=MeResponse,
+    responses={
+        **responses.auth_responses,
+        **responses.common_responses,
+    }
+)
 async def get_me(
     token: str = Depends(jwt_bearer),
     auth_service: AuthService = Depends(get_auth_service),
@@ -125,10 +157,7 @@ async def get_me(
     user = await auth_service.get_user_from_access_token(token)
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Invalid or expired token',
-        )
+        responses.raise_unauthorized('Invalid or expired token')
 
     return MeResponse(
         id=user.id,

@@ -2,11 +2,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core import settings
 from app.core.auth import JWTHandler
 from app.core.security import hash_password, verify_password
-from app.models.user import User, UserCreate
+from app.models.user import User, UserCreate, UserRole
 from app.repositories.user import UserRepository
 from app.repositories.refresh_session import RefreshSessionRepository
+from app.repositories.role import RoleRepository
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, RefreshResponse
 
 
@@ -15,9 +17,11 @@ class AuthService:
         self,
         user_repo: UserRepository,
         refresh_session_repo: RefreshSessionRepository,
+        role_repo: RoleRepository,
     ) -> None:
         self._user_repo = user_repo
         self._refresh_session_repo = refresh_session_repo
+        self._role_repo = role_repo
 
     async def register(self, register_data: RegisterRequest) -> User:
         existing_user = await self._user_repo.get_by_email(register_data.email)
@@ -28,11 +32,16 @@ class AuthService:
             email=register_data.email,
             first_name=register_data.first_name,
             last_name=register_data.last_name,
-            role=register_data.role if hasattr(register_data, 'role') else None,
+            role=UserRole.STUDENT,
             hashed_password=hash_password(register_data.password),
         )
 
         user = await self._user_repo.create(user_create)
+
+        public_role = await self._role_repo.get_by_name(settings.rbac.public_role)
+        if public_role:
+            await self._role_repo.assign_roles_to_user(user.id, [public_role.id])
+
         return user
 
     async def login(self, login_data: LoginRequest) -> TokenResponse:

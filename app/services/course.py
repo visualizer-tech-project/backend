@@ -1,4 +1,3 @@
-from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
 from app.models.prerequisite import PrerequisitePublic, PrerequisiteCreate
@@ -33,7 +32,11 @@ class CourseService:
             raise ValueError('Course not found')
         return CoursePublic.model_validate(course)
 
-    async def create_course(self, course_data: CourseCreate) -> CoursePublic:
+    async def create_course(
+            self,
+            course_data: CourseCreate,
+            user_id: int,
+    ) -> CoursePublic:
         program = await self._program_repo.get_by_id(course_data.program_id)
         if not program:
             raise ValueError('Program not found')
@@ -43,7 +46,6 @@ class CourseService:
             if existing_course.title == course_data.title:
                 raise ValueError('Course with this title already exists in program')
 
-        user_id = await get_current_user_id()
         course_dict = course_data.model_dump()
         course_dict['user_id'] = user_id
 
