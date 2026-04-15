@@ -1,4 +1,3 @@
-from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.user import UserPublic, UserUpdate, UserRole
 from app.schemas.filters import UserFilters
@@ -20,19 +19,17 @@ class UserService:
             raise ValueError('User not found')
         return UserPublic.model_validate(user)
 
-    async def update_own_profile(self, user_data: UserUpdate) -> UserPublic:
-        user_id = await get_current_user_id()
-        user = await self._user_repo.get_by_id(user_id)
-        if not user:
-            raise ValueError('User not found')
+    async def get_user_by_email(self, email: str) -> UserPublic | None:
+        user = await self._user_repo.get_by_email(email)
+        if user:
+            return UserPublic.model_validate(user)
+        return None
 
-        updated_user = await self._user_repo.update(user_id, user_data)
-        if not updated_user:
-            raise ValueError('User not found')
+    async def create_user(self, user_data) -> UserPublic:
+        user = await self._user_repo.create(user_data)
+        return UserPublic.model_validate(user)
 
-        return UserPublic.model_validate(updated_user)
-
-    async def update_user_by_admin(
+    async def update_user(
         self,
         user_id: int,
         user_data: UserUpdate,

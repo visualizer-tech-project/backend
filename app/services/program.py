@@ -1,4 +1,3 @@
-from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.program import (
     ProgramCreate,
@@ -34,12 +33,15 @@ class ProgramService:
             raise ValueError('Program not found')
         return ProgramPublic.model_validate(program)
 
-    async def create_program(self, program_data: ProgramCreate) -> ProgramPublic:
+    async def create_program(
+            self,
+            program_data: ProgramCreate,
+            user_id: int,
+    ) -> ProgramPublic:
         existing = await self._program_repo.get_by_title(program_data.title)
         if existing:
             raise ValueError('Program with this title already exists')
 
-        user_id = await get_current_user_id()
         program_dict = program_data.model_dump()
         program_dict['user_id'] = user_id
 
@@ -75,6 +77,7 @@ class ProgramService:
         self,
         program_id: int,
         copy_request: ProgramCopyRequest,
+        user_id: int,
     ) -> ProgramPublic:
         source_program = await self._program_repo.get_by_id(program_id)
         if not source_program:
@@ -83,8 +86,6 @@ class ProgramService:
         existing = await self._program_repo.get_by_title(copy_request.title)
         if existing:
             raise ValueError('Program with this title already exists')
-
-        user_id = await get_current_user_id()
 
         program_dict = source_program.model_dump(exclude={'id', 'created_at', 'updated_at'})
         program_dict['title'] = copy_request.title

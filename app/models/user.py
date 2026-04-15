@@ -1,7 +1,9 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
+
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship
+
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
 
 if TYPE_CHECKING:
@@ -9,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.userprogress import UserProgress
     from app.models.careertrack import CareerTrack
+    from app.models.role import Role
 
 
 class UserRole(str, Enum):
@@ -34,9 +37,15 @@ class User(UserBase, BaseSQLModel, table=True):
     progress: list['UserProgress'] = Relationship(back_populates='user', cascade_delete=True)
     career_tracks: list['CareerTrack'] = Relationship(back_populates='user', cascade_delete=True)
 
+    roles: List['Role'] = Relationship(
+        back_populates='users',
+        link_model='user_role',
+        sa_relationship_kwargs={'lazy': 'selectin'},
+    )
+
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, max_length=128)
+    hashed_password: str = Field(..., min_length=6, max_length=128)
 
 
 class UserUpdate(BaseSchema):

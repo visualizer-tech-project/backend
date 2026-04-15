@@ -16,3 +16,7 @@ FILTER_OPERATOR_IEXACT = 'iexact'
 
 TITLE_MAX_LENGTH = 255
 TITLE_FIELD_CONFIG = {"min_length": 1, "max_length": TITLE_MAX_LENGTH}
+
+# JWT и Cookies
+REFRESH_TOKEN_COOKIE_NAME = 'refresh_token'
+REFRESH_TOKEN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60

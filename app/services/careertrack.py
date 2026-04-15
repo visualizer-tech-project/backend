@@ -1,4 +1,3 @@
-from app.dependencies.current_user import get_current_user_id
 from app.models.base import ListResponse
 from app.models.careertrack import (
     CareerTrackCreate,
@@ -55,12 +54,15 @@ class CareerTrackService:
 
         return items
 
-    async def create_track(self, track_data: CareerTrackCreate) -> CareerTrackPublic:
+    async def create_track(
+            self,
+            track_data: CareerTrackCreate,
+            user_id: int,
+    ) -> CareerTrackPublic:
         existing = await self._track_repo.get_by_title(track_data.title)
         if existing:
             raise ValueError('Track with this title already exists')
 
-        user_id = await get_current_user_id()
         track_dict = track_data.model_dump()
         track_dict['user_id'] = user_id
 
