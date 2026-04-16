@@ -1,82 +1,108 @@
-import uuid
 from typing import List, Optional
 
-from app.models.role import RolePublic, RoleCreate, RoleUpdate
+from sqlmodel import delete, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.models.role import Role, RoleCreate, RoleUpdate, UserRoleMapping
+from app.models.permission import RolePermissionMapping
 from app.repositories.role import RoleRepository
 from app.repositories.permission import PermissionRepository
 
 
 class RoleService:
     def __init__(
-        self,
-        role_repository: RoleRepository,
-        permission_repository: PermissionRepository,
+            self,
+            role_repository: RoleRepository,
+            permission_repository: PermissionRepository,
+            session: AsyncSession,
     ):
         self._role_repository = role_repository
         self._permission_repository = permission_repository
+        self._session = session
 
-    async def get_roles(self) -> List[RolePublic]:
-        roles = await self._role_repository.get_all()
-        result = []
-        for role in roles:
-            await self._role_repository.session.refresh(role, ['permissions'])
-            result.append(RolePublic.model_validate(role))
-        return result
+    async def _parse_scope_aliases(self, scope_aliases: List[str]) -> List[int]:
+        permission_ids = []
+        for alias in scope_aliases:
+            parts = alias.split(':', 1)
+            if len(parts) == 2:
+                subject, action = parts
+                perm = await self._permission_repository.get_or_create(subject, action)
+                permission_ids.append(perm.id)
+        return permission_ids
 
-    async def get_role_by_id(self, role_id: uuid.UUID) -> Optional[RolePublic]:
-        role = await self._role_repository.get_with_permissions(role_id)
+    async def _set_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
+
+        await self._session.exec(
+            delete(RolePermissionMapping).where(RolePermissionMapping.role_id == role_id)
+        )
+
+        for perm_id in permission_ids:
+            mapping = RolePermissionMapping(role_id=role_id, permission_id=perm_id)
+            self._session.add(mapping)
+
+        await self._session.commit()
+
+    async def _assign_roles_to_user(self, user_id: int, role_ids: List[int]) -> None:
+        await self._session.exec(
+            delete(UserRoleMapping).where(UserRoleMapping.user_id == user_id)
+        )
+
+        for role_id in role_ids:
+            mapping = UserRoleMapping(user_id=user_id, role_id=role_id)
+            self._session.add(mapping)
+
+        await self._session.commit()
+
+    async def _get_role_with_permissions(self, role_id: int) -> Optional[Role]:
+        query = select(Role).where(Role.id == role_id)
+        result = await self._session.exec(query)
+        role = result.first()
         if role:
-            return RolePublic.model_validate(role)
-        return None
+            await self._session.refresh(role, ['permissions'])
+        return role
 
-    async def get_role_by_name(self, name: str) -> Optional[RolePublic]:
+    async def get_roles(self) -> List[Role]:
+        roles, _ = await self._role_repository.get_all()
+        return roles
+
+    async def get_role_by_id(self, role_id: int) -> Optional[Role]:
+        return await self._get_role_with_permissions(role_id)
+
+    async def get_role_by_name(self, name: str) -> Optional[Role]:
         role = await self._role_repository.get_by_name(name)
         if role:
-            await self._role_repository.session.refresh(role, ['permissions'])
-            return RolePublic.model_validate(role)
-        return None
+            await self._session.refresh(role, ['permissions'])
+        return role
 
-    async def create_role(self, role_data: RoleCreate) -> RolePublic:
+    async def create_role(self, role_data: RoleCreate) -> Role:
         role = await self._role_repository.create(role_data)
 
         if role_data.scope_aliases:
-            permission_ids = []
-            for alias in role_data.scope_aliases:
-                parts = alias.split(':', 1)
-                if len(parts) == 2:
-                    subject, action = parts
-                    perm = await self._permission_repository.get_or_create(subject, action)
-                    permission_ids.append(perm.id)
-            await self._role_repository.set_permissions(role.id, permission_ids)
+            permission_ids = await self._parse_scope_aliases(role_data.scope_aliases)
+            await self._set_role_permissions(role.id, permission_ids)
 
-        await self._role_repository.session.refresh(role, ['permissions'])
-        return RolePublic.model_validate(role)
+        return await self._get_role_with_permissions(role.id)
 
-    async def update_role(self, role_id: uuid.UUID, role_data: RoleUpdate) -> Optional[RolePublic]:
+    async def update_role(self, role_id: int, role_data: RoleUpdate) -> Optional[Role]:
         role = await self._role_repository.update(role_id, role_data)
         if not role:
             return None
 
-        if role_data.scope_aliases:
-            permission_ids = []
-            for alias in role_data.scope_aliases:
-                parts = alias.split(':', 1)
-                if len(parts) == 2:
-                    subject, action = parts
-                    perm = await self._permission_repository.get_or_create(subject, action)
-                    permission_ids.append(perm.id)
-            await self._role_repository.set_permissions(role.id, permission_ids)
+        if role_data.scope_aliases is not None:
+            if role_data.scope_aliases:
+                permission_ids = await self._parse_scope_aliases(role_data.scope_aliases)
+                await self._set_role_permissions(role.id, permission_ids)
+            else:
+                await self._set_role_permissions(role.id, [])
 
-        await self._role_repository.session.refresh(role, ['permissions'])
-        return RolePublic.model_validate(role)
+        return await self._get_role_with_permissions(role.id)
 
-    async def delete_role(self, role_id: uuid.UUID) -> bool:
+    async def delete_role(self, role_id: int) -> bool:
         return await self._role_repository.delete(role_id)
 
-    async def assign_roles_to_user(self, user_id: int, role_ids: List[uuid.UUID]) -> None:
-        await self._role_repository.assign_roles_to_user(user_id, role_ids)
+    async def assign_roles_to_user(self, user_id: int, role_ids: List[int]) -> None:
+        await self._assign_roles_to_user(user_id, role_ids)
 
-    async def get_or_create_role(self, name: str, description: Optional[str] = None) -> RolePublic:
+    async def get_or_create_role(self, name: str, description: Optional[str] = None) -> Role:
         role = await self._role_repository.get_or_create(name, description)
-        await self._role_repository.session.refresh(role, ['permissions'])
-        return RolePublic.model_validate(role)
+        return await self._get_role_with_permissions(role.id)

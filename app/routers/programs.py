@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Security, status
 
-from app.core import responses
+from app.core import exceptions, responses
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_program_service
 from app.models.base import ListResponse
@@ -31,7 +31,7 @@ async def get_programs(
     ] = None,
 ) -> ListResponse[ProgramPublic]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     return await service.get_programs(filters)
 
 
@@ -53,11 +53,11 @@ async def get_program_by_id(
     ] = None,
 ) -> ProgramPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.get_program_by_id(program_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.post(
@@ -79,11 +79,11 @@ async def create_program(
     ] = None,
 ) -> ProgramPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.create_program(program_data, current_user.id)
     except ValueError as e:
-        responses.raise_bad_request(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.put(
@@ -106,13 +106,13 @@ async def update_program(
     ] = None,
 ) -> ProgramPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.update_program(program_id, program_data)
     except ValueError as e:
-        if 'not found' in str(e):
-            responses.raise_not_found(detail=str(e))
-        responses.raise_bad_request(str(e))
+        if 'not found' in str(e).lower():
+            raise exceptions.NotFoundError(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.delete(
@@ -133,11 +133,11 @@ async def delete_program(
     ] = None,
 ) -> None:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         await service.delete_program(program_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.post(
@@ -161,10 +161,10 @@ async def copy_program(
     ] = None,
 ) -> ProgramPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.copy_program(program_id, copy_request, current_user.id)
     except ValueError as e:
-        if 'not found' in str(e):
-            responses.raise_not_found(detail=str(e))
-        responses.raise_bad_request(str(e))
+        if 'not found' in str(e).lower():
+            raise exceptions.NotFoundError(str(e))
+        raise exceptions.BadRequestError(str(e))

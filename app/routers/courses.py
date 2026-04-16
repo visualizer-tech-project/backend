@@ -2,12 +2,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Security, status
 
-from app.core import responses
-from app.core.security import get_current_user, CurrentUser
+from app.core import exceptions, responses
+from app.core.security import CurrentUser, get_current_user
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
-from app.models.prerequisite import PrerequisitePublic, PrerequisiteCreate
+from app.models.prerequisite import PrerequisiteCreate, PrerequisitePublic
 from app.schemas.filters import CourseFilters
 from app.services.course import CourseService
 
@@ -23,15 +23,15 @@ router = APIRouter(prefix='/courses', tags=['courses'])
     }
 )
 async def get_courses(
-    filters: CourseFilters = Depends(),
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:list'])
-    ] = None,
+        filters: CourseFilters = Depends(),
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:list'])
+        ] = None,
 ) -> ListResponse[CoursePublic]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     return await service.get_courses(filters)
 
 
@@ -45,19 +45,20 @@ async def get_courses(
     }
 )
 async def get_course_by_id(
-    course_id: int,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:read'])
-    ] = None,
+        course_id: int,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:read'])
+        ] = None,
 ) -> CoursePublic:
     if current_user is None:
-        responses.raise_forbidden()
-    try:
-        return await service.get_course_by_id(course_id)
-    except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.ForbiddenError()
+
+    course = await service.get_course_by_id(course_id)
+    if course is None:
+        raise exceptions.NotFoundError(f"Course with id {course_id} not found")
+    return course
 
 
 @router.post(
@@ -71,19 +72,20 @@ async def get_course_by_id(
     }
 )
 async def create_course(
-    course_data: CourseCreate,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:create'])
-    ] = None,
+        course_data: CourseCreate,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:create'])
+        ] = None,
 ) -> CoursePublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
+
     try:
         return await service.create_course(course_data, current_user.id)
     except ValueError as e:
-        responses.raise_bad_request(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.put(
@@ -97,22 +99,23 @@ async def create_course(
     }
 )
 async def update_course(
-    course_id: int,
-    course_data: CourseUpdate,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:update'])
-    ] = None,
+        course_id: int,
+        course_data: CourseUpdate,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:update'])
+        ] = None,
 ) -> CoursePublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
+
     try:
         return await service.update_course(course_id, course_data)
     except ValueError as e:
-        if 'not found' in str(e):
-            responses.raise_not_found(detail=str(e))
-        responses.raise_bad_request(str(e))
+        if 'not found' in str(e).lower():
+            raise exceptions.NotFoundError(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.delete(
@@ -125,19 +128,20 @@ async def update_course(
     }
 )
 async def delete_course(
-    course_id: int,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:delete'])
-    ] = None,
+        course_id: int,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:delete'])
+        ] = None,
 ) -> None:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
+
     try:
         await service.delete_course(course_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.get(
@@ -150,19 +154,20 @@ async def delete_course(
     }
 )
 async def get_prerequisites(
-    course_id: int,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:read'])
-    ] = None,
+        course_id: int,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:read'])
+        ] = None,
 ) -> list[CoursePublic]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
+
     try:
         return await service.get_prerequisites(course_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.post(
@@ -176,20 +181,21 @@ async def get_prerequisites(
     }
 )
 async def add_prerequisite(
-    course_id: int,
-    prerequisite_data: PrerequisiteCreate,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:update'])
-    ] = None,
+        course_id: int,
+        prerequisite_data: PrerequisiteCreate,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:update'])
+        ] = None,
 ) -> PrerequisitePublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
+
     try:
         return await service.add_prerequisite(course_id, prerequisite_data)
     except ValueError as e:
-        responses.raise_bad_request(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.delete(
@@ -202,17 +208,18 @@ async def add_prerequisite(
     }
 )
 async def remove_prerequisite(
-    course_id: int,
-    prerequisite_course_id: int,
-    service: CourseService = Depends(get_course_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['courses:update'])
-    ] = None,
+        course_id: int,
+        prerequisite_course_id: int,
+        service: CourseService = Depends(get_course_service),
+        current_user: Annotated[
+            CurrentUser,
+            Security(get_current_user, scopes=['courses:update'])
+        ] = None,
 ) -> None:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
+
     try:
         await service.remove_prerequisite(course_id, prerequisite_course_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))

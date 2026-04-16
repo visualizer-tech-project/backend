@@ -1,8 +1,9 @@
-import uuid
 from typing import TYPE_CHECKING, List, Optional
 
-from pydantic import BaseModel, computed_field
+from pydantic import computed_field
 from sqlmodel import Field, Relationship, SQLModel
+
+from app.models.base import BaseSQLModel, BaseModelSchema
 
 if TYPE_CHECKING:
     from app.models.permission import Permission
@@ -14,12 +15,8 @@ class RoleBase(SQLModel):
     description: Optional[str] = Field(default=None, max_length=255)
 
 
-class Role(RoleBase, table=True):
+class Role(RoleBase, BaseSQLModel, table=True):
     __tablename__ = 'roles'
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    created_at: Optional[str] = Field(default=None)
-    updated_at: Optional[str] = Field(default=None)
 
     permissions: List['Permission'] = Relationship(
         back_populates='roles',
@@ -34,34 +31,26 @@ class Role(RoleBase, table=True):
     )
 
 
-class RoleWithScopes(RoleBase):
-    id: uuid.UUID
+class RolePublic(RoleBase, BaseModelSchema):
 
     @computed_field
     @property
     def scopes(self) -> list[str]:
-        return list(map(lambda permission: f'{permission.subject}:{permission.action}', self.permissions))
+        return [f'{p.subject}:{p.action}' for p in self.permissions]
 
 
-class RolePublic(BaseModel, RoleWithScopes):
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-
-
-class RoleChange(RoleBase):
+class RoleCreate(RoleBase):
     scope_aliases: list[str] = []
 
 
-class RoleCreate(RoleChange):
-    pass
-
-
-class RoleUpdate(RoleChange):
+class RoleUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    scope_aliases: Optional[list[str]] = None
+
 
 class UserRoleMapping(SQLModel, table=True):
     __tablename__ = 'user_role'
 
     user_id: int = Field(foreign_key='users.id', primary_key=True)
-    role_id: uuid.UUID = Field(foreign_key='roles.id', primary_key=True)
+    role_id: int = Field(foreign_key='roles.id', primary_key=True)

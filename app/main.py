@@ -18,6 +18,7 @@ from app.routers.permission import router as permissions_router
 from app.services.user import UserService
 from app.services.permission import PermissionService
 from app.services.role import RoleService
+from app.core.exception_handlers import register_exception_handlers
 
 
 @asynccontextmanager
@@ -49,6 +50,8 @@ app = FastAPI(
     version='1.0.0',
     lifespan=lifespan
 )
+
+register_exception_handlers(app)
 
 api_v1_router = APIRouter(prefix='/api/v1')
 

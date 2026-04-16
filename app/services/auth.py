@@ -4,7 +4,7 @@ from typing import Optional
 
 from app.core import settings
 from app.core.auth import JWTHandler
-from app.core.security import hash_password, verify_password
+from app.core.hasher import hash_password, verify_password
 from app.models.user import User, UserCreate, UserRole
 from app.repositories.user import UserRepository
 from app.repositories.refresh_session import RefreshSessionRepository
@@ -22,6 +22,24 @@ class AuthService:
         self._user_repo = user_repo
         self._refresh_session_repo = refresh_session_repo
         self._role_repo = role_repo
+
+    async def _create_tokens_and_session(self, user_id: int) -> tuple[str, str]:
+        access_jti = str(uuid.uuid4())
+        refresh_jti = str(uuid.uuid4())
+
+        access_token = JWTHandler.create_access_token(user_id, access_jti)
+        refresh_token = JWTHandler.create_refresh_token(user_id, refresh_jti)
+
+        payload = JWTHandler.decode_token(refresh_token)
+        expires_at = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
+
+        await self._refresh_session_repo.create_session(
+            user_id=user_id,
+            refresh_token_jti=refresh_jti,
+            expires_at=expires_at,
+        )
+
+        return access_token, refresh_token
 
     async def register(self, register_data: RegisterRequest) -> User:
         existing_user = await self._user_repo.get_by_email(register_data.email)
@@ -52,20 +70,7 @@ class AuthService:
         if not verify_password(login_data.password, user.hashed_password):
             raise ValueError('Invalid credentials')
 
-        refresh_token_jti = str(uuid.uuid4())
-        access_token_jti = str(uuid.uuid4())
-
-        access_token = JWTHandler.create_access_token(user.id, access_token_jti)
-        refresh_token = JWTHandler.create_refresh_token(user.id, refresh_token_jti)
-
-        payload = JWTHandler.decode_token(refresh_token)
-        expires_at = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
-
-        await self._refresh_session_repo.create_session(
-            user_id=user.id,
-            refresh_token_jti=refresh_token_jti,
-            expires_at=expires_at,
-        )
+        access_token, refresh_token = await self._create_tokens_and_session(user.id)
 
         return TokenResponse(
             access_token=access_token,
@@ -76,9 +81,6 @@ class AuthService:
         payload = JWTHandler.decode_token(refresh_token)
         if not payload:
             raise ValueError('Invalid refresh token')
-
-        if JWTHandler.is_token_expired(refresh_token):
-            raise ValueError('Refresh token has expired')
 
         refresh_token_jti = payload.get('jti')
         if not refresh_token_jti:
@@ -101,23 +103,10 @@ class AuthService:
 
         await self._refresh_session_repo.invalidate_session(refresh_token_jti)
 
-        new_access_jti = str(uuid.uuid4())
-        new_refresh_jti = str(uuid.uuid4())
-
-        new_access_token = JWTHandler.create_access_token(user.id, new_access_jti)
-        new_refresh_token = JWTHandler.create_refresh_token(user.id, new_refresh_jti)
-
-        new_payload = JWTHandler.decode_token(new_refresh_token)
-        new_expires_at = datetime.fromtimestamp(new_payload['exp'], tz=timezone.utc)
-
-        await self._refresh_session_repo.create_session(
-            user_id=user.id,
-            refresh_token_jti=new_refresh_jti,
-            expires_at=new_expires_at,
-        )
+        access_token, new_refresh_token = await self._create_tokens_and_session(user.id)
 
         return RefreshResponse(
-            access_token=new_access_token,
+            access_token=access_token,
             refresh_token=new_refresh_token,
         )
 
@@ -135,9 +124,6 @@ class AuthService:
     async def get_user_from_access_token(self, access_token: str) -> Optional[User]:
         payload = JWTHandler.decode_token(access_token)
         if not payload:
-            return None
-
-        if JWTHandler.is_token_expired(access_token):
             return None
 
         user_id = int(payload['sub'])

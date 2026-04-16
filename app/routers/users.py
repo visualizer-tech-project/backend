@@ -3,7 +3,7 @@ from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends, Security, Query
 from pydantic import BaseModel
 
-from app.core import responses
+from app.core import exceptions, responses
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies.services import get_user_service, get_role_service
 from app.models.user import UserPublic, UserUpdate
@@ -33,7 +33,7 @@ async def get_profile(
     ],
 ) -> UserPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     return UserPublic.model_validate(current_user)
 
 
@@ -54,7 +54,7 @@ async def get_users(
     filters: Annotated[UserFilters, Query()] = Depends(),
 ) -> Sequence[UserPublic]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     result = await user_service.get_users(filters)
     return result.items
 
@@ -77,10 +77,10 @@ async def get_user(
     user_service: UserService = Depends(get_user_service),
 ) -> UserPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     user = await user_service.get_user_by_id(user_id)
     if user is None:
-        responses.raise_not_found('User')
+        raise exceptions.NotFoundError('User')
     return user
 
 
@@ -94,7 +94,7 @@ async def update_own_profile(
     user_service: UserService = Depends(get_user_service),
 ) -> UserPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     return await user_service.update_user(current_user.id, user_data)
 
 
@@ -118,15 +118,15 @@ async def escalate_user_role(
     role_service: RoleService = Depends(get_role_service),
 ) -> UserPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
 
     user = await user_service.get_user_by_id(user_id)
     if user is None:
-        responses.raise_not_found('User')
+        raise exceptions.NotFoundError('User')
 
     role = await role_service.get_role_by_name(request.role_name)
     if role is None:
-        responses.raise_not_found('Role')
+        raise exceptions.NotFoundError('Role')
 
     current_roles = await role_service._role_repository.get_user_roles(user_id)
     current_role_ids = [r.id for r in current_roles]

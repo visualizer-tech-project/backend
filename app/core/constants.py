@@ -1,6 +1,7 @@
 """
 Глобальные константы для приложения.
 """
+from datetime import timedelta
 
 # Пагинация
 DEFAULT_SKIP = 0
@@ -19,4 +20,4 @@ TITLE_FIELD_CONFIG = {"min_length": 1, "max_length": TITLE_MAX_LENGTH}
 
 # JWT и Cookies
 REFRESH_TOKEN_COOKIE_NAME = 'refresh_token'
-REFRESH_TOKEN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60
+REFRESH_TOKEN_COOKIE_MAX_AGE = int(timedelta(days=7).total_seconds())
