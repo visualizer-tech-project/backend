@@ -11,6 +11,12 @@ from app.models.userprogress import (
     UserProgress, ProgressStatus, ProgressCreate, ProgressUpdate, UserProgressPublic,
 )
 from app.models.refresh_session import RefreshSession
+from app.models.permission import (
+    Permission, PermissionCreate, PermissionUpdate, PermissionPublic, RolePermissionMapping
+)
+from app.models.role import (
+    Role, RoleCreate, RoleUpdate, RolePublic, UserRoleMapping
+)
 
 UserPublic.model_rebuild()
 ProgramPublic.model_rebuild()
@@ -20,6 +26,14 @@ CareerTrackPublic.model_rebuild()
 TrackCourseItem.model_rebuild()
 CareerTrackWithCourses.model_rebuild()
 UserProgressPublic.model_rebuild()
+PermissionPublic.model_rebuild()
+RolePublic.model_rebuild()
+
+ListResponse[ProgramPublic].model_rebuild()
+ListResponse[CoursePublic].model_rebuild()
+ListResponse[CareerTrackPublic].model_rebuild()
+ListResponse[UserPublic].model_rebuild()
+ListResponse[UserProgressPublic].model_rebuild()
 
 __all__ = [
     'BaseSQLModel', 'BaseSchema', 'BaseModelSchema', 'PaginationInfo', 'ListResponse',
@@ -31,4 +45,6 @@ __all__ = [
     'CareerTrackCoursePublic', 'CareerTrackPublic', 'CareerTrackWithCourses', 'TrackCourseItem',
     'UserProgress', 'ProgressStatus', 'ProgressCreate', 'ProgressUpdate', 'UserProgressPublic',
     'RefreshSession',
+    'Permission', 'PermissionCreate', 'PermissionUpdate', 'PermissionPublic', 'RolePermissionMapping',
+    'Role', 'RoleCreate', 'RoleUpdate', 'RolePublic', 'UserRoleMapping',
 ]

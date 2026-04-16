@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Security, status
 
-from app.core import responses
+from app.core import exceptions, responses
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_career_track_service
 from app.models.base import ListResponse
@@ -38,7 +38,7 @@ async def get_tracks(
     ] = None,
 ) -> ListResponse[CareerTrackPublic]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     return await service.get_tracks(filters)
 
 
@@ -60,11 +60,11 @@ async def get_track_by_id(
     ] = None,
 ) -> CareerTrackPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.get_track_by_id(track_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.get(
@@ -87,11 +87,11 @@ async def get_track_courses(
     ] = None,
 ) -> list[TrackCourseItem]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.get_track_courses(track_id, skip, limit)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.post(
@@ -113,11 +113,11 @@ async def create_track(
     ] = None,
 ) -> CareerTrackPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.create_track(track_data, current_user.id)
     except ValueError as e:
-        responses.raise_bad_request(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.put(
@@ -140,13 +140,13 @@ async def update_track(
     ] = None,
 ) -> CareerTrackPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.update_track(track_id, track_data)
     except ValueError as e:
-        if 'not found' in str(e):
-            responses.raise_not_found(detail=str(e))
-        responses.raise_bad_request(str(e))
+        if 'not found' in str(e).lower():
+            raise exceptions.NotFoundError(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.delete(
@@ -167,11 +167,11 @@ async def delete_track(
     ] = None,
 ) -> None:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         await service.delete_track(track_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.post(
@@ -194,11 +194,11 @@ async def add_course_to_track(
     ] = None,
 ) -> CareerTrackCoursePublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         return await service.add_course_to_track(track_id, add_data)
     except ValueError as e:
-        responses.raise_bad_request(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.delete(
@@ -220,8 +220,8 @@ async def remove_course_from_track(
     ] = None,
 ) -> None:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         await service.remove_course_from_track(track_id, course_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))

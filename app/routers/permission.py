@@ -2,7 +2,7 @@ from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Depends, Security
 
-from app.core import responses
+from app.core import exceptions, responses
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies.services import get_permission_service
 from app.models.permission import PermissionPublic
@@ -27,5 +27,5 @@ async def get_permissions(
     permission_service: PermissionService = Depends(get_permission_service),
 ) -> Sequence[PermissionPublic]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     return await permission_service.get_permissions()

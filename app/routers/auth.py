@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Response, Request, status, Cookie
+from fastapi import APIRouter, Depends, Response, status, Cookie
 
-from app.core import responses
+from app.core import exceptions, responses
 from app.core.security import oauth2_scheme
 from app.dependencies.services import get_auth_service
 from app.models.user import User
@@ -57,8 +57,8 @@ async def register(
         return user
     except ValueError as e:
         if 'already exists' in str(e):
-            responses.raise_conflict(str(e))
-        responses.raise_bad_request(str(e))
+            raise exceptions.ConflictError(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.post(
@@ -79,7 +79,7 @@ async def login(
         set_refresh_token_cookie(response, token_response.refresh_token)
         return token_response
     except ValueError as e:
-        responses.raise_unauthorized(str(e))
+        raise exceptions.UnauthorizedError(str(e))
 
 
 @router.post(
@@ -96,14 +96,14 @@ async def refresh_token(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> RefreshResponse:
     if not refresh_token:
-        responses.raise_unauthorized('Refresh token not found')
+        raise exceptions.UnauthorizedError('Refresh token not found')
 
     try:
         refresh_response = await auth_service.refresh(refresh_token)
         set_refresh_token_cookie(response, refresh_response.refresh_token)
         return refresh_response
     except ValueError as e:
-        responses.raise_unauthorized(str(e))
+        raise exceptions.UnauthorizedError(str(e))
 
 
 @router.post(
@@ -126,7 +126,7 @@ async def logout(
             return LogoutResponse(success=True)
         return LogoutResponse(success=False)
     except Exception:
-        responses.raise_server_error()
+        raise exceptions.InternalServerError()
 
 
 @router.get(
@@ -143,6 +143,6 @@ async def get_me(
 ) -> MeResponse:
     user = await auth_service.get_user_from_access_token(token)
     if not user:
-        responses.raise_unauthorized('Invalid or expired token')
+        raise exceptions.UnauthorizedError('Invalid or expired token')
 
     return MeResponse.model_validate(user)

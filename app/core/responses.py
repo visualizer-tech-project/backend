@@ -1,6 +1,5 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 
@@ -70,45 +69,3 @@ conflict_responses: Dict[int, Dict[str, Any]] = {
         'description': 'Resource already exists'
     }
 }
-
-
-def raise_forbidden(detail: str = 'Not enough permissions') -> None:
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail=detail
-    )
-
-
-def raise_unauthorized(detail: str = 'Not authenticated') -> None:
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=detail
-    )
-
-
-def raise_not_found(resource: str = 'Resource', detail: Optional[str] = None) -> None:
-    message = detail or f'{resource} not found'
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=message
-    )
-
-
-def raise_bad_request(detail: str = 'Bad request') -> None:
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=detail
-    )
-
-
-def raise_conflict(detail: str = 'Resource already exists') -> None:
-    raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail=detail
-    )
-
-def raise_server_error(detail: str = 'Internal server error') -> None:
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail=detail
-    )

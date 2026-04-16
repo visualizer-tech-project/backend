@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Security, status
 
-from app.core import responses
+from app.core import exceptions, responses
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_progress_service
 from app.models.base import ListResponse
@@ -37,15 +37,15 @@ async def get_user_progress(
     ] = None,
 ) -> ListResponse[UserProgressWithDetails]:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
 
     if current_user.role.value == 'student' and current_user.id != user_id:
-        responses.raise_forbidden('You can only view your own progress')
+        raise exceptions.ForbiddenError('You can only view your own progress')
 
     try:
         return await service.get_user_progress(user_id, filters)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.post(
@@ -71,10 +71,10 @@ async def create_progress(
     ] = None,
 ) -> UserProgressPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
 
     if current_user.role.value == 'student' and current_user.id != user_id:
-        responses.raise_forbidden('You can only create progress for yourself')
+        raise exceptions.ForbiddenError('You can only create progress for yourself')
 
     try:
         progress_data.user_id = user_id
@@ -82,8 +82,8 @@ async def create_progress(
         return await service.create_progress(user_id, course_id, progress_data)
     except ValueError as e:
         if 'already exists' in str(e):
-            responses.raise_conflict(str(e))
-        responses.raise_not_found(detail=str(e))
+            raise exceptions.ConflictError(str(e))
+        raise exceptions.NotFoundError(str(e))
 
 
 @router.put(
@@ -107,17 +107,17 @@ async def update_progress(
     ] = None,
 ) -> UserProgressPublic:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
 
     if current_user.role.value == 'student' and current_user.id != user_id:
-        responses.raise_forbidden('You can only update your own progress')
+        raise exceptions.ForbiddenError('You can only update your own progress')
 
     try:
         return await service.update_progress(user_id, course_id, progress_data)
     except ValueError as e:
-        if 'not found' in str(e):
-            responses.raise_not_found(detail=str(e))
-        responses.raise_bad_request(str(e))
+        if 'not found' in str(e).lower():
+            raise exceptions.NotFoundError(str(e))
+        raise exceptions.BadRequestError(str(e))
 
 
 @router.delete(
@@ -139,8 +139,8 @@ async def delete_progress(
     ] = None,
 ) -> None:
     if current_user is None:
-        responses.raise_forbidden()
+        raise exceptions.ForbiddenError()
     try:
         await service.delete_progress(user_id, course_id)
     except ValueError as e:
-        responses.raise_not_found(detail=str(e))
+        raise exceptions.NotFoundError(str(e))
