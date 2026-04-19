@@ -74,7 +74,8 @@ class CourseService:
 
         updated_course = await self._course_repo.update(course_id, course_data)
 
-        return CoursePublic.model_validate(updated_course)
+        course = await self._course_repo.save(course)
+        return CoursePublic.model_validate(course)
 
     async def delete_course(self, course_id: int) -> None:
         deleted = await self._course_repo.delete(course_id)
