@@ -72,9 +72,7 @@ class CourseService:
                 if existing_course.title == course_data.title and existing_course.id != course_id:
                     raise exceptions.ConflictError('Course with this title already exists in program')
 
-        update_dict = course_data.model_dump(exclude_unset=True)
-        for field, value in update_dict.items():
-            setattr(course, field, value)
+        updated_course = await self._course_repo.update(course_id, course_data)
 
         course = await self._course_repo.save(course)
         return CoursePublic.model_validate(course)
