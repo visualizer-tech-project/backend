@@ -105,7 +105,6 @@ async def get_role_service(
 ) -> RoleService:
     return RoleService(role_repo, permission_repo)
 
-
 async def get_auth_service(
     user_repo: UserRepository = Depends(get_user_repo),
     refresh_session_repo: RefreshSessionRepository = Depends(get_refresh_session_repo),
