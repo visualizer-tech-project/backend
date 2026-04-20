@@ -28,7 +28,9 @@ class ProgramCreate(ProgramBase):
 
 
 class ProgramUpdate(ProgramBase):
-    pass
+    title: Optional[str] = Field(None, max_length=TITLE_MAX_LENGTH)
+    description: Optional[str] = None
+    user_id: Optional[int] = Field(None, foreign_key='users.id')
 
 
 class ProgramPublic(ProgramBase, BaseModelSchema):

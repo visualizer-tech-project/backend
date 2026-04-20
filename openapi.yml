@@ -167,6 +167,10 @@ components:
         - email
         - password
 
+    ProgramStudyMode:
+      type: string
+      enum: [full-time, part-time]
+      description: "full-time - очная, part-time - заочная"
 
     Program:
       type: object
@@ -180,6 +184,8 @@ components:
         description:
           type: string
           example: "Подготовка инженеров-программистов"
+        study_mode:
+          $ref: '#/components/schemas/ProgramStudyMode'
         admission_year:
           type: integer
           example: 2026
@@ -192,6 +198,7 @@ components:
       required:
         - id
         - title
+        - study_mode
         - admission_year
         - created_by
         - created_at
@@ -205,11 +212,14 @@ components:
         description:
           type: string
           example: "Подготовка инженеров-программистов"
+        study_mode:
+          $ref: '#/components/schemas/ProgramStudyMode'
         admission_year:
           type: integer
           example: 2026
       required:
         - title
+        - study_mode
         - admission_year
 
     ProgramUpdate:
@@ -220,6 +230,8 @@ components:
           example: "Программная инженерия (обновленная)"
         description:
           type: string
+        study_mode:
+          $ref: '#/components/schemas/ProgramStudyMode'
         admission_year:
           type: integer
           example: 2027
@@ -849,6 +861,10 @@ paths:
       summary: Получить список образовательных программ
       parameters:
         - in: query
+          name: study_mode
+          schema:
+            $ref: '#/components/schemas/ProgramStudyMode'
+        - in: query
           name: admission_year
           schema:
             type: integer
@@ -1107,6 +1123,8 @@ paths:
                 admission_year:
                   type: integer
                   example: 2027
+                study_mode:
+                  $ref: '#/components/schemas/ProgramStudyMode'
               required:
                 - title
                 - admission_year
