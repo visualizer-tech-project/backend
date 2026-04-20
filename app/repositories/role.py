@@ -1,6 +1,5 @@
 from typing import List, Optional, Sequence
-
-from sqlmodel import select
+from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.role import Role, RoleCreate, RoleUpdate, UserRoleMapping
@@ -16,9 +15,9 @@ class RoleRepository(BaseRepository[Role, RoleCreate, RoleUpdate]):
         self.add_filter('name')
 
     async def get_by_name(self, name: str) -> Optional[Role]:
-        query = select(Role).where(Role.name == name)
-        result = await self.session.exec(query)
-        return result.first()
+        filters = self._create_filter_conditions_from_dict({'name': name})
+        items, _ = await self.get_all(filters=filters, limit=1)
+        return items[0] if items else None
 
     async def get_with_permissions(self, role_id: int) -> Optional[Role]:
         role = await self.get_by_id(role_id)

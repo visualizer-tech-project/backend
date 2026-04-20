@@ -32,7 +32,7 @@ class Bootstrapper:
             name=settings.rbac.admin_role,
             description='Administrator with full access',
         )
-        await self._role_service._role_repository.set_permissions(
+        await self._role_service.set_role_permissions(
             admin_role.id,
             list(all_permission_ids),
         )
@@ -57,7 +57,7 @@ class Bootstrapper:
                     perm = await self._permission_service.get_or_create_permission(subject, action)
                     permission_ids.append(perm.id)
 
-            await self._role_service._role_repository.set_permissions(role.id, permission_ids)
+            await self._role_service.set_role_permissions(role.id, permission_ids)
 
         existing_admin = await self._user_service.get_user_by_email(settings.rbac.admin_email)
         if not existing_admin:
