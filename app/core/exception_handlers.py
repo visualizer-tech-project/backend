@@ -11,30 +11,71 @@ from app.core.responses import (
     UnauthorizedErrorSchema,
 )
 
-EXCEPTION_MAPPING = {
-    exceptions.NotFoundError: (404, NotFoundErrorSchema),
-    exceptions.ForbiddenError: (403, ForbiddenErrorSchema),
-    exceptions.UnauthorizedError: (401, UnauthorizedErrorSchema),
-    exceptions.BadRequestError: (400, BadRequestErrorSchema),
-    exceptions.ConflictError: (409, ConflictErrorSchema),
-    exceptions.InternalServerError: (500, InternalServerErrorSchema),
-}
 
-
-async def generic_exception_handler(
+async def not_found_exception_handler(
     request: Request,
-    exc: exceptions.AppBaseException,
+    exc: exceptions.NotFoundError
 ) -> JSONResponse:
-    status_code, schema_class = EXCEPTION_MAPPING.get(
-        type(exc),
-        (500, InternalServerErrorSchema)
-    )
     return JSONResponse(
-        status_code=status_code,
-        content=schema_class(detail=exc.detail).model_dump()
+        status_code=404,
+        content=NotFoundErrorSchema(detail=exc.detail).model_dump()
+    )
+
+
+async def forbidden_exception_handler(
+    request: Request,
+    exc: exceptions.ForbiddenError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content=ForbiddenErrorSchema(detail=exc.detail).model_dump()
+    )
+
+
+async def unauthorized_exception_handler(
+    request: Request,
+    exc: exceptions.UnauthorizedError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=401,
+        content=UnauthorizedErrorSchema(detail=exc.detail).model_dump()
+    )
+
+
+async def bad_request_exception_handler(
+    request: Request,
+    exc: exceptions.BadRequestError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content=BadRequestErrorSchema(detail=exc.detail).model_dump()
+    )
+
+
+async def conflict_exception_handler(
+    request: Request,
+    exc: exceptions.ConflictError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=409,
+        content=ConflictErrorSchema(detail=exc.detail).model_dump()
+    )
+
+
+async def internal_server_error_exception_handler(
+    request: Request,
+    exc: exceptions.InternalServerError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content=InternalServerErrorSchema(detail=exc.detail).model_dump()
     )
 
 
 def register_exception_handlers(app):
-    for exc_class in EXCEPTION_MAPPING.keys():
-        app.add_exception_handler(exc_class, generic_exception_handler)
+    app.add_exception_handler(exceptions.NotFoundError, not_found_exception_handler)
+    app.add_exception_handler(exceptions.ForbiddenError, forbidden_exception_handler)
+    app.add_exception_handler(exceptions.UnauthorizedError, unauthorized_exception_handler)
+    app.add_exception_handler(exceptions.BadRequestError, bad_request_exception_handler)
+    app.add_exception_handler(exceptions.ConflictError, conflict_exception_handler)
+    app.add_exception_handler(exceptions.InternalServerError, internal_server_error_exception_handler)

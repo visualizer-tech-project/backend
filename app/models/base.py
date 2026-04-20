@@ -41,5 +41,3 @@ class PaginationInfo(SQLModel):
 class ListResponse(BaseModel, Generic[T]):
     info: PaginationInfo
     items: list[T]
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)

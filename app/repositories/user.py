@@ -1,8 +1,9 @@
-from typing import List, Optional
-
+from typing import List, Optional, Sequence
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.user import User, UserCreate, UserRole, UserUpdate
+from app.models.role import Role
 from app.repositories.base import BaseRepository, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 from app.schemas.filters import UserFilters
@@ -41,7 +42,6 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             filters: UserFilters,
     ) -> ListResponse[User]:
         filter_conditions = self._create_filter_conditions_from_model(filters)
-
         return await self.get_paginated(
             skip=filters.skip,
             limit=filters.limit,
@@ -49,3 +49,31 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             order_by='created_at',
             descending=True,
         )
+
+    async def get_with_roles(self, user_id: int) -> Optional[User]:
+        user = await self.get_by_id(user_id)
+        if user:
+            await self.session.refresh(user, ['roles'])
+        return user
+
+    async def get_user_roles(self, user_id: int) -> Sequence[Role]:
+        user = await self.get_with_roles(user_id)
+        return user.roles if user else []
+
+    async def set_user_roles(self, user_id: int, role_ids: List[int]) -> Optional[User]:
+
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+
+        if role_ids:
+            roles = await self.session.exec(
+                select(Role).where(Role.id.in_(role_ids))
+            )
+            user.roles = list(roles.all())
+        else:
+            user.roles = []
+
+        await self.session.commit()
+        await self.session.refresh(user, ['roles'])
+        return user

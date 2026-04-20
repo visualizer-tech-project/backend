@@ -12,6 +12,38 @@ class RoleService:
     ):
         self._role_repository = role_repository
         self._permission_repository = permission_repository
+        self._session = session
+
+    async def _parse_scope_aliases(self, scope_aliases: List[str]) -> List[int]:
+        permission_ids = []
+        for alias in scope_aliases:
+            parts = alias.split(':', 1)
+            if len(parts) == 2:
+                subject, action = parts
+                perm = await self._permission_repository.get_or_create(subject, action)
+                permission_ids.append(perm.id)
+        return permission_ids
+
+    async def _set_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
+
+        await self._session.exec(
+            delete(RolePermissionMapping).where(RolePermissionMapping.role_id == role_id)
+        )
+
+        for perm_id in permission_ids:
+            mapping = RolePermissionMapping(role_id=role_id, permission_id=perm_id)
+            self._session.add(mapping)
+
+        await self._session.commit()
+
+    async def _assign_roles_to_user(self, user_id: int, role_ids: List[int]) -> None:
+        await self._session.exec(
+            delete(UserRoleMapping).where(UserRoleMapping.user_id == user_id)
+        )
+
+        for role_id in role_ids:
+            mapping = UserRoleMapping(user_id=user_id, role_id=role_id)
+            self._session.add(mapping)
 
     async def _parse_scope_aliases(self, scope_aliases: List[str]) -> List[int]:
         permission_ids = []
