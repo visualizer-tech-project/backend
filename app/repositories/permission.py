@@ -1,10 +1,9 @@
 from typing import Optional
 
-from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.permission import Permission, PermissionCreate, PermissionUpdate
-from app.repositories.base import BaseRepository
+from app.repositories.base import BaseRepository, FilterCondition
 
 
 class PermissionRepository(BaseRepository[Permission, PermissionCreate, PermissionUpdate]):
@@ -16,13 +15,15 @@ class PermissionRepository(BaseRepository[Permission, PermissionCreate, Permissi
         self.add_filter('action')
 
     async def get_by_subject_and_action(self, subject: str, action: str) -> Optional[Permission]:
-
-        query = select(Permission).where(
-            Permission.subject == subject,
-            Permission.action == action
+        filters = [
+            FilterCondition('subject', subject),
+            FilterCondition('action', action)
+        ]
+        items, _ = await self.get_all(
+            limit=1,
+            filters=filters
         )
-        result = await self.session.exec(query)
-        return result.first()
+        return items[0] if items else None
 
     async def get_or_create(self, subject: str, action: str) -> Permission:
         existing = await self.get_by_subject_and_action(subject, action)
