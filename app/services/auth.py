@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from app.core import settings
+from app.core import exceptions, settings
 from app.core.auth import JWTHandler
 from app.core.hasher import hash_password, verify_password
 from app.models.user import User, UserCreate, UserRole
@@ -31,6 +31,8 @@ class AuthService:
         refresh_token = JWTHandler.create_refresh_token(user_id, refresh_jti)
 
         payload = JWTHandler.decode_token(refresh_token)
+        if not payload:
+            raise exceptions.InternalServerError("Failed to decode refresh token")
         expires_at = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
 
         await self._refresh_session_repo.create_session(
@@ -44,7 +46,7 @@ class AuthService:
     async def register(self, register_data: RegisterRequest) -> User:
         existing_user = await self._user_repo.get_by_email(register_data.email)
         if existing_user:
-            raise ValueError('User with this email already exists')
+            raise exceptions.ConflictError(f"User with email {register_data.email} already exists")
 
         user_create = UserCreate(
             email=register_data.email,
@@ -65,10 +67,10 @@ class AuthService:
     async def login(self, login_data: LoginRequest) -> TokenResponse:
         user = await self._user_repo.get_by_email(login_data.email)
         if not user:
-            raise ValueError('Invalid credentials')
+            raise exceptions.UnauthorizedError("Invalid email or password")
 
         if not verify_password(login_data.password, user.hashed_password):
-            raise ValueError('Invalid credentials')
+            raise exceptions.UnauthorizedError("Invalid email or password")
 
         access_token, refresh_token = await self._create_tokens_and_session(user.id)
 
@@ -80,26 +82,26 @@ class AuthService:
     async def refresh(self, refresh_token: str) -> RefreshResponse:
         payload = JWTHandler.decode_token(refresh_token)
         if not payload:
-            raise ValueError('Invalid refresh token')
+            raise exceptions.UnauthorizedError("Invalid refresh token")
 
         refresh_token_jti = payload.get('jti')
         if not refresh_token_jti:
-            raise ValueError('Invalid refresh token: missing jti')
+            raise exceptions.UnauthorizedError("Invalid refresh token: missing jti")
 
         session = await self._refresh_session_repo.get_by_jti(refresh_token_jti)
         if not session:
-            raise ValueError('Refresh session not found')
+            raise exceptions.UnauthorizedError("Refresh session not found")
 
         if not session.is_valid:
-            raise ValueError('Refresh session is invalid')
+            raise exceptions.UnauthorizedError("Refresh session is invalid")
 
         if session.is_expired():
-            raise ValueError('Refresh session has expired')
+            raise exceptions.UnauthorizedError("Refresh session has expired")
 
         user_id = int(payload['sub'])
         user = await self._user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError('User not found')
+            raise exceptions.UnauthorizedError("User not found")
 
         await self._refresh_session_repo.invalidate_session(refresh_token_jti)
 

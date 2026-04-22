@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 
 from app.core.bootstrap import Bootstrapper
+from app.core.exception_handlers import register_exception_handlers
+from app.core.middleware import add_middleware
 from app.database.engine import engine
 from app.repositories.user import UserRepository
 from app.repositories.permission import PermissionRepository
@@ -18,7 +20,6 @@ from app.routers.permission import router as permissions_router
 from app.services.user import UserService
 from app.services.permission import PermissionService
 from app.services.role import RoleService
-from app.core.exception_handlers import register_exception_handlers
 
 
 @asynccontextmanager
@@ -52,6 +53,7 @@ app = FastAPI(
 )
 
 register_exception_handlers(app)
+add_middleware(app)
 
 api_v1_router = APIRouter(prefix='/api/v1')
 

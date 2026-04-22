@@ -30,8 +30,6 @@ async def get_courses(
             Security(get_current_user, scopes=['courses:list'])
         ] = None,
 ) -> ListResponse[CoursePublic]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
     return await service.get_courses(filters)
 
 
@@ -52,13 +50,7 @@ async def get_course_by_id(
             Security(get_current_user, scopes=['courses:read'])
         ] = None,
 ) -> CoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    course = await service.get_course_by_id(course_id)
-    if course is None:
-        raise exceptions.NotFoundError(f"Course with id {course_id} not found")
-    return course
+    return await service.get_course_by_id(course_id)
 
 
 @router.post(
@@ -79,13 +71,7 @@ async def create_course(
             Security(get_current_user, scopes=['courses:create'])
         ] = None,
 ) -> CoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.create_course(course_data, current_user.id)
-    except ValueError as e:
-        raise exceptions.BadRequestError(str(e))
+    return await service.create_course(course_data, current_user.id)
 
 
 @router.put(
@@ -107,15 +93,7 @@ async def update_course(
             Security(get_current_user, scopes=['courses:update'])
         ] = None,
 ) -> CoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.update_course(course_id, course_data)
-    except ValueError as e:
-        if 'not found' in str(e).lower():
-            raise exceptions.NotFoundError(str(e))
-        raise exceptions.BadRequestError(str(e))
+    return await service.update_course(course_id, course_data)
 
 
 @router.delete(
@@ -135,13 +113,7 @@ async def delete_course(
             Security(get_current_user, scopes=['courses:delete'])
         ] = None,
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        await service.delete_course(course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    await service.delete_course(course_id)
 
 
 @router.get(
@@ -161,13 +133,7 @@ async def get_prerequisites(
             Security(get_current_user, scopes=['courses:read'])
         ] = None,
 ) -> list[CoursePublic]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.get_prerequisites(course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    return await service.get_prerequisites(course_id)
 
 
 @router.post(
@@ -189,13 +155,7 @@ async def add_prerequisite(
             Security(get_current_user, scopes=['courses:update'])
         ] = None,
 ) -> PrerequisitePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.add_prerequisite(course_id, prerequisite_data)
-    except ValueError as e:
-        raise exceptions.BadRequestError(str(e))
+    return await service.add_prerequisite(course_id, prerequisite_data)
 
 
 @router.delete(
@@ -216,10 +176,4 @@ async def remove_prerequisite(
             Security(get_current_user, scopes=['courses:update'])
         ] = None,
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        await service.remove_prerequisite(course_id, prerequisite_course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    await service.remove_prerequisite(course_id, prerequisite_course_id)
