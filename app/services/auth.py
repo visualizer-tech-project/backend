@@ -2,26 +2,42 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
+from fastapi import BackgroundTasks
+
 from app.core import exceptions, settings
 from app.core.auth import JWTHandler
 from app.core.hasher import hash_password, verify_password
-from app.models.user import User, UserCreate, UserRole
+from app.models.user import User, UserCreate, UserRole, AccountStatus
+from app.models.email import EmailAction
 from app.repositories.user import UserRepository
 from app.repositories.refresh_session import RefreshSessionRepository
 from app.repositories.role import RoleRepository
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, RefreshResponse
+from app.repositories.email import EmailRepository
+from app.schemas.auth import (
+    RegisterRequest,
+    LoginRequest,
+    TokenResponse,
+    RefreshResponse,
+    VerifyAccountRequest,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
+from app.services.email import EmailService
 
 
 class AuthService:
     def __init__(
-        self,
-        user_repo: UserRepository,
-        refresh_session_repo: RefreshSessionRepository,
-        role_repo: RoleRepository,
+            self,
+            user_repo: UserRepository,
+            refresh_session_repo: RefreshSessionRepository,
+            role_repo: RoleRepository,
+            email_repo: EmailRepository,
     ) -> None:
         self._user_repo = user_repo
         self._refresh_session_repo = refresh_session_repo
         self._role_repo = role_repo
+        self._email_repo = email_repo
 
     async def _create_tokens_and_session(self, user_id: int) -> tuple[str, str]:
         access_jti = str(uuid.uuid4())
@@ -43,31 +59,71 @@ class AuthService:
 
         return access_token, refresh_token
 
-    async def register(self, register_data: RegisterRequest) -> User:
-        existing_user = await self._user_repo.get_by_email(register_data.email)
+    async def register(
+            self,
+            register_data: RegisterRequest,
+            background_tasks: BackgroundTasks,
+    ) -> User:
+        email_str = str(register_data.email)
+
+        existing_user = await self._user_repo.get_by_email(email_str)
         if existing_user:
-            raise exceptions.ConflictError(f"User with email {register_data.email} already exists")
+            raise exceptions.ConflictError(
+                f"User with email {email_str} already exists"
+            )
 
         user_create = UserCreate(
-            email=register_data.email,
+            email=email_str,
             first_name=register_data.first_name,
             last_name=register_data.last_name,
             role=UserRole.STUDENT,
+            status=AccountStatus.CREATED,
             hashed_password=hash_password(register_data.password),
         )
 
         user = await self._user_repo.create(user_create)
-
         public_role = await self._role_repo.get_by_name(settings.rbac.public_role)
         if public_role:
             await self._role_repo.assign_roles_to_user(user.id, [public_role.id])
-
+        notification = await self._email_repo.create_notification(
+            user_id=user.id,
+            action=EmailAction.VERIFY_ACCOUNT,
+        )
+        email_service = EmailService(background_tasks)
+        verification_link = (
+            f"{settings.email.base_url}/api/v1/auth/verify?code={notification.code}"
+        )
+        await email_service.send_verification_email(
+            email_to=str(user.email),
+            verification_code=str(notification.code),
+            verification_link=verification_link,
+        )
         return user
 
+    async def verify_account(self, verify_data: VerifyAccountRequest) -> None:
+        notification = await self._email_repo.get_by_code(verify_data.code)
+        if not notification:
+            raise exceptions.NotFoundError("Verification code not found")
+        if not notification.is_valid:
+            raise exceptions.BadRequestError(
+                "Verification code is invalid, expired or already used"
+            )
+        user = await self._user_repo.get_by_id(notification.user_id)
+        if not user:
+            raise exceptions.NotFoundError("User not found")
+        user.status = AccountStatus.CONFIRMED
+        await self._user_repo.save(user)
+        await self._email_repo.mark_as_used(notification)
+
     async def login(self, login_data: LoginRequest) -> TokenResponse:
-        user = await self._user_repo.get_by_email(login_data.email)
+        email_str = str(login_data.email)
+        user = await self._user_repo.get_by_email(email_str)
         if not user:
             raise exceptions.UnauthorizedError("Invalid email or password")
+        if user.status != AccountStatus.CONFIRMED:
+            raise exceptions.UnauthorizedError(
+                "Account is not confirmed. Please verify your email first."
+            )
 
         if not verify_password(login_data.password, user.hashed_password):
             raise exceptions.UnauthorizedError("Invalid email or password")
@@ -130,3 +186,63 @@ class AuthService:
 
         user_id = int(payload['sub'])
         return await self._user_repo.get_by_id(user_id)
+
+    async def forgot_password(
+            self,
+            request: ForgotPasswordRequest,
+            background_tasks: BackgroundTasks,
+    ) -> None:
+        email_str = str(request.email)
+        user = await self._user_repo.get_by_email(email_str)
+        if not user:
+            return
+
+        notification = await self._email_repo.create_notification(
+            user_id=user.id,
+            action=EmailAction.CHANGE_PASSWORD,
+        )
+
+        email_service = EmailService(background_tasks)
+        reset_link = (
+            f"{settings.email.base_url}/api/v1/auth/reset-password?code={notification.code}"
+        )
+        await email_service.send_change_password_email(
+            email_to=str(user.email),
+            reset_code=str(notification.code),
+            reset_link=reset_link,
+        )
+
+    async def reset_password(self, request: ResetPasswordRequest) -> None:
+        if request.new_password != request.confirm_password:
+            raise exceptions.BadRequestError("Passwords do not match")
+        notification = await self._email_repo.get_by_code(request.code)
+        if not notification:
+            raise exceptions.NotFoundError("Reset code not found")
+        if not notification.is_valid:
+            raise exceptions.BadRequestError(
+                "Reset code is invalid, expired or already used"
+            )
+        user = await self._user_repo.get_by_id(notification.user_id)
+        if not user:
+            raise exceptions.NotFoundError("User not found")
+        user.hashed_password = hash_password(request.new_password)
+        await self._user_repo.save(user)
+        await self._refresh_session_repo.invalidate_all_user_sessions(user.id)
+        await self._email_repo.mark_as_used(notification)
+
+    async def change_password(
+            self,
+            user_id: int,
+            request: ChangePasswordRequest,
+    ) -> None:
+        if request.new_password != request.confirm_password:
+            raise exceptions.BadRequestError("Passwords do not match")
+        user = await self._user_repo.get_by_id(user_id)
+        if not user:
+            raise exceptions.NotFoundError("User not found")
+        if request.old_password:
+            if not verify_password(request.old_password, user.hashed_password):
+                raise exceptions.BadRequestError("Old password is incorrect")
+        user.hashed_password = hash_password(request.new_password)
+        await self._user_repo.save(user)
+        await self._refresh_session_repo.invalidate_all_user_sessions(user.id)

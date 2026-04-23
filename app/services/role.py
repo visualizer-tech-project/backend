@@ -31,7 +31,7 @@ class RoleService:
         return roles
 
     async def get_role_by_id(self, role_id: int) -> Role:
-        role = await self._role_repository.get_role_with_permissions(role_id)
+        role = await self._role_repository.get_with_permissions(role_id)
         if not role:
             raise exceptions.NotFoundError(f"Role with id {role_id} not found")
         return role
@@ -46,7 +46,7 @@ class RoleService:
             permission_ids = await self._parse_scope_aliases(role_data.scope_aliases)
             await self._role_repository.set_role_permissions(role.id, permission_ids)
 
-        return await self._role_repository.get_role_with_permissions(role.id)
+        return await self._role_repository.get_with_permissions(role.id)
 
     async def update_role(self, role_id: int, role_data: RoleUpdate) -> Role:
         role = await self._role_repository.update(role_id, role_data)
@@ -60,7 +60,7 @@ class RoleService:
             else:
                 await self._role_repository.set_role_permissions(role.id, [])
 
-        return await self._role_repository.get_role_with_permissions(role.id)
+        return await self._role_repository.get_with_permissions(role.id)
 
     async def delete_role(self, role_id: int) -> None:
         deleted = await self._role_repository.delete(role_id)
@@ -72,7 +72,7 @@ class RoleService:
 
     async def get_or_create_role(self, name: str, description: Optional[str] = None) -> Role:
         role = await self._role_repository.get_or_create(name, description)
-        return await self._role_repository.get_role_with_permissions(role.id)
+        return await self._role_repository.get_with_permissions(role.id)
 
     async def set_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
         await self._role_repository.set_role_permissions(role_id, permission_ids)

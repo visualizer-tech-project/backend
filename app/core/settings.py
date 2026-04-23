@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,10 +29,22 @@ class RBACSettings(BaseModel):
     public_role: str = 'public'
 
 
+class EmailSettings(BaseModel):
+    username: EmailStr = 'test@example.com'
+    password: SecretStr = 'your-password'
+    title: str = 'EduMap'
+    port: int = 587
+    server: str = 'smtp.gmail.com'
+    notification_lifetime_seconds: int = 3600
+    templates_dir: str = 'templates'
+    base_url: str = 'http://localhost:8000'
+
+
 class Settings(BaseSettings):
     db: DbSettings = DbSettings()
     auth: AuthSettings = AuthSettings()
     rbac: RBACSettings = RBACSettings()
+    email: EmailSettings = EmailSettings()
 
     model_config = SettingsConfigDict(
         env_file='.env',
