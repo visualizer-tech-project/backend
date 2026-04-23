@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import CurrentUser, get_current_user
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
@@ -22,13 +23,15 @@ router = APIRouter(prefix='/courses', tags=['courses'])
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_courses(
-        filters: CourseFilters = Depends(),
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:list'])
-        ] = None,
+    request: Request,
+    filters: CourseFilters = Depends(),
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:list'])
+    ] = None,
 ) -> ListResponse[CoursePublic]:
     return await service.get_courses(filters)
 
@@ -42,13 +45,15 @@ async def get_courses(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_course_by_id(
-        course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:read'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:read'])
+    ] = None,
 ) -> CoursePublic:
     return await service.get_course_by_id(course_id)
 
@@ -63,13 +68,15 @@ async def get_course_by_id(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def create_course(
-        course_data: CourseCreate,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:create'])
-        ] = None,
+    request: Request,
+    course_data: CourseCreate,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:create'])
+    ] = None,
 ) -> CoursePublic:
     return await service.create_course(course_data, current_user.id)
 
@@ -84,14 +91,16 @@ async def create_course(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def update_course(
-        course_id: int,
-        course_data: CourseUpdate,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:update'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    course_data: CourseUpdate,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:update'])
+    ] = None,
 ) -> CoursePublic:
     return await service.update_course(course_id, course_data)
 
@@ -105,13 +114,15 @@ async def update_course(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def delete_course(
-        course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:delete'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:delete'])
+    ] = None,
 ) -> None:
     await service.delete_course(course_id)
 
@@ -125,13 +136,15 @@ async def delete_course(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_prerequisites(
-        course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:read'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:read'])
+    ] = None,
 ) -> list[CoursePublic]:
     return await service.get_prerequisites(course_id)
 
@@ -146,14 +159,16 @@ async def get_prerequisites(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def add_prerequisite(
-        course_id: int,
-        prerequisite_data: PrerequisiteCreate,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:update'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    prerequisite_data: PrerequisiteCreate,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:update'])
+    ] = None,
 ) -> PrerequisitePublic:
     return await service.add_prerequisite(course_id, prerequisite_data)
 
@@ -167,13 +182,15 @@ async def add_prerequisite(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def remove_prerequisite(
-        course_id: int,
-        prerequisite_course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:update'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    prerequisite_course_id: int,
+    service: CourseService = Depends(get_course_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['courses:update'])
+    ] = None,
 ) -> None:
     await service.remove_prerequisite(course_id, prerequisite_course_id)

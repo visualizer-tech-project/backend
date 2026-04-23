@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_progress_service
 from app.dependencies.services import get_role_service
@@ -29,7 +30,9 @@ router = APIRouter(prefix='/users', tags=['progress'])
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_user_progress(
+    request: Request,
     user_id: int,
     filters: ProgressFilters = Depends(),
     service: ProgressService = Depends(get_progress_service),
@@ -56,7 +59,9 @@ async def get_user_progress(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def create_progress(
+    request: Request,
     user_id: int,
     course_id: int,
     progress_data: ProgressCreate,
@@ -85,7 +90,9 @@ async def create_progress(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def update_progress(
+    request: Request,
     user_id: int,
     course_id: int,
     progress_data: ProgressUpdate,
@@ -110,7 +117,9 @@ async def update_progress(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def delete_progress(
+    request: Request,
     user_id: int,
     course_id: int,
     service: ProgressService = Depends(get_progress_service),

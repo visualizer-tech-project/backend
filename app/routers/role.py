@@ -1,8 +1,9 @@
 from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies.services import get_role_service
 from app.models.role import RolePublic, RoleCreate, RoleUpdate, Role
@@ -19,7 +20,9 @@ router = APIRouter(prefix='/roles', tags=['roles'])
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_roles(
+    request: Request,
     current_user: Annotated[
         CurrentUser,
         Security(get_current_user, scopes=['roles:list'])
@@ -38,7 +41,9 @@ async def get_roles(
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_role(
+    request: Request,
     role_id: int,
     current_user: Annotated[
         CurrentUser,
@@ -58,7 +63,9 @@ async def get_role(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def create_role(
+    request: Request,
     role_data: RoleCreate,
     current_user: Annotated[
         CurrentUser,
@@ -78,7 +85,9 @@ async def create_role(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def update_role(
+    request: Request,
     role_id: int,
     role_data: RoleUpdate,
     current_user: Annotated[
@@ -99,7 +108,9 @@ async def update_role(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def delete_role(
+    request: Request,
     role_id: int,
     current_user: Annotated[
         CurrentUser,

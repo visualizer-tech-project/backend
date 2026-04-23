@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_career_track_service
 from app.models.base import ListResponse
@@ -29,7 +30,9 @@ router = APIRouter(prefix='/career-tracks', tags=['career-tracks'])
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_tracks(
+    request: Request,
     filters: CareerTrackFilters = Depends(),
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -49,7 +52,9 @@ async def get_tracks(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_track_by_id(
+    request: Request,
     track_id: int,
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -69,7 +74,9 @@ async def get_track_by_id(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_track_courses(
+    request: Request,
     track_id: int,
     skip: int = DEFAULT_SKIP,
     limit: int = DEFAULT_LIMIT,
@@ -92,7 +99,9 @@ async def get_track_courses(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def create_track(
+    request: Request,
     track_data: CareerTrackCreate,
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -113,7 +122,9 @@ async def create_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def update_track(
+    request: Request,
     track_id: int,
     track_data: CareerTrackUpdate,
     service: CareerTrackService = Depends(get_career_track_service),
@@ -134,7 +145,9 @@ async def update_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def delete_track(
+    request: Request,
     track_id: int,
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -155,7 +168,9 @@ async def delete_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def add_course_to_track(
+    request: Request,
     track_id: int,
     add_data: AddCourseToTrack,
     service: CareerTrackService = Depends(get_career_track_service),
@@ -176,7 +191,9 @@ async def add_course_to_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def remove_course_from_track(
+    request: Request,
     track_id: int,
     course_id: int,
     service: CareerTrackService = Depends(get_career_track_service),
@@ -186,3 +203,4 @@ async def remove_course_from_track(
     ] = None,
 ) -> None:
     await service.remove_course_from_track(track_id, course_id)
+    

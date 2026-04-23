@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_program_service
 from app.models.base import ListResponse
@@ -22,7 +23,9 @@ router = APIRouter(prefix='/programs', tags=['programs'])
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_programs(
+    request: Request,
     filters: ProgramFilters = Depends(),
     service: ProgramService = Depends(get_program_service),
     current_user: Annotated[
@@ -42,7 +45,9 @@ async def get_programs(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_program_by_id(
+    request: Request,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
     current_user: Annotated[
@@ -63,7 +68,9 @@ async def get_program_by_id(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def create_program(
+    request: Request,
     program_data: ProgramCreate,
     service: ProgramService = Depends(get_program_service),
     current_user: Annotated[
@@ -84,7 +91,9 @@ async def create_program(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def update_program(
+    request: Request,
     program_id: int,
     program_data: ProgramUpdate,
     service: ProgramService = Depends(get_program_service),
@@ -105,7 +114,9 @@ async def update_program(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def delete_program(
+    request: Request,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
     current_user: Annotated[
@@ -127,7 +138,9 @@ async def delete_program(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def copy_program(
+    request: Request,
     program_id: int,
     copy_request: ProgramCopyRequest,
     service: ProgramService = Depends(get_program_service),

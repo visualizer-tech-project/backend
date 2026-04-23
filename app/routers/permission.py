@@ -1,8 +1,9 @@
 from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, Security, Request
 
 from app.core import responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies.services import get_permission_service
 from app.models.permission import PermissionPublic
@@ -19,7 +20,9 @@ router = APIRouter(prefix='/permissions', tags=['permissions'])
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_permissions(
+    request: Request,
     current_user: Annotated[
         CurrentUser,
         Security(get_current_user, scopes=['permissions:list'])
