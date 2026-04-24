@@ -33,6 +33,8 @@ async def get_courses(
         Security(get_current_user, scopes=['courses:list'])
     ] = None,
 ) -> ListResponse[CoursePublic]:
+    if current_user is None:
+        raise exceptions.ForbiddenError()
     return await service.get_courses(filters)
 
 
