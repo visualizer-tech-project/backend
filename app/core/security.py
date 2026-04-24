@@ -1,9 +1,10 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import Depends, Security
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core import exceptions
 from app.core.rbac import PERMISSION_DESCRIPTIONS
 from app.dependencies.session import get_session
 from app.models.user import User
@@ -22,12 +23,15 @@ async def get_current_user(
     access_token: AccessTokenDep,
     security_scopes: SecurityScopes,
     session: AsyncSession = Depends(get_session),
-) -> Optional[User]:
+) -> User:
     authenticator = AuthenticatorService(session)
-    return await authenticator.authenticate(
+    user = await authenticator.authenticate(
         access_token,
         security_scopes.scopes,
     )
+    if user is None:
+        raise exceptions.UnauthorizedError("Invalid or expired token")
+    return user
 
 
-CurrentUser = Annotated[Optional[User], Security(get_current_user)]
+CurrentUser = Annotated[User, Security(get_current_user)]

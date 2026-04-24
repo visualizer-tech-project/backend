@@ -1,8 +1,9 @@
 from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies.services import get_role_service
 from app.models.role import RolePublic, RoleCreate, RoleUpdate, Role
@@ -19,15 +20,15 @@ router = APIRouter(prefix='/roles', tags=['roles'])
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_roles(
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['roles:list'])
-        ],
-        role_service: RoleService = Depends(get_role_service),
+    request: Request,
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['roles:list'])
+    ],
+    role_service: RoleService = Depends(get_role_service),
 ) -> Sequence[Role]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
     return await role_service.get_roles()
 
 
@@ -40,21 +41,17 @@ async def get_roles(
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_role(
-        role_id: int,
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['roles:read'])
-        ],
-        role_service: RoleService = Depends(get_role_service),
+    request: Request,
+    role_id: int,
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['roles:read'])
+    ],
+    role_service: RoleService = Depends(get_role_service),
 ) -> Role:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    role = await role_service.get_role_by_id(role_id)
-    if role is None:
-        raise exceptions.NotFoundError('Role')
-    return role
+    return await role_service.get_role_by_id(role_id)
 
 
 @router.post(
@@ -66,16 +63,16 @@ async def get_role(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def create_role(
-        role_data: RoleCreate,
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['roles:create'])
-        ],
-        role_service: RoleService = Depends(get_role_service),
+    request: Request,
+    role_data: RoleCreate,
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['roles:create'])
+    ],
+    role_service: RoleService = Depends(get_role_service),
 ) -> Role:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
     return await role_service.create_role(role_data)
 
 
@@ -88,22 +85,18 @@ async def create_role(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def update_role(
-        role_id: int,
-        role_data: RoleUpdate,
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['roles:update'])
-        ],
-        role_service: RoleService = Depends(get_role_service),
+    request: Request,
+    role_id: int,
+    role_data: RoleUpdate,
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['roles:update'])
+    ],
+    role_service: RoleService = Depends(get_role_service),
 ) -> Role:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    role = await role_service.update_role(role_id, role_data)
-    if role is None:
-        raise exceptions.NotFoundError('Role')
-    return role
+    return await role_service.update_role(role_id, role_data)
 
 
 @router.delete(
@@ -115,17 +108,14 @@ async def update_role(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def delete_role(
-        role_id: int,
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['roles:delete'])
-        ],
-        role_service: RoleService = Depends(get_role_service),
+    request: Request,
+    role_id: int,
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['roles:delete'])
+    ],
+    role_service: RoleService = Depends(get_role_service),
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    deleted = await role_service.delete_role(role_id)
-    if not deleted:
-        raise exceptions.NotFoundError('Role')
+    await role_service.delete_role(role_id)

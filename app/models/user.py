@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.userprogress import UserProgress
     from app.models.careertrack import CareerTrack
     from app.models.role import Role
+    from app.models.email import EmailNotification
 
 
 class UserRole(str, Enum):
@@ -20,11 +21,18 @@ class UserRole(str, Enum):
     TEACHER = 'teacher'
 
 
+class AccountStatus(str, Enum):
+    CREATED = 'created'
+    CONFIRMED = 'confirmed'
+    BLOCKED = 'blocked'
+
+
 class UserBase(BaseSchema):
     email: EmailStr = Field(max_length=255, unique=True, index=True)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     role: UserRole = Field(default=UserRole.STUDENT)
+    status: AccountStatus = Field(default=AccountStatus.CREATED)
 
 
 class User(UserBase, BaseSQLModel, table=True):
@@ -43,6 +51,11 @@ class User(UserBase, BaseSQLModel, table=True):
         sa_relationship_kwargs={'lazy': 'selectin'},
     )
 
+    email_notifications: List['EmailNotification'] = Relationship(
+        back_populates='user',
+        sa_relationship_kwargs={'lazy': 'selectin'},
+    )
+
 
 class UserCreate(UserBase):
     hashed_password: str = Field(..., min_length=6, max_length=128)
@@ -52,6 +65,7 @@ class UserUpdate(BaseSchema):
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
     role: Optional[UserRole] = None
+    status: Optional[AccountStatus] = None
 
 
 class UserPublic(UserBase, BaseModelSchema):

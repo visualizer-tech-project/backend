@@ -12,6 +12,7 @@ from app.dependencies.services import (
     get_user_service,
     get_auth_service,
     get_refresh_session_repo,
+    get_email_repo,
 )
 from app.dependencies.session import SessionDep
 
@@ -30,4 +31,5 @@ __all__ = [
     'get_progress_service',
     'get_auth_service',
     'get_refresh_session_repo',
+    'get_email_repo',
 ]

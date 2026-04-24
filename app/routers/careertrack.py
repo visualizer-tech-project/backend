@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
+from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_career_track_service
 from app.models.base import ListResponse
@@ -29,7 +30,9 @@ router = APIRouter(prefix='/career-tracks', tags=['career-tracks'])
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_tracks(
+    request: Request,
     filters: CareerTrackFilters = Depends(),
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -37,8 +40,6 @@ async def get_tracks(
         Security(get_current_user, scopes=['career_tracks:list'])
     ] = None,
 ) -> ListResponse[CareerTrackPublic]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
     return await service.get_tracks(filters)
 
 
@@ -51,7 +52,9 @@ async def get_tracks(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_track_by_id(
+    request: Request,
     track_id: int,
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -59,12 +62,7 @@ async def get_track_by_id(
         Security(get_current_user, scopes=['career_tracks:read'])
     ] = None,
 ) -> CareerTrackPublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        return await service.get_track_by_id(track_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    return await service.get_track_by_id(track_id)
 
 
 @router.get(
@@ -76,7 +74,9 @@ async def get_track_by_id(
         **responses.common_responses,
     }
 )
+@limiter.limit("60/minute")
 async def get_track_courses(
+    request: Request,
     track_id: int,
     skip: int = DEFAULT_SKIP,
     limit: int = DEFAULT_LIMIT,
@@ -86,12 +86,7 @@ async def get_track_courses(
         Security(get_current_user, scopes=['career_tracks:read'])
     ] = None,
 ) -> list[TrackCourseItem]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        return await service.get_track_courses(track_id, skip, limit)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    return await service.get_track_courses(track_id, skip, limit)
 
 
 @router.post(
@@ -104,7 +99,9 @@ async def get_track_courses(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def create_track(
+    request: Request,
     track_data: CareerTrackCreate,
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -112,12 +109,7 @@ async def create_track(
         Security(get_current_user, scopes=['career_tracks:create'])
     ] = None,
 ) -> CareerTrackPublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        return await service.create_track(track_data, current_user.id)
-    except ValueError as e:
-        raise exceptions.BadRequestError(str(e))
+    return await service.create_track(track_data, current_user.id)
 
 
 @router.put(
@@ -130,7 +122,9 @@ async def create_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def update_track(
+    request: Request,
     track_id: int,
     track_data: CareerTrackUpdate,
     service: CareerTrackService = Depends(get_career_track_service),
@@ -139,14 +133,7 @@ async def update_track(
         Security(get_current_user, scopes=['career_tracks:update'])
     ] = None,
 ) -> CareerTrackPublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        return await service.update_track(track_id, track_data)
-    except ValueError as e:
-        if 'not found' in str(e).lower():
-            raise exceptions.NotFoundError(str(e))
-        raise exceptions.BadRequestError(str(e))
+    return await service.update_track(track_id, track_data)
 
 
 @router.delete(
@@ -158,7 +145,9 @@ async def update_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def delete_track(
+    request: Request,
     track_id: int,
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: Annotated[
@@ -166,12 +155,7 @@ async def delete_track(
         Security(get_current_user, scopes=['career_tracks:delete'])
     ] = None,
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        await service.delete_track(track_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    await service.delete_track(track_id)
 
 
 @router.post(
@@ -184,7 +168,9 @@ async def delete_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def add_course_to_track(
+    request: Request,
     track_id: int,
     add_data: AddCourseToTrack,
     service: CareerTrackService = Depends(get_career_track_service),
@@ -193,12 +179,7 @@ async def add_course_to_track(
         Security(get_current_user, scopes=['career_tracks:update'])
     ] = None,
 ) -> CareerTrackCoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        return await service.add_course_to_track(track_id, add_data)
-    except ValueError as e:
-        raise exceptions.BadRequestError(str(e))
+    return await service.add_course_to_track(track_id, add_data)
 
 
 @router.delete(
@@ -210,7 +191,9 @@ async def add_course_to_track(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def remove_course_from_track(
+    request: Request,
     track_id: int,
     course_id: int,
     service: CareerTrackService = Depends(get_career_track_service),
@@ -219,9 +202,5 @@ async def remove_course_from_track(
         Security(get_current_user, scopes=['career_tracks:update'])
     ] = None,
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        await service.remove_course_from_track(track_id, course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    await service.remove_course_from_track(track_id, course_id)
+    

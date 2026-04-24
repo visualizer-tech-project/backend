@@ -2,11 +2,10 @@ from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import update
+from sqlmodel import select, update
 
 from app.models.refresh_session import RefreshSession
 from app.repositories.base import BaseRepository
-from app.core.constants import DEFAULT_LIMIT
 
 
 class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
@@ -15,7 +14,7 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
 
     async def get_by_jti(self, jti: str) -> Optional[RefreshSession]:
         filters = self._create_filter_conditions_from_dict({'jti': jti})
-        items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
+        items, _ = await self.get_all(filters=filters, limit=1)
         return items[0] if items else None
 
     async def get_valid_by_user_id(self, user_id: int) -> List[RefreshSession]:
@@ -31,10 +30,10 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
         return valid_items
 
     async def create_session(
-        self,
-        user_id: int,
-        refresh_token_jti: str,
-        expires_at: datetime,
+            self,
+            user_id: int,
+            refresh_token_jti: str,
+            expires_at: datetime,
     ) -> RefreshSession:
         session = RefreshSession(
             user_id=user_id,
@@ -52,11 +51,29 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
         await self.save(session)
         return True
 
-    async def invalidate_all_user_sessions(self, user_id: int) -> None:
+    async def invalidate_all_user_sessions(self, user_id: int) -> int:
+        active_sessions = await self.get_valid_by_user_id(user_id)
+        count = len(active_sessions)
+
         await self.session.exec(
             update(RefreshSession)
             .where(RefreshSession.user_id == user_id)
             .where(RefreshSession.is_valid == True)
             .values(is_valid=False)
         )
+        await self.session.commit()
+
+        return count
+
+    async def cleanup_expired_sessions(self) -> None:
+        now = datetime.now(timezone.utc)
+        query = select(RefreshSession).where(
+            RefreshSession.expires_at < now
+        )
+        result = await self.session.exec(query)
+        expired_sessions = result.all()
+
+        for session in expired_sessions:
+            await self.session.delete(session)
+
         await self.session.commit()
