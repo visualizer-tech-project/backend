@@ -5,6 +5,7 @@ from pydantic import EmailStr
 from sqlmodel import Field, Relationship
 
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
+from app.models.role import UserRoleMapping
 
 if TYPE_CHECKING:
     from app.models.program import Program
@@ -47,7 +48,7 @@ class User(UserBase, BaseSQLModel, table=True):
 
     roles: List['Role'] = Relationship(
         back_populates='users',
-        link_model='user_role',
+        link_model=UserRoleMapping,
         sa_relationship_kwargs={'lazy': 'selectin'},
     )
 

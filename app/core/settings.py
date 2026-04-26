@@ -4,13 +4,19 @@ from pydantic import BaseModel, EmailStr, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class DbSettings(BaseModel):
+class DbSettings(BaseSettings):
     schema: str = 'postgresql+asyncpg'
     host: str = 'localhost'
     user: str = 'postgres'
     password: str = 'pass'
     port: int = 5432
     name: str = 'db'
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='DB_',
+        extra='ignore',
+    )
 
 
 class AuthSettings(BaseModel):
