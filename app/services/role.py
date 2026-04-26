@@ -77,20 +77,6 @@ class RoleService:
     async def set_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
         await self._role_repository.set_role_permissions(role_id, permission_ids)
 
-    async def can_view_user_progress(self, current_user: User, target_user_id: int) -> bool:
-        if current_user.role == UserRole.ADMIN:
-            return True
-        if current_user.role == UserRole.TEACHER:
-            return True
-        return current_user.id == target_user_id
-
-    async def can_modify_user_progress(self, current_user: User, target_user_id: int) -> bool:
-        if current_user.role == UserRole.ADMIN:
-            return True
-        if current_user.role == UserRole.TEACHER:
-            return True
-        return current_user.id == target_user_id
-
     async def get_user_role_names(self, user_id: int) -> List[str]:
         roles = await self._role_repository.get_user_roles(user_id)
         return [role.name for role in roles]

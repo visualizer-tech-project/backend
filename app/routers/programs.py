@@ -33,8 +33,6 @@ async def get_programs(
         Security(get_current_user, scopes=['programs:list'])
     ] = None,
 ) -> ListResponse[ProgramPublic]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
     return await service.get_programs(filters)
 
 

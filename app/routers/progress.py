@@ -28,7 +28,8 @@ router = APIRouter(prefix='/users', tags=['progress'])
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['progress:list'])]
 )
 @limiter.limit("30/minute")
 async def get_user_progress(
@@ -36,14 +37,13 @@ async def get_user_progress(
     user_id: int,
     filters: ProgressFilters = Depends(),
     service: ProgressService = Depends(get_progress_service),
-    role_service: RoleService = Depends(get_role_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:list'])
-    ] = None,
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ListResponse[UserProgressWithDetails]:
-    if not await role_service.can_view_user_progress(current_user, user_id):
-        raise exceptions.ForbiddenError('You can only view your own progress')
+
+    if current_user.id != user_id:
+        if 'progress:view_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
+
     return await service.get_user_progress(user_id, filters)
 
 
@@ -57,7 +57,8 @@ async def get_user_progress(
         **responses.bad_request_responses,
         **responses.conflict_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['progress:create'])]
 )
 @limiter.limit("10/minute")
 async def create_progress(
@@ -66,15 +67,11 @@ async def create_progress(
     course_id: int,
     progress_data: ProgressCreate,
     service: ProgressService = Depends(get_progress_service),
-    role_service: RoleService = Depends(get_role_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:create'])
-    ] = None,
+    current_user: CurrentUser = Depends(get_current_user)
 ) -> UserProgressPublic:
-    if not await role_service.can_modify_user_progress(current_user, user_id):
-        raise exceptions.ForbiddenError('You can only create progress for yourself')
-
+    if current_user.id != user_id:
+        if 'progress:modify_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
     progress_data.user_id = user_id
     progress_data.course_id = course_id
     return await service.create_progress(user_id, course_id, progress_data)
@@ -88,7 +85,8 @@ async def create_progress(
         **responses.detail_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['progress:update'])]
 )
 @limiter.limit("10/minute")
 async def update_progress(
@@ -97,14 +95,11 @@ async def update_progress(
     course_id: int,
     progress_data: ProgressUpdate,
     service: ProgressService = Depends(get_progress_service),
-    role_service: RoleService = Depends(get_role_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:update'])
-    ] = None,
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> UserProgressPublic:
-    if not await role_service.can_modify_user_progress(current_user, user_id):
-        raise exceptions.ForbiddenError('You can only update your own progress')
+    if current_user.id != user_id:
+        if 'progress:modify_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
     return await service.update_progress(user_id, course_id, progress_data)
 
 
@@ -115,7 +110,8 @@ async def update_progress(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['progress:delete'])]
 )
 @limiter.limit("10/minute")
 async def delete_progress(
@@ -123,12 +119,10 @@ async def delete_progress(
     user_id: int,
     course_id: int,
     service: ProgressService = Depends(get_progress_service),
-    role_service: RoleService = Depends(get_role_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:delete'])
-    ] = None,
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> None:
-    if not await role_service.can_modify_user_progress(current_user, user_id):
-        raise exceptions.ForbiddenError('You can only delete your own progress')
+    if current_user.id != user_id:
+        if 'progress:modify_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
+
     await service.delete_progress(user_id, course_id)
