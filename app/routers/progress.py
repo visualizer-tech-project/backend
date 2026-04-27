@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
@@ -29,7 +27,6 @@ router = APIRouter(prefix='/users', tags=['progress'])
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['progress:list'])]
 )
 @limiter.limit("30/minute")
 async def get_user_progress(
@@ -37,7 +34,7 @@ async def get_user_progress(
     user_id: int,
     filters: ProgressFilters = Depends(),
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:list']),
 ) -> ListResponse[UserProgressWithDetails]:
 
     if current_user.id != user_id:
@@ -58,7 +55,6 @@ async def get_user_progress(
         **responses.conflict_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['progress:create'])]
 )
 @limiter.limit("10/minute")
 async def create_progress(
@@ -67,7 +63,7 @@ async def create_progress(
     course_id: int,
     progress_data: ProgressCreate,
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:create']),
 ) -> UserProgressPublic:
     if current_user.id != user_id:
         if 'progress:modify_any' not in current_user.scopes:
@@ -86,7 +82,6 @@ async def create_progress(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['progress:update'])]
 )
 @limiter.limit("10/minute")
 async def update_progress(
@@ -95,7 +90,7 @@ async def update_progress(
     course_id: int,
     progress_data: ProgressUpdate,
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:update']),
 ) -> UserProgressPublic:
     if current_user.id != user_id:
         if 'progress:modify_any' not in current_user.scopes:
@@ -111,7 +106,6 @@ async def update_progress(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['progress:delete'])]
 )
 @limiter.limit("10/minute")
 async def delete_progress(
@@ -119,7 +113,7 @@ async def delete_progress(
     user_id: int,
     course_id: int,
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:delete']),
 ) -> None:
     if current_user.id != user_id:
         if 'progress:modify_any' not in current_user.scopes:

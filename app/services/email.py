@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from fastapi import BackgroundTasks
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
@@ -10,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class EmailService:
-    def __init__(self, background_tasks: Optional[BackgroundTasks] = None):
+    def __init__(self, background_tasks: BackgroundTasks):
         self._background_tasks = background_tasks
 
         self._conf = ConnectionConfig(
@@ -41,17 +40,11 @@ class EmailService:
             subtype=MessageType.html,
         )
 
-        if self._background_tasks:
-            self._background_tasks.add_task(
-                self._fast_mail.send_message,
-                message,
-                template_name=template_name,
-            )
-        else:
-            await self._fast_mail.send_message(
-                message,
-                template_name=template_name,
-            )
+        self._background_tasks.add_task(
+            self._fast_mail.send_message,
+            message,
+            template_name=template_name,
+        )
 
     async def send_verification_email(
             self,
