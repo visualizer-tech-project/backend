@@ -134,6 +134,7 @@ async def get_prerequisites(
     '/{course_id}/prerequisites',
     response_model=PrerequisitePublic,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Security(get_current_user, scopes=['courses:update'])],
     responses={
         **responses.auth_responses,
         **responses.bad_request_responses,
