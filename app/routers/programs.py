@@ -66,8 +66,8 @@ async def create_program(
     request: Request,
     program_data: ProgramCreate,
     service: ProgramService = Depends(get_program_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProgramPublic:
+    current_user = request.user
     return await service.create_program(program_data, current_user.id)
 
 
@@ -129,6 +129,6 @@ async def copy_program(
     program_id: int,
     copy_request: ProgramCopyRequest,
     service: ProgramService = Depends(get_program_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProgramPublic:
+    current_user = request.user
     return await service.copy_program(program_id, copy_request, current_user.id)

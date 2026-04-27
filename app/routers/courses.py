@@ -66,8 +66,8 @@ async def create_course(
     request: Request,
     course_data: CourseCreate,
     service: CourseService = Depends(get_course_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> CoursePublic:
+    current_user = request.user
     return await service.create_course(course_data, current_user.id)
 
 

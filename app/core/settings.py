@@ -46,11 +46,27 @@ class EmailSettings(BaseModel):
     base_url: str = 'http://localhost:8000'
 
 
+class CorsSettings(BaseModel):
+    debug_origins: list[str] = [
+        "http://localhost",
+        "http://localhost:8080",
+        "http://localhost:3000",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:3000",
+        "https://localhost",
+        "https://localhost:8080",
+        "https://localhost:3000",
+    ]
+    production_origins: list[str] = ["https://our-domain.com"]
+
+
 class Settings(BaseSettings):
+    debug: bool = False
     db: DbSettings = DbSettings()
     auth: AuthSettings = AuthSettings()
     rbac: RBACSettings = RBACSettings()
     email: EmailSettings = EmailSettings()
+    cors: CorsSettings = CorsSettings()
 
     model_config = SettingsConfigDict(
         env_file='.env',

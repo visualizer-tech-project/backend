@@ -1,26 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
+
+from app.core.settings import settings
 
 
 def setup_cors(app: FastAPI) -> None:
-    debug = os.getenv("DEBUG", "false").lower() == "true"
-
-    if debug:
-        origins = [
-            "http://localhost",
-            "http://localhost:8080",
-            "http://localhost:3000",
-            "http://127.0.0.1:8000",
-            "http://127.0.0.1:3000",
-            "https://localhost",
-            "https://localhost:8080",
-            "https://localhost:3000",
-        ]
-    else:
-        origins = [
-            "https://our-domain.com",
-        ]
+    origins = settings.cors.debug_origins if settings.debug else settings.cors.production_origins
 
     app.add_middleware(
         CORSMiddleware,
