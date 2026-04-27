@@ -1,8 +1,6 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, Security, status, Request
 
-from app.core import exceptions, responses
+from app.core import responses
 from app.core.rate_limiter import limiter
 from app.core.security import get_current_user, CurrentUser
 from app.dependencies import get_program_service
@@ -21,17 +19,14 @@ router = APIRouter(prefix='/programs', tags=['programs'])
     responses={
         **responses.auth_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['programs:list'])]
 )
 @limiter.limit("60/minute")
 async def get_programs(
     request: Request,
     filters: ProgramFilters = Depends(),
     service: ProgramService = Depends(get_program_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['programs:list'])
-    ] = None,
 ) -> ListResponse[ProgramPublic]:
     return await service.get_programs(filters)
 
@@ -43,17 +38,14 @@ async def get_programs(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['programs:read'])]
 )
 @limiter.limit("60/minute")
 async def get_program_by_id(
     request: Request,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['programs:read'])
-    ] = None,
 ) -> ProgramPublic:
     return await service.get_program_by_id(program_id)
 
@@ -66,17 +58,15 @@ async def get_program_by_id(
         **responses.auth_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['programs:create'])]
 )
 @limiter.limit("10/minute")
 async def create_program(
     request: Request,
     program_data: ProgramCreate,
     service: ProgramService = Depends(get_program_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['programs:create'])
-    ] = None,
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProgramPublic:
     return await service.create_program(program_data, current_user.id)
 
@@ -89,7 +79,8 @@ async def create_program(
         **responses.detail_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['programs:update'])]
 )
 @limiter.limit("10/minute")
 async def update_program(
@@ -97,10 +88,6 @@ async def update_program(
     program_id: int,
     program_data: ProgramUpdate,
     service: ProgramService = Depends(get_program_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['programs:update'])
-    ] = None,
 ) -> ProgramPublic:
     return await service.update_program(program_id, program_data)
 
@@ -112,17 +99,14 @@ async def update_program(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['programs:delete'])]
 )
 @limiter.limit("10/minute")
 async def delete_program(
     request: Request,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['programs:delete'])
-    ] = None,
 ) -> None:
     await service.delete_program(program_id)
 
@@ -136,7 +120,8 @@ async def delete_program(
         **responses.detail_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['programs:create'])]
 )
 @limiter.limit("5/minute")
 async def copy_program(
@@ -144,9 +129,6 @@ async def copy_program(
     program_id: int,
     copy_request: ProgramCopyRequest,
     service: ProgramService = Depends(get_program_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['programs:create'])
-    ] = None,
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProgramPublic:
     return await service.copy_program(program_id, copy_request, current_user.id)

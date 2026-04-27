@@ -57,11 +57,6 @@ class User(UserBase, BaseSQLModel, table=True):
         sa_relationship_kwargs={'lazy': 'selectin'},
     )
 
-    email_notifications: List['EmailNotification'] = Relationship(
-        back_populates='user',
-        sa_relationship_kwargs={'lazy': 'selectin'},
-    )
-
 
 class UserCreate(UserBase):
     hashed_password: str = Field(..., min_length=6, max_length=128)
