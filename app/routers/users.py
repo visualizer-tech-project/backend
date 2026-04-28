@@ -48,7 +48,6 @@ async def get_users(
     request: Request,
     user_service: UserService = Depends(get_user_service),
     filters: UserFilters = Depends(),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> Sequence[UserPublic]:
     result = await user_service.get_users(filters)
     return result.items
@@ -68,7 +67,6 @@ async def get_user(
     request: Request,
     user_id: int,
     user_service: UserService = Depends(get_user_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> UserPublic:
     return await user_service.get_user_by_id(user_id)
 
@@ -107,7 +105,6 @@ async def escalate_user_role(
     escalate_data: EscalateRoleRequest,
     user_service: UserService = Depends(get_user_service),
     role_service: RoleService = Depends(get_role_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> UserPublic:
     await user_service.get_user_by_id(user_id)
 
