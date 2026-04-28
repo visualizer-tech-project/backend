@@ -12,11 +12,6 @@ class DbSettings(BaseSettings):
     port: int = 5432
     name: str = 'db'
 
-    model_config = SettingsConfigDict(
-        env_file='.env',
-        env_prefix='DB_',
-        extra='ignore',
-    )
 
 
 class AuthSettings(BaseModel):
@@ -70,7 +65,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file='.env',
-        env_nested_delimiter='__',
+        env_nested_delimiter='_',
         extra='ignore',
         case_sensitive=False,
     )

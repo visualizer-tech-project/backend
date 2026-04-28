@@ -59,13 +59,13 @@ async def get_program_by_id(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['programs:create'])]
 )
 @limiter.limit("10/minute")
 async def create_program(
     request: Request,
     program_data: ProgramCreate,
     service: ProgramService = Depends(get_program_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['programs:create']),
 ) -> ProgramPublic:
     current_user = request.user
     return await service.create_program(program_data, current_user.id)
@@ -121,7 +121,6 @@ async def delete_program(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['programs:create'])]
 )
 @limiter.limit("5/minute")
 async def copy_program(
@@ -129,6 +128,7 @@ async def copy_program(
     program_id: int,
     copy_request: ProgramCopyRequest,
     service: ProgramService = Depends(get_program_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['programs:create']),
 ) -> ProgramPublic:
     current_user = request.user
     return await service.copy_program(program_id, copy_request, current_user.id)

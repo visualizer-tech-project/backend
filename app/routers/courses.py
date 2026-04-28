@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Security, status, Request
+from typing import Annotated
 
 from app.core import responses
 from app.core.rate_limiter import limiter
@@ -59,13 +60,13 @@ async def get_course_by_id(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:create'])]
 )
 @limiter.limit("10/minute")
 async def create_course(
     request: Request,
     course_data: CourseCreate,
     service: CourseService = Depends(get_course_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['courses:create']),
 ) -> CoursePublic:
     current_user = request.user
     return await service.create_course(course_data, current_user.id)
@@ -134,13 +135,11 @@ async def get_prerequisites(
     '/{course_id}/prerequisites',
     response_model=PrerequisitePublic,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Security(get_current_user, scopes=['courses:update'])],
     responses={
         **responses.auth_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:update'])]
 )
 @limiter.limit("10/minute")
 async def add_prerequisite(
@@ -148,6 +147,7 @@ async def add_prerequisite(
     course_id: int,
     prerequisite_data: PrerequisiteCreate,
     service: CourseService = Depends(get_course_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['courses:update']),
 ) -> PrerequisitePublic:
     return await service.add_prerequisite(course_id, prerequisite_data)
 
