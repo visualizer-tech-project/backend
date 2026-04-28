@@ -67,6 +67,7 @@ async def create_program(
     service: ProgramService = Depends(get_program_service),
     current_user: CurrentUser = Security(get_current_user, scopes=['programs:create']),
 ) -> ProgramPublic:
+    current_user = request.user
     return await service.create_program(program_data, current_user.id)
 
 
@@ -129,4 +130,5 @@ async def copy_program(
     service: ProgramService = Depends(get_program_service),
     current_user: CurrentUser = Security(get_current_user, scopes=['programs:create']),
 ) -> ProgramPublic:
+    current_user = request.user
     return await service.copy_program(program_id, copy_request, current_user.id)

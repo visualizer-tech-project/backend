@@ -95,6 +95,7 @@ async def create_track(
     service: CareerTrackService = Depends(get_career_track_service),
     current_user: CurrentUser = Security(get_current_user, scopes=['career_tracks:create']),
 ) -> CareerTrackPublic:
+    current_user = request.user
     return await service.create_track(track_data, current_user.id)
 
 
