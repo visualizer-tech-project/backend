@@ -19,6 +19,7 @@ class DbSettings(BaseSettings):
     )
 
 
+
 class AuthSettings(BaseModel):
     jwt_secret_key: str = 'your-secret-key-min-32-chars-long-here!!!'
     jwt_algorithm: str = 'HS256'
@@ -70,7 +71,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file='.env',
-        env_nested_delimiter='__',
+        env_nested_delimiter='_',
         extra='ignore',
         case_sensitive=False,
     )
