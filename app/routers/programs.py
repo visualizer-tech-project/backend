@@ -27,7 +27,13 @@ async def get_programs(
     request: Request,
     filters: ProgramFilters = Depends(),
     service: ProgramService = Depends(get_program_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['programs:list'])
+    ] = None,
 ) -> ListResponse[ProgramPublic]:
+    if current_user is None:
+        raise exceptions.ForbiddenError()
     return await service.get_programs(filters)
 
 
@@ -46,6 +52,10 @@ async def get_program_by_id(
     request: Request,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['programs:read'])
+    ] = None,
 ) -> ProgramPublic:
     return await service.get_program_by_id(program_id)
 
@@ -66,6 +76,10 @@ async def create_program(
     request: Request,
     program_data: ProgramCreate,
     service: ProgramService = Depends(get_program_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['programs:create'])
+    ] = None,
 ) -> ProgramPublic:
     current_user = request.user
     return await service.create_program(program_data, current_user.id)
@@ -88,6 +102,10 @@ async def update_program(
     program_id: int,
     program_data: ProgramUpdate,
     service: ProgramService = Depends(get_program_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['programs:update'])
+    ] = None,
 ) -> ProgramPublic:
     return await service.update_program(program_id, program_data)
 
@@ -107,6 +125,10 @@ async def delete_program(
     request: Request,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['programs:delete'])
+    ] = None,
 ) -> None:
     await service.delete_program(program_id)
 
@@ -129,6 +151,10 @@ async def copy_program(
     program_id: int,
     copy_request: ProgramCopyRequest,
     service: ProgramService = Depends(get_program_service),
+    current_user: Annotated[
+        CurrentUser,
+        Security(get_current_user, scopes=['programs:create'])
+    ] = None,
 ) -> ProgramPublic:
     current_user = request.user
     return await service.copy_program(program_id, copy_request, current_user.id)

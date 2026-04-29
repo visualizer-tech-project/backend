@@ -28,6 +28,8 @@ async def get_courses(
     filters: CourseFilters = Depends(),
     service: CourseService = Depends(get_course_service),
 ) -> ListResponse[CoursePublic]:
+    if current_user is None:
+        raise exceptions.ForbiddenError()
     return await service.get_courses(filters)
 
 
