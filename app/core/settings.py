@@ -12,12 +12,6 @@ class DbSettings(BaseSettings):
     port: int = 5432
     name: str = 'db'
 
-    model_config = SettingsConfigDict(
-        env_file='.env',
-        env_prefix='DB_',
-        extra='ignore',
-    )
-
 
 class AuthSettings(BaseModel):
     jwt_secret_key: str = 'your-secret-key-min-32-chars-long-here!!!'

@@ -1,3 +1,4 @@
+# app/repositories/role.py
 from typing import List, Optional, Sequence
 from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession

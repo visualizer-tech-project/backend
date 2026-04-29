@@ -87,15 +87,14 @@ async def get_track_courses(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['career_tracks:create'])]
 )
 @limiter.limit("10/minute")
 async def create_track(
     request: Request,
     track_data: CareerTrackCreate,
     service: CareerTrackService = Depends(get_career_track_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['career_tracks:create']),
 ) -> CareerTrackPublic:
-    current_user = request.user
     return await service.create_track(track_data, current_user.id)
 
 

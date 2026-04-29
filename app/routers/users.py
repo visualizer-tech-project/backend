@@ -26,12 +26,11 @@ class EscalateRoleRequest(BaseModel):
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['profile:read'])]
 )
 @limiter.limit("30/minute")
 async def get_profile(
     request: Request,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
 ) -> UserPublic:
     return UserPublic.model_validate(current_user)
 
@@ -81,13 +80,12 @@ async def get_user(
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['profile:read'])]
 )
 @limiter.limit("10/minute")
 async def update_own_profile(
     request: Request,
     user_data: UserUpdate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
     user_service: UserService = Depends(get_user_service),
 ) -> UserPublic:
     return await user_service.update_user(current_user.id, user_data)
