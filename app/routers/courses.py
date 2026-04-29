@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import responses
 from app.core.rate_limiter import limiter
-from app.core.security import CurrentUser, get_current_user
+from app.dependencies import CurrentUser, get_current_user
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
@@ -59,15 +59,14 @@ async def get_course_by_id(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:create'])]
 )
 @limiter.limit("10/minute")
 async def create_course(
     request: Request,
     course_data: CourseCreate,
     service: CourseService = Depends(get_course_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['courses:create']),
 ) -> CoursePublic:
-    current_user = request.user
     return await service.create_course(course_data, current_user.id)
 
 

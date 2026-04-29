@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTask
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
 from app.core.security import oauth2_scheme, get_current_user, CurrentUser
-from app.dependencies.services import get_auth_service
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -59,7 +58,7 @@ async def register(
     request: Request,
     register_data: RegisterRequest,
     background_tasks: BackgroundTasks,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MeResponse:
     try:
         user = await auth_service.register(register_data, background_tasks)
@@ -83,7 +82,7 @@ async def register(
 async def verify_account(
     request: Request,
     verify_data: VerifyAccountRequest,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MessageResponse:
     await auth_service.verify_account(verify_data)
     return MessageResponse(
@@ -105,7 +104,7 @@ async def login(
     request: Request,
     response: Response,
     login_data: LoginRequest,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> TokenResponse:
     try:
         token_response = await auth_service.login(login_data)
@@ -128,7 +127,7 @@ async def refresh_token(
     request: Request,
     response: Response,
     refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> RefreshResponse:
     if not refresh_token:
         raise exceptions.UnauthorizedError('Refresh token not found')
@@ -148,7 +147,7 @@ async def refresh_token(
 )
 async def logout(
     refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> LogoutResponse:
     if not refresh_token:
         return LogoutResponse(success=True)
@@ -176,7 +175,7 @@ async def logout(
 async def get_me(
     request: Request,
     token: str = Depends(oauth2_scheme),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MeResponse:
     user = await auth_service.get_user_from_access_token(token)
     if not user:
@@ -198,7 +197,7 @@ async def forgot_password(
     request: Request,
     forgot_data: ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MessageResponse:
     await auth_service.forgot_password(forgot_data, background_tasks)
     return MessageResponse(
@@ -220,7 +219,7 @@ async def forgot_password(
 async def reset_password(
     request: Request,
     reset_data: ResetPasswordRequest,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MessageResponse:
     await auth_service.reset_password(reset_data)
     return MessageResponse(
@@ -246,7 +245,7 @@ async def change_password(
         CurrentUser,
         Depends(get_current_user)
     ],
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MessageResponse:
     await auth_service.change_password(current_user.id, change_data)
     return MessageResponse(

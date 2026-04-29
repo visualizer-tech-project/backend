@@ -106,17 +106,6 @@ async def get_role_service(
 ) -> RoleService:
     return RoleService(role_repo, permission_repo)
 
-async def get_email_repo(session: SessionDep) -> EmailRepository:
-    return EmailRepository(session)
-
-async def get_auth_service(
-    user_repo: UserRepository = Depends(get_user_repo),
-    refresh_session_repo: RefreshSessionRepository = Depends(get_refresh_session_repo),
-    role_repo: RoleRepository = Depends(get_role_repo),
-    email_repo: EmailRepository = Depends(get_email_repo),
-) -> AuthService:
-    return AuthService(user_repo, refresh_session_repo, role_repo, email_repo)
-
 async def get_authenticator_service(
     session: SessionDep,
 ) -> AuthenticatorService:

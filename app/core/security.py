@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, Security
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -32,6 +32,3 @@ async def get_current_user(
     if user is None:
         raise exceptions.UnauthorizedError("Invalid or expired token")
     return user
-
-
-CurrentUser = Annotated[User, Security(get_current_user)]
