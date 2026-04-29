@@ -26,6 +26,7 @@ class EscalateRoleRequest(BaseModel):
         **responses.auth_responses,
         **responses.common_responses,
     },
+    dependencies=[Security(get_current_user, scopes=['profile:read'])]
 )
 @limiter.limit("30/minute")
 async def get_profile(
@@ -42,13 +43,13 @@ async def get_profile(
         **responses.auth_responses,
         **responses.common_responses,
     },
+    dependencies=[Security(get_current_user, scopes=['profile:list'])]
 )
 @limiter.limit("30/minute")
 async def get_users(
     request: Request,
     user_service: UserService = Depends(get_user_service),
     filters: UserFilters = Depends(),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> Sequence[UserPublic]:
     result = await user_service.get_users(filters)
     return result.items
@@ -62,13 +63,13 @@ async def get_users(
         **responses.detail_responses,
         **responses.common_responses,
     },
+    dependencies=[Security(get_current_user, scopes=['profile:read'])]
 )
 @limiter.limit("30/minute")
 async def get_user(
     request: Request,
     user_id: int,
     user_service: UserService = Depends(get_user_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> UserPublic:
     return await user_service.get_user_by_id(user_id)
 
@@ -80,6 +81,7 @@ async def get_user(
         **responses.auth_responses,
         **responses.common_responses,
     },
+    dependencies=[Security(get_current_user, scopes=['profile:read'])]
 )
 @limiter.limit("10/minute")
 async def update_own_profile(
@@ -99,6 +101,7 @@ async def update_own_profile(
         **responses.detail_responses,
         **responses.common_responses,
     },
+    dependencies=[Security(get_current_user, scopes=['roles:update'])]
 )
 @limiter.limit("5/minute")
 async def escalate_user_role(
@@ -107,7 +110,6 @@ async def escalate_user_role(
     escalate_data: EscalateRoleRequest,
     user_service: UserService = Depends(get_user_service),
     role_service: RoleService = Depends(get_role_service),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> UserPublic:
     await user_service.get_user_by_id(user_id)
 
