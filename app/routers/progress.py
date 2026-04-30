@@ -13,6 +13,7 @@ from app.models.userprogress import (
 )
 from app.schemas.userprogress import UserProgressWithDetails
 from app.services.progress import ProgressService
+from app.services.role import RoleService
 
 router = APIRouter(prefix='/users', tags=['progress'])
 
