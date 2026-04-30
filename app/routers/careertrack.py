@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import responses
 from app.core.rate_limiter import limiter
-from app.core.security import get_current_user, CurrentUser
-from app.dependencies import get_career_track_service
+from app.core.security import get_current_user
+from app.dependencies import get_career_track_service, CurrentUser
 from app.models.base import ListResponse
 from app.models.careertrack import (
     CareerTrackCreate,

@@ -5,7 +5,8 @@ from pydantic import BaseModel
 
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
-from app.core.security import get_current_user, CurrentUser
+from app.core.security import get_current_user
+from app.dependencies import CurrentUser
 from app.dependencies.services import get_user_service, get_role_service
 from app.models.user import UserPublic, UserUpdate
 from app.schemas.filters import UserFilters
@@ -42,7 +43,7 @@ async def get_profile(
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['profile:list'])]
+    dependencies=[Security(get_current_user, scopes=['profile:read'])]
 )
 @limiter.limit("30/minute")
 async def get_users(
@@ -85,7 +86,7 @@ async def get_user(
 async def update_own_profile(
     request: Request,
     user_data: UserUpdate,
-    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
+    current_user: CurrentUser = Security(get_current_user, scopes=['profile:update']),
     user_service: UserService = Depends(get_user_service),
 ) -> UserPublic:
     return await user_service.update_user(current_user.id, user_data)

@@ -1,9 +1,10 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTasks, Request, Security
 
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
-from app.core.security import oauth2_scheme, get_current_user, CurrentUser
+from app.core.security import oauth2_scheme, get_current_user
+from app.dependencies import CurrentUser
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -241,10 +242,7 @@ async def reset_password(
 async def change_password(
     request: Request,
     change_data: ChangePasswordRequest,
-    current_user: Annotated[
-        CurrentUser,
-        Depends(get_current_user)
-    ],
+    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
     auth_service: AuthService = Depends(AuthService),
 ) -> MessageResponse:
     await auth_service.change_password(current_user.id, change_data)

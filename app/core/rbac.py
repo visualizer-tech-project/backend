@@ -48,6 +48,8 @@ PERMISSION_DESCRIPTIONS: dict[str, str] = {
     'progress:create': 'Создание записи прогресса',
     'progress:update': 'Обновление прогресса',
     'progress:delete': 'Удаление прогресса',
+    'progress:view_any': 'Просмотр прогресса любого пользователя',
+    'progress:modify_any': 'Изменение прогресса любого пользователя',
     'roles:list': 'Просмотр списка ролей',
     'roles:read': 'Просмотр роли',
     'roles:create': 'Создание роли',
