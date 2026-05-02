@@ -1,3 +1,4 @@
+# app/repositories/role.py
 from typing import List, Optional, Sequence
 from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -25,6 +26,12 @@ class RoleRepository(BaseRepository[Role, RoleCreate, RoleUpdate]):
             await self.session.refresh(role, ['permissions'])
         return role
 
+    async def get_role_by_name_with_permissions(self, name: str) -> Optional[Role]:
+        role = await self.get_by_name(name)
+        if role:
+            await self.session.refresh(role, ['permissions'])
+        return role
+
     async def get_user_roles(self, user_id: int) -> Sequence[Role]:
         query = (
             select(Role)
@@ -41,3 +48,21 @@ class RoleRepository(BaseRepository[Role, RoleCreate, RoleUpdate]):
 
         role_data = RoleCreate(name=name, description=description, scope_aliases=[])
         return await self.create(role_data)
+
+    async def assign_roles_to_user(self, user_id: int, role_ids: List[int]) -> None:
+        await self.session.exec(
+            delete(UserRoleMapping).where(UserRoleMapping.user_id == user_id)
+        )
+        for role_id in role_ids:
+            mapping = UserRoleMapping(user_id=user_id, role_id=role_id)
+            self.session.add(mapping)
+        await self.session.commit()
+
+    async def set_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
+        await self.session.exec(
+            delete(RolePermissionMapping).where(RolePermissionMapping.role_id == role_id)
+        )
+        for perm_id in permission_ids:
+            mapping = RolePermissionMapping(role_id=role_id, permission_id=perm_id)
+            self.session.add(mapping)
+        await self.session.commit()

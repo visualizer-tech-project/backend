@@ -12,7 +12,7 @@ INITIAL_PERMISSION_SCHEMA: dict[str, list[str]] = {
         'programs:list', 'programs:read', 'programs:create', 'programs:update',
         'courses:list', 'courses:read', 'courses:create', 'courses:update',
         'career_tracks:list', 'career_tracks:read', 'career_tracks:create', 'career_tracks:update',
-        'progress:list', 'progress:read', 'progress:create', 'progress:update',
+        'progress:list', 'progress:read', 'progress:create', 'progress:update', 'progress:view_any', 'progress:modify_any',
     ],
     'student': [
         'profile:read',
@@ -48,6 +48,8 @@ PERMISSION_DESCRIPTIONS: dict[str, str] = {
     'progress:create': 'Создание записи прогресса',
     'progress:update': 'Обновление прогресса',
     'progress:delete': 'Удаление прогресса',
+    'progress:view_any': 'Просмотр прогресса любого пользователя',
+    'progress:modify_any': 'Изменение прогресса любого пользователя',
     'roles:list': 'Просмотр списка ролей',
     'roles:read': 'Просмотр роли',
     'roles:create': 'Создание роли',

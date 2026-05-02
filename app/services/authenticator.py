@@ -1,15 +1,17 @@
 from typing import Optional
 
+from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.auth import JWTHandler
+from app.dependencies.session import get_session
 from app.models.user import User
 from app.repositories.role import RoleRepository
 from app.repositories.user import UserRepository
 
 
 class AuthenticatorService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession = Depends(get_session)):
         self._session = session
         self._user_repo = UserRepository(session)
         self._role_repo = RoleRepository(session)

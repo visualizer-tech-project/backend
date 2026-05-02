@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Response, status, Cookie
+from typing import Annotated
+from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTasks, Request, Security
 
 from app.core import exceptions, responses
-from app.core.security import oauth2_scheme
-from app.dependencies.services import get_auth_service
-from app.models.user import User
+from app.core.rate_limiter import limiter
+from app.core.security import oauth2_scheme, get_current_user
+from app.dependencies import CurrentUser
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -11,6 +12,11 @@ from app.schemas.auth import (
     RefreshResponse,
     LogoutResponse,
     MeResponse,
+    VerifyAccountRequest,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    MessageResponse,
 )
 from app.services.auth import AuthService
 from app.core.constants import REFRESH_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_MAX_AGE
@@ -40,7 +46,7 @@ def clear_refresh_token_cookie(response: Response) -> None:
 
 @router.post(
     '/register',
-    response_model=User,
+    response_model=MeResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         **responses.bad_request_responses,
@@ -48,17 +54,42 @@ def clear_refresh_token_cookie(response: Response) -> None:
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def register(
+    request: Request,
     register_data: RegisterRequest,
-    auth_service: AuthService = Depends(get_auth_service),
-) -> User:
+    background_tasks: BackgroundTasks,
+    auth_service: AuthService = Depends(AuthService),
+) -> MeResponse:
     try:
-        user = await auth_service.register(register_data)
-        return user
+        user = await auth_service.register(register_data, background_tasks)
+        return MeResponse.model_validate(user)
     except ValueError as e:
         if 'already exists' in str(e):
             raise exceptions.ConflictError(str(e))
         raise exceptions.BadRequestError(str(e))
+
+
+@router.post(
+    '/verify',
+    response_model=MessageResponse,
+    responses={
+        **responses.bad_request_responses,
+        **responses.detail_responses,
+        **responses.common_responses,
+    }
+)
+@limiter.limit("10/minute")
+async def verify_account(
+    request: Request,
+    verify_data: VerifyAccountRequest,
+    auth_service: AuthService = Depends(AuthService),
+) -> MessageResponse:
+    await auth_service.verify_account(verify_data)
+    return MessageResponse(
+        message="Account verified successfully. You can now login.",
+        success=True
+    )
 
 
 @router.post(
@@ -69,10 +100,12 @@ async def register(
         **responses.common_responses,
     }
 )
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     response: Response,
     login_data: LoginRequest,
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> TokenResponse:
     try:
         token_response = await auth_service.login(login_data)
@@ -90,10 +123,12 @@ async def login(
         **responses.common_responses,
     }
 )
+@limiter.limit("10/minute")
 async def refresh_token(
+    request: Request,
     response: Response,
     refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> RefreshResponse:
     if not refresh_token:
         raise exceptions.UnauthorizedError('Refresh token not found')
@@ -113,7 +148,7 @@ async def refresh_token(
 )
 async def logout(
     refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> LogoutResponse:
     if not refresh_token:
         return LogoutResponse(success=True)
@@ -137,12 +172,81 @@ async def logout(
         **responses.common_responses,
     }
 )
+@limiter.limit("30/minute")
 async def get_me(
+    request: Request,
     token: str = Depends(oauth2_scheme),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(AuthService),
 ) -> MeResponse:
     user = await auth_service.get_user_from_access_token(token)
     if not user:
         raise exceptions.UnauthorizedError('Invalid or expired token')
 
     return MeResponse.model_validate(user)
+
+
+@router.post(
+    '/forgot-password',
+    response_model=MessageResponse,
+    responses={
+        **responses.bad_request_responses,
+        **responses.common_responses,
+    }
+)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    forgot_data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    auth_service: AuthService = Depends(AuthService),
+) -> MessageResponse:
+    await auth_service.forgot_password(forgot_data, background_tasks)
+    return MessageResponse(
+        message="If the email exists in our system, a password reset link has been sent.",
+        success=True
+    )
+
+
+@router.post(
+    '/reset-password',
+    response_model=MessageResponse,
+    responses={
+        **responses.bad_request_responses,
+        **responses.detail_responses,
+        **responses.common_responses,
+    }
+)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    reset_data: ResetPasswordRequest,
+    auth_service: AuthService = Depends(AuthService),
+) -> MessageResponse:
+    await auth_service.reset_password(reset_data)
+    return MessageResponse(
+        message="Password has been reset successfully. You can now login with the new password.",
+        success=True
+    )
+
+
+@router.post(
+    '/change-password',
+    response_model=MessageResponse,
+    responses={
+        **responses.auth_responses,
+        **responses.bad_request_responses,
+        **responses.common_responses,
+    }
+)
+@limiter.limit("5/minute")
+async def change_password(
+    request: Request,
+    change_data: ChangePasswordRequest,
+    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
+    auth_service: AuthService = Depends(AuthService),
+) -> MessageResponse:
+    await auth_service.change_password(current_user.id, change_data)
+    return MessageResponse(
+        message="Password has been changed successfully. Please login again with the new password.",
+        success=True
+    )

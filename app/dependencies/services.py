@@ -9,13 +9,11 @@ from app.repositories.program import ProgramRepository
 from app.repositories.role import RoleRepository
 from app.repositories.user import UserRepository
 from app.repositories.userprogress import UserProgressRepository
-from app.services import AuthenticatorService
 from app.services.careertrack import CareerTrackService
 from app.services.course import CourseService
 from app.services.program import ProgramService
 from app.services.progress import ProgressService
 from app.services.user import UserService
-from app.services.auth import AuthService
 from app.services.permission import PermissionService
 from app.services.role import RoleService
 from app.repositories.refresh_session import RefreshSessionRepository
@@ -104,15 +102,3 @@ async def get_role_service(
     permission_repo: PermissionRepository = Depends(get_permission_repo),
 ) -> RoleService:
     return RoleService(role_repo, permission_repo)
-
-async def get_auth_service(
-    user_repo: UserRepository = Depends(get_user_repo),
-    refresh_session_repo: RefreshSessionRepository = Depends(get_refresh_session_repo),
-    role_repo: RoleRepository = Depends(get_role_repo),
-) -> AuthService:
-    return AuthService(user_repo, refresh_session_repo, role_repo)
-
-async def get_authenticator_service(
-    session: SessionDep,
-) -> AuthenticatorService:
-    return AuthenticatorService(session)

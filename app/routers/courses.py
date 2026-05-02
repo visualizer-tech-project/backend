@@ -1,9 +1,8 @@
-from typing import Annotated
+from fastapi import APIRouter, Depends, Security, status, Request
 
-from fastapi import APIRouter, Depends, Security, status
-
-from app.core import exceptions, responses
-from app.core.security import CurrentUser, get_current_user
+from app.core import responses
+from app.core.rate_limiter import limiter
+from app.dependencies import CurrentUser, get_current_user
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
@@ -20,18 +19,15 @@ router = APIRouter(prefix='/courses', tags=['courses'])
     responses={
         **responses.auth_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:list'])]
 )
+@limiter.limit("60/minute")
 async def get_courses(
-        filters: CourseFilters = Depends(),
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:list'])
-        ] = None,
+    request: Request,
+    filters: CourseFilters = Depends(),
+    service: CourseService = Depends(get_course_service),
 ) -> ListResponse[CoursePublic]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
     return await service.get_courses(filters)
 
 
@@ -42,23 +38,16 @@ async def get_courses(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:read'])]
 )
+@limiter.limit("60/minute")
 async def get_course_by_id(
-        course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:read'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    service: CourseService = Depends(get_course_service),
 ) -> CoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    course = await service.get_course_by_id(course_id)
-    if course is None:
-        raise exceptions.NotFoundError(f"Course with id {course_id} not found")
-    return course
+    return await service.get_course_by_id(course_id)
 
 
 @router.post(
@@ -69,23 +58,16 @@ async def get_course_by_id(
         **responses.auth_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
 )
+@limiter.limit("10/minute")
 async def create_course(
-        course_data: CourseCreate,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:create'])
-        ] = None,
+    request: Request,
+    course_data: CourseCreate,
+    service: CourseService = Depends(get_course_service),
+    current_user: CurrentUser = Security(get_current_user, scopes=['courses:create']),
 ) -> CoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.create_course(course_data, current_user.id)
-    except ValueError as e:
-        raise exceptions.BadRequestError(str(e))
+    return await service.create_course(course_data, current_user.id)
 
 
 @router.put(
@@ -96,26 +78,17 @@ async def create_course(
         **responses.detail_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:update'])]
 )
+@limiter.limit("10/minute")
 async def update_course(
-        course_id: int,
-        course_data: CourseUpdate,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:update'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    course_data: CourseUpdate,
+    service: CourseService = Depends(get_course_service),
 ) -> CoursePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.update_course(course_id, course_data)
-    except ValueError as e:
-        if 'not found' in str(e).lower():
-            raise exceptions.NotFoundError(str(e))
-        raise exceptions.BadRequestError(str(e))
+    return await service.update_course(course_id, course_data)
 
 
 @router.delete(
@@ -125,23 +98,16 @@ async def update_course(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:delete'])]
 )
+@limiter.limit("10/minute")
 async def delete_course(
-        course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:delete'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    service: CourseService = Depends(get_course_service),
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        await service.delete_course(course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    await service.delete_course(course_id)
 
 
 @router.get(
@@ -151,23 +117,16 @@ async def delete_course(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:read'])]
 )
+@limiter.limit("60/minute")
 async def get_prerequisites(
-        course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:read'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    service: CourseService = Depends(get_course_service),
 ) -> list[CoursePublic]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.get_prerequisites(course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    return await service.get_prerequisites(course_id)
 
 
 @router.post(
@@ -178,24 +137,17 @@ async def get_prerequisites(
         **responses.auth_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:update'])]
 )
+@limiter.limit("10/minute")
 async def add_prerequisite(
-        course_id: int,
-        prerequisite_data: PrerequisiteCreate,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:update'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    prerequisite_data: PrerequisiteCreate,
+    service: CourseService = Depends(get_course_service),
 ) -> PrerequisitePublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        return await service.add_prerequisite(course_id, prerequisite_data)
-    except ValueError as e:
-        raise exceptions.BadRequestError(str(e))
+    return await service.add_prerequisite(course_id, prerequisite_data)
 
 
 @router.delete(
@@ -205,21 +157,14 @@ async def add_prerequisite(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
+    dependencies=[Security(get_current_user, scopes=['courses:update'])]
 )
+@limiter.limit("10/minute")
 async def remove_prerequisite(
-        course_id: int,
-        prerequisite_course_id: int,
-        service: CourseService = Depends(get_course_service),
-        current_user: Annotated[
-            CurrentUser,
-            Security(get_current_user, scopes=['courses:update'])
-        ] = None,
+    request: Request,
+    course_id: int,
+    prerequisite_course_id: int,
+    service: CourseService = Depends(get_course_service),
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    try:
-        await service.remove_prerequisite(course_id, prerequisite_course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    await service.remove_prerequisite(course_id, prerequisite_course_id)
