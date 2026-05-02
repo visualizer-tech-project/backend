@@ -1,3 +1,4 @@
+from app.dependencies.auth import CurrentUser
 from app.dependencies.services import (
     get_career_track_repo,
     get_career_track_service,
@@ -10,7 +11,6 @@ from app.dependencies.services import (
     get_user_progress_repo,
     get_user_repo,
     get_user_service,
-    get_auth_service,
     get_refresh_session_repo,
 )
 from app.dependencies.session import SessionDep
@@ -28,6 +28,7 @@ __all__ = [
     'get_course_service',
     'get_career_track_service',
     'get_progress_service',
-    'get_auth_service',
     'get_refresh_session_repo',
+    'CurrentUser',
+    'SessionDep',
 ]

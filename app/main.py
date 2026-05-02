@@ -3,6 +3,10 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 
 from app.core.bootstrap import Bootstrapper
+from app.core.cors import setup_cors
+from app.core.exception_handlers import register_exception_handlers
+from app.core.middleware import add_middleware
+from app.core.rate_limiter import setup_rate_limiter
 from app.database.engine import engine
 from app.repositories.user import UserRepository
 from app.repositories.permission import PermissionRepository
@@ -18,12 +22,11 @@ from app.routers.permission import router as permissions_router
 from app.services.user import UserService
 from app.services.permission import PermissionService
 from app.services.role import RoleService
-from app.core.exception_handlers import register_exception_handlers
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from sqlmodel.ext.asyncio.session import AsyncSession
 
     async with AsyncSession(engine) as session:
         permission_repository = PermissionRepository(session)
@@ -51,7 +54,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+setup_cors(app)
+
+setup_rate_limiter(app)
+
 register_exception_handlers(app)
+add_middleware(app)
 
 api_v1_router = APIRouter(prefix='/api/v1')
 

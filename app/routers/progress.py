@@ -1,10 +1,9 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
-from app.core.security import get_current_user, CurrentUser
-from app.dependencies import get_progress_service
+from app.core.rate_limiter import limiter
+from app.core.security import get_current_user
+from app.dependencies import get_progress_service, CurrentUser
 from app.models.base import ListResponse
 from app.schemas.filters import ProgressFilters
 from app.models.userprogress import (
@@ -14,6 +13,7 @@ from app.models.userprogress import (
 )
 from app.schemas.userprogress import UserProgressWithDetails
 from app.services.progress import ProgressService
+from app.services.role import RoleService
 
 router = APIRouter(prefix='/users', tags=['progress'])
 
@@ -25,27 +25,22 @@ router = APIRouter(prefix='/users', tags=['progress'])
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
 )
+@limiter.limit("30/minute")
 async def get_user_progress(
+    request: Request,
     user_id: int,
     filters: ProgressFilters = Depends(),
     service: ProgressService = Depends(get_progress_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:list'])
-    ] = None,
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:list']),
 ) -> ListResponse[UserProgressWithDetails]:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
 
-    if current_user.role.value == 'student' and current_user.id != user_id:
-        raise exceptions.ForbiddenError('You can only view your own progress')
+    if current_user.id != user_id:
+        if 'progress:view_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
 
-    try:
-        return await service.get_user_progress(user_id, filters)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    return await service.get_user_progress(user_id, filters)
 
 
 @router.post(
@@ -58,32 +53,23 @@ async def get_user_progress(
         **responses.bad_request_responses,
         **responses.conflict_responses,
         **responses.common_responses,
-    }
+    },
 )
+@limiter.limit("10/minute")
 async def create_progress(
+    request: Request,
     user_id: int,
     course_id: int,
     progress_data: ProgressCreate,
     service: ProgressService = Depends(get_progress_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:create'])
-    ] = None,
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:create']),
 ) -> UserProgressPublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    if current_user.role.value == 'student' and current_user.id != user_id:
-        raise exceptions.ForbiddenError('You can only create progress for yourself')
-
-    try:
-        progress_data.user_id = user_id
-        progress_data.course_id = course_id
-        return await service.create_progress(user_id, course_id, progress_data)
-    except ValueError as e:
-        if 'already exists' in str(e):
-            raise exceptions.ConflictError(str(e))
-        raise exceptions.NotFoundError(str(e))
+    if current_user.id != user_id:
+        if 'progress:modify_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
+    progress_data.user_id = user_id
+    progress_data.course_id = course_id
+    return await service.create_progress(user_id, course_id, progress_data)
 
 
 @router.put(
@@ -94,30 +80,21 @@ async def create_progress(
         **responses.detail_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
 )
+@limiter.limit("10/minute")
 async def update_progress(
+    request: Request,
     user_id: int,
     course_id: int,
     progress_data: ProgressUpdate,
     service: ProgressService = Depends(get_progress_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:update'])
-    ] = None,
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:update']),
 ) -> UserProgressPublic:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-
-    if current_user.role.value == 'student' and current_user.id != user_id:
-        raise exceptions.ForbiddenError('You can only update your own progress')
-
-    try:
-        return await service.update_progress(user_id, course_id, progress_data)
-    except ValueError as e:
-        if 'not found' in str(e).lower():
-            raise exceptions.NotFoundError(str(e))
-        raise exceptions.BadRequestError(str(e))
+    if current_user.id != user_id:
+        if 'progress:modify_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
+    return await service.update_progress(user_id, course_id, progress_data)
 
 
 @router.delete(
@@ -127,20 +104,18 @@ async def update_progress(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
 )
+@limiter.limit("10/minute")
 async def delete_progress(
+    request: Request,
     user_id: int,
     course_id: int,
     service: ProgressService = Depends(get_progress_service),
-    current_user: Annotated[
-        CurrentUser,
-        Security(get_current_user, scopes=['progress:delete'])
-    ] = None,
+    current_user: CurrentUser = Security(get_current_user, scopes=['progress:delete']),
 ) -> None:
-    if current_user is None:
-        raise exceptions.ForbiddenError()
-    try:
-        await service.delete_progress(user_id, course_id)
-    except ValueError as e:
-        raise exceptions.NotFoundError(str(e))
+    if current_user.id != user_id:
+        if 'progress:modify_any' not in current_user.scopes:
+            raise exceptions.ForbiddenError('Not enough permissions')
+
+    await service.delete_progress(user_id, course_id)
