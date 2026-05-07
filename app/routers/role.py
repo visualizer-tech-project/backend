@@ -19,9 +19,9 @@ router = APIRouter(prefix='/roles', tags=['roles'])
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['roles:list'])]
+    dependencies=[Security(get_current_user, scopes=['roles:list'])],
 )
-@limiter.limit("30/minute")
+@limiter.limit('30/minute')
 async def get_roles(
     request: Request,
     role_service: RoleService = Depends(get_role_service),
@@ -37,9 +37,9 @@ async def get_roles(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['roles:read'])]
+    dependencies=[Security(get_current_user, scopes=['roles:read'])],
 )
-@limiter.limit("30/minute")
+@limiter.limit('30/minute')
 async def get_role(
     request: Request,
     role_id: int,
@@ -56,9 +56,9 @@ async def get_role(
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['roles:create'])]
+    dependencies=[Security(get_current_user, scopes=['roles:create'])],
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def create_role(
     request: Request,
     role_data: RoleCreate,
@@ -75,9 +75,9 @@ async def create_role(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['roles:update'])]
+    dependencies=[Security(get_current_user, scopes=['roles:update'])],
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def update_role(
     request: Request,
     role_id: int,
@@ -95,9 +95,9 @@ async def update_role(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['roles:delete'])]
+    dependencies=[Security(get_current_user, scopes=['roles:delete'])],
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def delete_role(
     request: Request,
     role_id: int,

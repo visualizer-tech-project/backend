@@ -25,6 +25,35 @@ uv
 3. **uv run fastapi dev main.py**
 
 
+## Запуск через Docker Compose
+
+### Требования
+- Docker Desktop (включает Docker и Docker Compose)
+
+### Инструкция
+
+1. Создайте файл `.env` в корне проекта со следующим содержимым:
+```env 
+
+DB__SCHEMA=postgresql+asyncpg
+DB__HOST=db
+DB__USER=postgres
+DB__PASSWORD=your_password
+DB__PORT=5432
+DB__NAME=edumap
+AUTH__JWT_SECRET_KEY=your-secret-key-min-32-chars
+AUTH__JWT_ALGORITHM=HS256
+AUTH__ACCESS_TOKEN_EXPIRE_MINUTES=15
+AUTH__REFRESH_TOKEN_EXPIRE_DAYS=7
+RBAC__ADMIN_EMAIL=admin@example.com
+RBAC__ADMIN_PASSWORD=admin123
+RBAC__ADMIN_FIRST_NAME=Admin
+RBAC__ADMIN_LAST_NAME=User
+RBAC__ADMIN_ROLE=admin
+RBAC__PUBLIC_ROLE=public
+DEBUG=true 
+```
+
 ### Переменные окружения
 
 Для настройки приложения используйте файл `.env`.

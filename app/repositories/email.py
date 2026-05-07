@@ -32,10 +32,12 @@ class EmailRepository(BaseRepository[EmailNotification, None, None]):
         user_id: int,
         code: uuid.UUID,
     ) -> Optional[EmailNotification]:
-        filters = self._create_filter_conditions_from_dict({
-            'user_id': user_id,
-            'code': code,
-        })
+        filters = self._create_filter_conditions_from_dict(
+            {
+                'user_id': user_id,
+                'code': code,
+            }
+        )
         items, _ = await self.get_all(filters=filters, limit=1)
         return items[0] if items else None
 

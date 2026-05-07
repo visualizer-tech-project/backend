@@ -31,11 +31,11 @@ class FilterCondition:
 
 class FilterConfig:
     def __init__(
-            self,
-            field_name: str,
-            operator: str = FILTER_OPERATOR_EQ,
-            model_field_name: Optional[str] = None,
-            condition: Optional[Callable[[Any], bool]] = None,
+        self,
+        field_name: str,
+        operator: str = FILTER_OPERATOR_EQ,
+        model_field_name: Optional[str] = None,
+        condition: Optional[Callable[[Any], bool]] = None,
     ):
         self.field_name = field_name
         self.operator = operator
@@ -54,11 +54,11 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         pass
 
     def add_filter(
-            self,
-            field_name: str,
-            operator: str = FILTER_OPERATOR_EQ,
-            model_field_name: Optional[str] = None,
-            condition: Optional[Callable[[Any], bool]] = None,
+        self,
+        field_name: str,
+        operator: str = FILTER_OPERATOR_EQ,
+        model_field_name: Optional[str] = None,
+        condition: Optional[Callable[[Any], bool]] = None,
     ) -> None:
         self._filter_configs[field_name] = FilterConfig(
             field_name=field_name,
@@ -68,10 +68,10 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         )
 
     def _create_filter_conditions_from_dict(
-            self,
-            filter_dict: Dict[str, Any],
-            skip_none: bool = True,
-            allowed_fields: Optional[List[str]] = None,
+        self,
+        filter_dict: Dict[str, Any],
+        skip_none: bool = True,
+        allowed_fields: Optional[List[str]] = None,
     ) -> List[FilterCondition]:
 
         conditions = []
@@ -91,19 +91,21 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if config.condition and not config.condition(value):
                 continue
 
-            conditions.append(FilterCondition(
-                field=config.model_field_name,
-                value=value,
-                operator=config.operator,
-            ))
+            conditions.append(
+                FilterCondition(
+                    field=config.model_field_name,
+                    value=value,
+                    operator=config.operator,
+                )
+            )
 
         return conditions
 
     def _create_filter_conditions_from_model(
-            self,
-            filter_model: Optional[BaseModel],
-            skip_none: bool = True,
-            allowed_fields: Optional[List[str]] = None,
+        self,
+        filter_model: Optional[BaseModel],
+        skip_none: bool = True,
+        allowed_fields: Optional[List[str]] = None,
     ) -> List[FilterCondition]:
 
         if not filter_model:
@@ -111,9 +113,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         filter_dict = filter_model.model_dump(exclude_unset=skip_none)
         return self._create_filter_conditions_from_dict(
-            filter_dict,
-            skip_none=skip_none,
-            allowed_fields=allowed_fields
+            filter_dict, skip_none=skip_none, allowed_fields=allowed_fields
         )
 
     async def save(self, db_obj: ModelType) -> ModelType:
@@ -125,7 +125,12 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_by_id(self, item_id: int) -> Optional[ModelType]:
         return await self.session.get(self.model, item_id)
 
-    def _apply_filters(self, query, model: Type[ModelType], filters: Optional[List[FilterCondition]] = None):
+    def _apply_filters(
+        self,
+        query,
+        model: Type[ModelType],
+        filters: Optional[List[FilterCondition]] = None,
+    ):
         if not filters:
             return query
 
@@ -147,12 +152,12 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return query
 
     async def get_all(
-            self,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
-            filters: Optional[List[FilterCondition]] = None,
-            order_by: Optional[str] = None,
-            descending: bool = False,
+        self,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        filters: Optional[List[FilterCondition]] = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
     ) -> tuple[List[ModelType], int]:
         query = select(self.model)
         query = self._apply_filters(query, self.model, filters)
@@ -176,12 +181,12 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return items, total
 
     async def get_paginated(
-            self,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
-            filters: Optional[List[FilterCondition]] = None,
-            order_by: Optional[str] = None,
-            descending: bool = False,
+        self,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        filters: Optional[List[FilterCondition]] = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
     ) -> ListResponse[ModelType]:
         if limit < MIN_LIMIT:
             limit = DEFAULT_LIMIT
@@ -212,7 +217,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return await self.save(db_obj)
 
     async def update(
-            self, item_id: int, update_data: UpdateSchemaType
+        self, item_id: int, update_data: UpdateSchemaType
     ) -> Optional[ModelType]:
         db_obj = await self.get_by_id(item_id)
         if not db_obj:
@@ -241,13 +246,13 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return result.first() is not None
 
     async def get_all_for_model(
-            self,
-            model: Type[ModelType],
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
-            filters: Optional[List[FilterCondition]] = None,
-            order_by: Optional[str] = None,
-            descending: bool = False,
+        self,
+        model: Type[ModelType],
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        filters: Optional[List[FilterCondition]] = None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
     ) -> tuple[List[ModelType], int]:
         query = select(model)
         query = self._apply_filters(query, model, filters)

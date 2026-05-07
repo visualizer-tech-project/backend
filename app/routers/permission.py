@@ -19,9 +19,9 @@ router = APIRouter(prefix='/permissions', tags=['permissions'])
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['permissions:list'])]
+    dependencies=[Security(get_current_user, scopes=['permissions:list'])],
 )
-@limiter.limit("30/minute")
+@limiter.limit('30/minute')
 async def get_permissions(
     request: Request,
     permission_service: PermissionService = Depends(get_permission_service),

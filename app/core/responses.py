@@ -32,40 +32,22 @@ class ConflictErrorSchema(ErrorSchema):
 
 
 common_responses: Dict[int, Dict[str, Any]] = {
-    500: {
-        'model': InternalServerErrorSchema,
-        'description': 'Internal server error'
-    }
+    500: {'model': InternalServerErrorSchema, 'description': 'Internal server error'}
 }
 
 auth_responses: Dict[int, Dict[str, Any]] = {
-    401: {
-        'model': UnauthorizedErrorSchema,
-        'description': 'Not authenticated'
-    },
-    403: {
-        'model': ForbiddenErrorSchema,
-        'description': 'Not enough permissions'
-    },
+    401: {'model': UnauthorizedErrorSchema, 'description': 'Not authenticated'},
+    403: {'model': ForbiddenErrorSchema, 'description': 'Not enough permissions'},
 }
 
 detail_responses: Dict[int, Dict[str, Any]] = {
-    404: {
-        'model': NotFoundErrorSchema,
-        'description': 'Resource not found'
-    }
+    404: {'model': NotFoundErrorSchema, 'description': 'Resource not found'}
 }
 
 bad_request_responses: Dict[int, Dict[str, Any]] = {
-    400: {
-        'model': BadRequestErrorSchema,
-        'description': 'Bad request'
-    }
+    400: {'model': BadRequestErrorSchema, 'description': 'Bad request'}
 }
 
 conflict_responses: Dict[int, Dict[str, Any]] = {
-    409: {
-        'model': ConflictErrorSchema,
-        'description': 'Resource already exists'
-    }
+    409: {'model': ConflictErrorSchema, 'description': 'Resource already exists'}
 }

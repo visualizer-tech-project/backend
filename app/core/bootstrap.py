@@ -25,7 +25,9 @@ class Bootstrapper:
         all_permission_ids: Set[uuid.UUID] = set()
         for subject in INITIAL_SUBJECTS:
             for action in INITIAL_ACTIONS:
-                perm = await self._permission_service.get_or_create_permission(subject, action)
+                perm = await self._permission_service.get_or_create_permission(
+                    subject, action
+                )
                 all_permission_ids.add(perm.id)
 
         admin_role = await self._role_service.get_or_create_role(
@@ -54,12 +56,16 @@ class Bootstrapper:
                 parts = alias.split(':', 1)
                 if len(parts) == 2:
                     subject, action = parts
-                    perm = await self._permission_service.get_or_create_permission(subject, action)
+                    perm = await self._permission_service.get_or_create_permission(
+                        subject, action
+                    )
                     permission_ids.append(perm.id)
 
             await self._role_service.set_role_permissions(role.id, permission_ids)
 
-        existing_admin = await self._user_service.get_user_by_email(settings.rbac.admin_email)
+        existing_admin = await self._user_service.get_user_by_email(
+            settings.rbac.admin_email
+        )
         if not existing_admin:
             admin_user = UserCreate(
                 email=settings.rbac.admin_email,
@@ -70,6 +76,10 @@ class Bootstrapper:
             )
             user = await self._user_service.create_user(admin_user)
 
-            admin_role_obj = await self._role_service.get_role_by_name(settings.rbac.admin_role)
+            admin_role_obj = await self._role_service.get_role_by_name(
+                settings.rbac.admin_role
+            )
             if admin_role_obj:
-                await self._role_service.assign_roles_to_user(user.id, [admin_role_obj.id])
+                await self._role_service.assign_roles_to_user(
+                    user.id, [admin_role_obj.id]
+                )

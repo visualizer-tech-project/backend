@@ -7,7 +7,7 @@ from starlette.types import ASGIApp
 
 from app.core.logger import get_logger, request_id_var
 
-logger = get_logger("middleware")
+logger = get_logger('middleware')
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -19,28 +19,27 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         request_id_var.set(request_id)
 
         start_time = time.time()
-        logger.info(f"Request started: {request.method} {request.url.path}")
+        logger.info(f'Request started: {request.method} {request.url.path}')
 
         try:
             response = await call_next(request)
 
             duration_ms = (time.time() - start_time) * 1000
             logger.info(
-                f"Request completed: {request.method} {request.url.path} - "
-                f"Status: {response.status_code} - Duration: {duration_ms:.2f}ms"
+                f'Request completed: {request.method} {request.url.path} - '
+                f'Status: {response.status_code} - Duration: {duration_ms:.2f}ms'
             )
             return response
 
         except Exception as exc:
             duration_ms = (time.time() - start_time) * 1000
             logger.error(
-                f"Request failed: {request.method} {request.url.path} - "
-                f"Error: {type(exc).__name__}: {str(exc)} - Duration: {duration_ms:.2f}ms",
-                exc_info=True
+                f'Request failed: {request.method} {request.url.path} - '
+                f'Error: {type(exc).__name__}: {str(exc)} - Duration: {duration_ms:.2f}ms',
+                exc_info=True,
             )
             raise exc
 
 
 def add_middleware(app):
     app.add_middleware(LoggingMiddleware)
-    

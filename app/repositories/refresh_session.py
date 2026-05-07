@@ -18,22 +18,23 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
         return items[0] if items else None
 
     async def get_valid_by_user_id(self, user_id: int) -> List[RefreshSession]:
-        filters = self._create_filter_conditions_from_dict({
-            'user_id': user_id,
-            'is_valid': True,
-        })
+        filters = self._create_filter_conditions_from_dict(
+            {
+                'user_id': user_id,
+                'is_valid': True,
+            }
+        )
         items, _ = await self.get_all(filters=filters)
         valid_items = [
-            item for item in items
-            if item.expires_at > datetime.now(timezone.utc)
+            item for item in items if item.expires_at > datetime.now(timezone.utc)
         ]
         return valid_items
 
     async def create_session(
-            self,
-            user_id: int,
-            refresh_token_jti: str,
-            expires_at: datetime,
+        self,
+        user_id: int,
+        refresh_token_jti: str,
+        expires_at: datetime,
     ) -> RefreshSession:
         session = RefreshSession(
             user_id=user_id,
@@ -67,9 +68,7 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
 
     async def cleanup_expired_sessions(self) -> None:
         now = datetime.now(timezone.utc)
-        query = select(RefreshSession).where(
-            RefreshSession.expires_at < now
-        )
+        query = select(RefreshSession).where(RefreshSession.expires_at < now)
         result = await self.session.exec(query)
         expired_sessions = result.all()
 

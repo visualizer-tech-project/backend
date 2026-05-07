@@ -20,10 +20,12 @@ class PrerequisiteRepository(
     async def get_by_course_pair(
         self, course_id: int, prerequisite_course_id: int
     ) -> Optional[Prerequisite]:
-        filters = self._create_filter_conditions_from_dict({
-            'course_id': course_id,
-            'prerequisite_course_id': prerequisite_course_id,
-        })
+        filters = self._create_filter_conditions_from_dict(
+            {
+                'course_id': course_id,
+                'prerequisite_course_id': prerequisite_course_id,
+            }
+        )
         items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
@@ -35,9 +37,9 @@ class PrerequisiteRepository(
     async def get_by_prerequisite_course(
         self, prerequisite_course_id: int
     ) -> List[Prerequisite]:
-        filters = self._create_filter_conditions_from_dict({
-            'prerequisite_course_id': prerequisite_course_id
-        })
+        filters = self._create_filter_conditions_from_dict(
+            {'prerequisite_course_id': prerequisite_course_id}
+        )
         items, _ = await self.get_all(filters=filters)
         return items
 

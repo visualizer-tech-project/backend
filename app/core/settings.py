@@ -42,16 +42,16 @@ class EmailSettings(BaseModel):
 
 class CorsSettings(BaseModel):
     debug_origins: list[str] = [
-        "http://localhost",
-        "http://localhost:8080",
-        "http://localhost:3000",
-        "http://127.0.0.1:8000",
-        "http://127.0.0.1:3000",
-        "https://localhost",
-        "https://localhost:8080",
-        "https://localhost:3000",
+        'http://localhost',
+        'http://localhost:8080',
+        'http://localhost:3000',
+        'http://127.0.0.1:8000',
+        'http://127.0.0.1:3000',
+        'https://localhost',
+        'https://localhost:8080',
+        'https://localhost:3000',
     ]
-    production_origins: list[str] = ["https://our-domain.com"]
+    production_origins: list[str] = ['https://our-domain.com']
 
 
 class Settings(BaseSettings):

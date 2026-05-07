@@ -20,9 +20,9 @@ router = APIRouter(prefix='/programs', tags=['programs'])
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['programs:list'])]
+    dependencies=[Security(get_current_user, scopes=['programs:list'])],
 )
-@limiter.limit("60/minute")
+@limiter.limit('60/minute')
 async def get_programs(
     request: Request,
     filters: ProgramFilters = Depends(),
@@ -39,9 +39,9 @@ async def get_programs(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['programs:read'])]
+    dependencies=[Security(get_current_user, scopes=['programs:read'])],
 )
-@limiter.limit("60/minute")
+@limiter.limit('60/minute')
 async def get_program_by_id(
     request: Request,
     program_id: int,
@@ -60,7 +60,7 @@ async def get_program_by_id(
         **responses.common_responses,
     },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def create_program(
     request: Request,
     program_data: ProgramCreate,
@@ -79,9 +79,9 @@ async def create_program(
         **responses.bad_request_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['programs:update'])]
+    dependencies=[Security(get_current_user, scopes=['programs:update'])],
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def update_program(
     request: Request,
     program_id: int,
@@ -99,9 +99,9 @@ async def update_program(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['programs:delete'])]
+    dependencies=[Security(get_current_user, scopes=['programs:delete'])],
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def delete_program(
     request: Request,
     program_id: int,
@@ -121,7 +121,7 @@ async def delete_program(
         **responses.common_responses,
     },
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def copy_program(
     request: Request,
     program_id: int,

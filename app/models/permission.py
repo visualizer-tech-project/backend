@@ -13,6 +13,7 @@ class PermissionBase(SQLModel):
     subject: str = Field(max_length=100)
     action: str = Field(max_length=100)
 
+
 class RolePermissionMapping(SQLModel, table=True):
     __tablename__ = 'role_permission'
 
@@ -24,13 +25,11 @@ class Permission(PermissionBase, BaseSQLModel, table=True):
     __tablename__ = 'permissions'
 
     roles: List['Role'] = Relationship(
-        back_populates='permissions',
-        link_model=RolePermissionMapping
+        back_populates='permissions', link_model=RolePermissionMapping
     )
 
 
 class PermissionPublic(PermissionBase, BaseModelSchema):
-
     @computed_field
     @property
     def alias(self) -> str:

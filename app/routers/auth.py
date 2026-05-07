@@ -1,5 +1,14 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTasks, Request, Security
+from fastapi import (
+    APIRouter,
+    Depends,
+    Response,
+    status,
+    Cookie,
+    BackgroundTasks,
+    Request,
+    Security,
+)
 
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
@@ -52,9 +61,9 @@ def clear_refresh_token_cookie(response: Response) -> None:
         **responses.bad_request_responses,
         **responses.conflict_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def register(
     request: Request,
     register_data: RegisterRequest,
@@ -77,9 +86,9 @@ async def register(
         **responses.bad_request_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def verify_account(
     request: Request,
     verify_data: VerifyAccountRequest,
@@ -87,8 +96,7 @@ async def verify_account(
 ) -> MessageResponse:
     await auth_service.verify_account(verify_data)
     return MessageResponse(
-        message="Account verified successfully. You can now login.",
-        success=True
+        message='Account verified successfully. You can now login.', success=True
     )
 
 
@@ -98,9 +106,9 @@ async def verify_account(
     responses={
         **responses.auth_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def login(
     request: Request,
     response: Response,
@@ -121,9 +129,9 @@ async def login(
     responses={
         **responses.auth_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def refresh_token(
     request: Request,
     response: Response,
@@ -142,9 +150,7 @@ async def refresh_token(
 
 
 @router.post(
-    '/logout',
-    response_model=LogoutResponse,
-    responses={**responses.common_responses}
+    '/logout', response_model=LogoutResponse, responses={**responses.common_responses}
 )
 async def logout(
     refresh_token: str = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
@@ -170,9 +176,9 @@ async def logout(
     responses={
         **responses.auth_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("30/minute")
+@limiter.limit('30/minute')
 async def get_me(
     request: Request,
     token: str = Depends(oauth2_scheme),
@@ -191,9 +197,9 @@ async def get_me(
     responses={
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("3/minute")
+@limiter.limit('3/minute')
 async def forgot_password(
     request: Request,
     forgot_data: ForgotPasswordRequest,
@@ -202,8 +208,8 @@ async def forgot_password(
 ) -> MessageResponse:
     await auth_service.forgot_password(forgot_data, background_tasks)
     return MessageResponse(
-        message="If the email exists in our system, a password reset link has been sent.",
-        success=True
+        message='If the email exists in our system, a password reset link has been sent.',
+        success=True,
     )
 
 
@@ -214,9 +220,9 @@ async def forgot_password(
         **responses.bad_request_responses,
         **responses.detail_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def reset_password(
     request: Request,
     reset_data: ResetPasswordRequest,
@@ -224,8 +230,8 @@ async def reset_password(
 ) -> MessageResponse:
     await auth_service.reset_password(reset_data)
     return MessageResponse(
-        message="Password has been reset successfully. You can now login with the new password.",
-        success=True
+        message='Password has been reset successfully. You can now login with the new password.',
+        success=True,
     )
 
 
@@ -236,9 +242,9 @@ async def reset_password(
         **responses.auth_responses,
         **responses.bad_request_responses,
         **responses.common_responses,
-    }
+    },
 )
-@limiter.limit("5/minute")
+@limiter.limit('5/minute')
 async def change_password(
     request: Request,
     change_data: ChangePasswordRequest,
@@ -247,6 +253,6 @@ async def change_password(
 ) -> MessageResponse:
     await auth_service.change_password(current_user.id, change_data)
     return MessageResponse(
-        message="Password has been changed successfully. Please login again with the new password.",
-        success=True
+        message='Password has been changed successfully. Please login again with the new password.',
+        success=True,
     )

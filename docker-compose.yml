@@ -1,0 +1,96 @@
+x-common-env: &common-env
+  DB__HOST: db
+  DB__PORT: 5432
+
+x-back-image: &back-image python:3.13-slim-bookworm
+
+x-api-base: &api-base
+  image: *back-image
+  env_file:
+    - .env
+  environment:
+    <<: *common-env
+  networks:
+    - app-network
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: edumap-db
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB__USER} -d ${DB__NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  migrator:
+    <<: *api-base
+    container_name: edumap-migrator
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  rbac-init:
+    <<: *api-base
+    container_name: edumap-rbac
+    command: ["python", "-m", "app.rbac.init"]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: *back-image
+    container_name: edumap-api
+    env_file:
+      - .env
+    environment:
+      <<: *common-env
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      rbac-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+  web:
+    image: nginx:stable-alpine
+    container_name: edumap-web
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./html:/var/www/html:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

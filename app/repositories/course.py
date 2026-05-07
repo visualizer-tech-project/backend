@@ -24,11 +24,11 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
         return items[0] if items else None
 
     async def get_by_program(
-            self,
-            program_id: int,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
-            course_type: Optional[CourseType] = None,
+        self,
+        program_id: int,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        course_type: Optional[CourseType] = None,
     ) -> tuple[List[Course], int]:
         filter_dict = {'program_id': program_id}
         if course_type:
@@ -42,10 +42,10 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
         )
 
     async def get_by_user(
-            self,
-            user_id: int,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
+        self,
+        user_id: int,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
     ) -> tuple[List[Course], int]:
         filters = self._create_filter_conditions_from_dict({'user_id': user_id})
         return await self.get_all(
@@ -57,8 +57,8 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
         )
 
     async def get_filtered_paginated(
-            self,
-            filters: CourseFilters,
+        self,
+        filters: CourseFilters,
     ) -> ListResponse[Course]:
         filter_conditions = self._create_filter_conditions_from_model(filters)
 
