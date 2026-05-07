@@ -58,10 +58,6 @@ setup_cors(app)
 
 setup_rate_limiter(app)
 
-setup_cors(app)
-
-setup_rate_limiter(app)
-
 register_exception_handlers(app)
 add_middleware(app)
 

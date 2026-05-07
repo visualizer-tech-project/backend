@@ -23,6 +23,14 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
         items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
+    async def get_by_title_and_program(self, title: str, program_id: int) -> Optional[Course]:
+        filters = self._create_filter_conditions_from_dict({
+            'title': title,
+            'program_id': program_id
+        })
+        items, _ = await self.get_all(filters=filters, limit=1)
+        return items[0] if items else None
+
     async def get_by_program(
         self,
         program_id: int,

@@ -42,14 +42,14 @@ class CourseService:
         if not program:
             raise exceptions.NotFoundError('Program not found')
 
-        courses_in_program, _ = await self._course_repo.get_by_program(
+        existing = await self._course_repo.get_by_title_and_program(
+            course_data.title,
             course_data.program_id
         )
-        for existing_course in courses_in_program:
-            if existing_course.title == course_data.title:
-                raise exceptions.ConflictError(
-                    'Course with this title already exists in program'
-                )
+        if existing:
+            raise exceptions.ConflictError(
+                f'Course "{course_data.title}" already exists in this program'
+            )
 
         course = Course(
             title=course_data.title,
@@ -71,17 +71,14 @@ class CourseService:
             raise exceptions.NotFoundError('Course not found')
 
         if course_data.title:
-            courses_in_program, _ = await self._course_repo.get_by_program(
-                course.program_id
+            existing = await self._course_repo.get_by_title_and_program(
+                course_data.title,
+                course_data.program_id if course_data.program_id else course.program_id
             )
-            for existing_course in courses_in_program:
-                if (
-                    existing_course.title == course_data.title
-                    and existing_course.id != course_id
-                ):
-                    raise exceptions.ConflictError(
-                        'Course with this title already exists in program'
-                    )
+            if existing and existing.id != course_id:
+                raise exceptions.ConflictError(
+                    f'Course "{course_data.title}" already exists in this program'
+                )
 
         update_dict = course_data.model_dump(exclude_unset=True)
         for field, value in update_dict.items():
