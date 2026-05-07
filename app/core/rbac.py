@@ -1,6 +1,14 @@
 from app.core.settings import settings
 
-INITIAL_SUBJECTS = ['profile', 'programs', 'courses', 'career_tracks', 'progress', 'roles', 'permissions']
+INITIAL_SUBJECTS = [
+    'profile',
+    'programs',
+    'courses',
+    'career_tracks',
+    'progress',
+    'roles',
+    'permissions',
+]
 
 INITIAL_ACTIONS = ['read', 'create', 'update', 'delete', 'list']
 
@@ -9,17 +17,35 @@ INITIAL_PERMISSION_SCHEMA: dict[str, list[str]] = {
     settings.rbac.public_role: ['profile:read'],
     'teacher': [
         'profile:read',
-        'programs:list', 'programs:read', 'programs:create', 'programs:update',
-        'courses:list', 'courses:read', 'courses:create', 'courses:update',
-        'career_tracks:list', 'career_tracks:read', 'career_tracks:create', 'career_tracks:update',
-        'progress:list', 'progress:read', 'progress:create', 'progress:update', 'progress:view_any', 'progress:modify_any',
+        'programs:list',
+        'programs:read',
+        'programs:create',
+        'programs:update',
+        'courses:list',
+        'courses:read',
+        'courses:create',
+        'courses:update',
+        'career_tracks:list',
+        'career_tracks:read',
+        'career_tracks:create',
+        'career_tracks:update',
+        'progress:list',
+        'progress:read',
+        'progress:create',
+        'progress:update',
+        'progress:view_any',
+        'progress:modify_any',
     ],
     'student': [
         'profile:read',
-        'programs:list', 'programs:read',
-        'courses:list', 'courses:read',
-        'career_tracks:list', 'career_tracks:read',
-        'progress:list', 'progress:read',
+        'programs:list',
+        'programs:read',
+        'courses:list',
+        'courses:read',
+        'career_tracks:list',
+        'career_tracks:read',
+        'progress:list',
+        'progress:read',
     ],
 }
 

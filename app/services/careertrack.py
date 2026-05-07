@@ -18,16 +18,16 @@ from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT
 
 class CareerTrackService:
     def __init__(
-            self,
-            track_repo: CareerTrackRepository,
-            course_repo: CourseRepository,
+        self,
+        track_repo: CareerTrackRepository,
+        course_repo: CourseRepository,
     ) -> None:
         self._track_repo = track_repo
         self._course_repo = course_repo
 
     async def get_tracks(
-            self,
-            filters: CareerTrackFilters,
+        self,
+        filters: CareerTrackFilters,
     ) -> ListResponse[CareerTrackPublic]:
         result = await self._track_repo.get_filtered_paginated(filters)
         public_items = [CareerTrackPublic.model_validate(item) for item in result.items]
@@ -40,32 +40,36 @@ class CareerTrackService:
         return CareerTrackPublic.model_validate(track)
 
     async def get_track_courses(
-            self,
-            track_id: int,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
+        self,
+        track_id: int,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
     ) -> list[TrackCourseItem]:
         track = await self._track_repo.get_by_id(track_id)
         if not track:
             raise exceptions.NotFoundError('Career track not found')
 
-        track_courses, _ = await self._track_repo.get_track_courses(track_id, skip, limit)
+        track_courses, _ = await self._track_repo.get_track_courses(
+            track_id, skip, limit
+        )
 
         items = []
         for tc in track_courses:
             course = await self._course_repo.get_by_id(tc.course_id)
             if course:
-                items.append(TrackCourseItem(
-                    order_index=tc.order_index,
-                    course=CoursePublic.model_validate(course)
-                ))
+                items.append(
+                    TrackCourseItem(
+                        order_index=tc.order_index,
+                        course=CoursePublic.model_validate(course),
+                    )
+                )
 
         return items
 
     async def create_track(
-            self,
-            track_data: CareerTrackCreate,
-            user_id: int,
+        self,
+        track_data: CareerTrackCreate,
+        user_id: int,
     ) -> CareerTrackPublic:
         if track_data.title:
             existing = await self._track_repo.get_by_title(track_data.title)
@@ -73,17 +77,15 @@ class CareerTrackService:
                 raise exceptions.ConflictError('Track with this title already exists')
 
         track = CareerTrack(
-            title=track_data.title,
-            description=track_data.description,
-            user_id=user_id
+            title=track_data.title, description=track_data.description, user_id=user_id
         )
         track = await self._track_repo.save(track)
         return CareerTrackPublic.model_validate(track)
 
     async def update_track(
-            self,
-            track_id: int,
-            track_data: CareerTrackUpdate,
+        self,
+        track_id: int,
+        track_data: CareerTrackUpdate,
     ) -> CareerTrackPublic:
         track = await self._track_repo.get_by_id(track_id)
         if not track:
@@ -107,9 +109,9 @@ class CareerTrackService:
             raise exceptions.NotFoundError('Career track not found')
 
     async def add_course_to_track(
-            self,
-            track_id: int,
-            add_data: AddCourseToTrack,
+        self,
+        track_id: int,
+        add_data: AddCourseToTrack,
     ) -> CareerTrackCoursePublic:
         track = await self._track_repo.get_by_id(track_id)
         if not track:
@@ -124,9 +126,7 @@ class CareerTrackService:
             raise exceptions.ConflictError('Course already in track')
 
         track_course = await self._track_repo.add_course_to_track(
-            track_id,
-            add_data.course_id,
-            add_data.order_index
+            track_id, add_data.course_id, add_data.order_index
         )
         return CareerTrackCoursePublic.model_validate(track_course)
 

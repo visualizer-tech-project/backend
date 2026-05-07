@@ -48,11 +48,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(
-    title='EduMap API',
-    version='1.0.0',
-    lifespan=lifespan
-)
+app = FastAPI(title='EduMap API', version='1.0.0', lifespan=lifespan)
 
 setup_cors(app)
 

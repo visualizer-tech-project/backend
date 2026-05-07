@@ -27,7 +27,7 @@ router = APIRouter(prefix='/users', tags=['progress'])
         **responses.common_responses,
     },
 )
-@limiter.limit("30/minute")
+@limiter.limit('30/minute')
 async def get_user_progress(
     request: Request,
     user_id: int,
@@ -55,7 +55,7 @@ async def get_user_progress(
         **responses.common_responses,
     },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def create_progress(
     request: Request,
     user_id: int,
@@ -82,7 +82,7 @@ async def create_progress(
         **responses.common_responses,
     },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def update_progress(
     request: Request,
     user_id: int,
@@ -106,7 +106,7 @@ async def update_progress(
         **responses.common_responses,
     },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def delete_progress(
     request: Request,
     user_id: int,

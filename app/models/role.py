@@ -15,6 +15,7 @@ class RoleBase(SQLModel):
     name: str = Field(max_length=100, unique=True, index=True)
     description: Optional[str] = Field(default=None, max_length=255)
 
+
 class UserRoleMapping(SQLModel, table=True):
     __tablename__ = 'user_role'
 
@@ -39,7 +40,6 @@ class Role(RoleBase, BaseSQLModel, table=True):
 
 
 class RolePublic(RoleBase, BaseModelSchema):
-
     @computed_field
     @property
     def scopes(self) -> list[str]:

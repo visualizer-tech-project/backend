@@ -11,9 +11,11 @@ if TYPE_CHECKING:
     from app.models.course import Course
     from app.models.user import User
 
+
 class ProgressId(BaseSchema):
-    user_id: int = Field(foreign_key="users.id", gt=0)
-    course_id: int = Field(foreign_key="courses.id", gt=0)
+    user_id: int = Field(foreign_key='users.id', gt=0)
+    course_id: int = Field(foreign_key='courses.id', gt=0)
+
 
 class ProgressStatus(str, Enum):
     NOT_STARTED = 'not_started'
@@ -29,12 +31,18 @@ class ProgressBase(BaseSchema):
 
     @model_validator(mode='after')
     def validate_dates(self) -> 'ProgressBase':
-        if self.started_at and self.completed_at and self.completed_at < self.started_at:
+        if (
+            self.started_at
+            and self.completed_at
+            and self.completed_at < self.started_at
+        ):
             raise ValueError('completed_at не может быть раньше started_at')
         return self
 
+
 class ProgressCreate(ProgressId, ProgressBase):
     status: ProgressStatus
+
 
 class ProgressUpdate(ProgressBase):
     pass

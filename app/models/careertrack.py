@@ -11,27 +11,31 @@ if TYPE_CHECKING:
 
 
 class CareerTrackCourseBase(BaseSchema):
-    career_track_id: int = Field(foreign_key="career_tracks.id")
-    course_id: int = Field(foreign_key="courses.id")
+    career_track_id: int = Field(foreign_key='career_tracks.id')
+    course_id: int = Field(foreign_key='courses.id')
     order_index: int
 
 
 class CareerTrackBase(BaseSchema):
     title: Optional[str] = Field(None, **TITLE_FIELD_CONFIG)
     description: Optional[str] = Field(None)
-    user_id: int = Field(foreign_key="users.id")
+    user_id: int = Field(foreign_key='users.id')
 
 
 class CareerTrack(BaseSQLModel, CareerTrackBase, table=True):
     __tablename__ = 'career_tracks'
 
     user: 'User' = Relationship(back_populates='career_tracks')
-    courses: List['CareerTrackCourse'] = Relationship(back_populates='career_track', cascade_delete=True)
+    courses: List['CareerTrackCourse'] = Relationship(
+        back_populates='career_track', cascade_delete=True
+    )
 
 
 class CareerTrackCourse(BaseSQLModel, CareerTrackCourseBase, table=True):
     __tablename__ = 'career_track_courses'
-    __table_args__ = (UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),)
+    __table_args__ = (
+        UniqueConstraint('career_track_id', 'course_id', name='uq_track_course'),
+    )
 
     career_track: 'CareerTrack' = Relationship(back_populates='courses')
     course: 'Course' = Relationship(back_populates='career_track_courses')
@@ -46,7 +50,7 @@ class CareerTrackCreate(CareerTrackBase):
 
 
 class CareerTrackUpdate(CareerTrackBase):
-    user_id: Optional[int] = Field(None, foreign_key="users.id")
+    user_id: Optional[int] = Field(None, foreign_key='users.id')
 
 
 class CareerTrackPublic(CareerTrackBase, BaseModelSchema):

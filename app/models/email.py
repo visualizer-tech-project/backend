@@ -20,15 +20,16 @@ class EmailNotification(BaseSQLModel, table=True):
 
     code: uuid.UUID = Field(
         default_factory=uuid.uuid4,
-        sa_column=Column(UUID(as_uuid=True), unique=True, nullable=False, index=True)
+        sa_column=Column(UUID(as_uuid=True), unique=True, nullable=False, index=True),
     )
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
     action: EmailAction = Field(nullable=False)
     expired_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc) + timedelta(
-            seconds=settings.email.notification_lifetime_seconds
+        default_factory=lambda: (
+            datetime.now(timezone.utc)
+            + timedelta(seconds=settings.email.notification_lifetime_seconds)
         ),
-        sa_column=Column(TIMESTAMP(timezone=True), nullable=False)
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False),
     )
     is_used: bool = Field(default=False, nullable=False)
 

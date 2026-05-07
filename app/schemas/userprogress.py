@@ -6,8 +6,8 @@ from app.models.userprogress import UserProgressPublic
 
 class UserProgressWithDetails(BaseSchema):
     """Составная схема: прогресс с деталями курса и пользователя"""
-    progress: UserProgressPublic
 
+    progress: UserProgressPublic
 
     course: Optional[Any] = Field(None, exclude=True)
     user: Any = Field(exclude=True)
@@ -32,7 +32,7 @@ class UserProgressWithDetails(BaseSchema):
     @computed_field
     @property
     def user_name(self) -> str:
-        return f"{self.user.first_name} {self.user.last_name}"
+        return f'{self.user.first_name} {self.user.last_name}'
 
     @computed_field
     @property
