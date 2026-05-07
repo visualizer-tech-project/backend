@@ -15,6 +15,12 @@ class RoleBase(SQLModel):
     name: str = Field(max_length=100, unique=True, index=True)
     description: Optional[str] = Field(default=None, max_length=255)
 
+class UserRoleMapping(SQLModel, table=True):
+    __tablename__ = 'user_role'
+
+    user_id: int = Field(foreign_key='users.id', primary_key=True)
+    role_id: int = Field(foreign_key='roles.id', primary_key=True)
+
 
 class UserRoleMapping(SQLModel, table=True):
     __tablename__ = 'user_role'
