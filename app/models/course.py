@@ -19,11 +19,7 @@ class CourseType(str, Enum):
 
 
 class CourseBase(BaseSchema):
-    title: str = Field(
-        index=True,
-        nullable=False,
-        **TITLE_FIELD_CONFIG
-    )
+    title: str = Field(unique=True, index=True, nullable=False, **TITLE_FIELD_CONFIG)
     description: Optional[str] = Field(sa_column=Column(Text, nullable=True))
     type: CourseType = Field(default=CourseType.REQUIRED, nullable=False)
     program_id: int = Field(foreign_key='programs.id', nullable=False, index=True)

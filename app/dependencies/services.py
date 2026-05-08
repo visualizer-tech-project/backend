@@ -3,6 +3,7 @@ from fastapi import Depends
 from app.dependencies.session import SessionDep
 from app.repositories.careertrack import CareerTrackRepository
 from app.repositories.course import CourseRepository
+from app.repositories.email import EmailRepository
 from app.repositories.permission import PermissionRepository
 from app.repositories.prerequisite import PrerequisiteRepository
 from app.repositories.program import ProgramRepository
@@ -102,3 +103,6 @@ async def get_role_service(
     permission_repo: PermissionRepository = Depends(get_permission_repo),
 ) -> RoleService:
     return RoleService(role_repo, permission_repo)
+
+async def get_email_repo(session: SessionDep) -> EmailRepository:
+    return EmailRepository(session)

@@ -11,7 +11,7 @@ from app.repositories.user import UserRepository
 
 
 class AuthenticatorService:
-    def __init__(self, session: AsyncSession = Depends(get_session)):
+    def __init__(self, session: AsyncSession):
         self._session = session
         self._user_repo = UserRepository(session)
         self._role_repo = RoleRepository(session)

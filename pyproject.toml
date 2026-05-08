@@ -18,6 +18,8 @@ dependencies = [
     "fastapi-mail>=1.6.2",
     "slowapi>=0.1.9",
     "gunicorn>=25.3.0",
+    "pwdlib[argon2]>=0.3.0",
+    "pyjwt>=2.12.1",
 ]
 
 [dependency-groups]

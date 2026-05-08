@@ -1,3 +1,4 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import exceptions, responses
@@ -31,9 +32,9 @@ router = APIRouter(prefix='/users', tags=['progress'])
 async def get_user_progress(
     request: Request,
     user_id: int,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['progress:list'])],
     filters: ProgressFilters = Depends(),
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Security(get_current_user, scopes=['progress:list']),
 ) -> ListResponse[UserProgressWithDetails]:
 
     if current_user.id != user_id:
@@ -61,8 +62,8 @@ async def create_progress(
     user_id: int,
     course_id: int,
     progress_data: ProgressCreate,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['progress:create'])],
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Security(get_current_user, scopes=['progress:create']),
 ) -> UserProgressPublic:
     if current_user.id != user_id:
         if 'progress:modify_any' not in current_user.scopes:
@@ -88,8 +89,8 @@ async def update_progress(
     user_id: int,
     course_id: int,
     progress_data: ProgressUpdate,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['progress:update'])],
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Security(get_current_user, scopes=['progress:update']),
 ) -> UserProgressPublic:
     if current_user.id != user_id:
         if 'progress:modify_any' not in current_user.scopes:
@@ -111,8 +112,8 @@ async def delete_progress(
     request: Request,
     user_id: int,
     course_id: int,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['progress:delete'])],
     service: ProgressService = Depends(get_progress_service),
-    current_user: CurrentUser = Security(get_current_user, scopes=['progress:delete']),
 ) -> None:
     if current_user.id != user_id:
         if 'progress:modify_any' not in current_user.scopes:

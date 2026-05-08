@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import responses
@@ -92,10 +94,8 @@ async def get_track_courses(
 async def create_track(
     request: Request,
     track_data: CareerTrackCreate,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['career_tracks:create'])],
     service: CareerTrackService = Depends(get_career_track_service),
-    current_user: CurrentUser = Security(
-        get_current_user, scopes=['career_tracks:create']
-    ),
 ) -> CareerTrackPublic:
     return await service.create_track(track_data, current_user.id)
 
