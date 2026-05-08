@@ -2,7 +2,8 @@ x-common-env: &common-env
   DB__HOST: db
   DB__PORT: 5432
 
-x-back-image: &back-image python:3.13-slim-bookworm
+x-back-image: &back-image amirkhubeev/edumap-api:latest
+x-front-image: &front-image nginx:stable-alpine
 
 x-api-base: &api-base
   image: *back-image
@@ -19,10 +20,14 @@ services:
     container_name: edumap-db
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB__USER} -d ${DB__NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -40,19 +45,7 @@ services:
         condition: service_healthy
     restart: "no"
 
-  rbac-init:
-    <<: *api-base
-    container_name: edumap-rbac
-    command: ["python", "-m", "app.rbac.init"]
-    depends_on:
-      migrator:
-        condition: service_completed_successfully
-    restart: "no"
-
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: *back-image
     container_name: edumap-api
     env_file:
@@ -64,17 +57,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      rbac-init:
-        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 15s
     restart: unless-stopped
+
   web:
-    image: nginx:stable-alpine
+    image: *front-image
     container_name: edumap-web
     ports:
       - "80:80"
@@ -93,4 +85,3 @@ volumes:
 
 networks:
   app-network:
-    driver: bridge

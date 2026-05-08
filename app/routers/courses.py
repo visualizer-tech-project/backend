@@ -1,8 +1,11 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import responses
 from app.core.rate_limiter import limiter
-from app.dependencies import CurrentUser, get_current_user
+from app.core.security import get_current_user
+from app.dependencies import CurrentUser
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
@@ -64,8 +67,8 @@ async def get_course_by_id(
 async def create_course(
     request: Request,
     course_data: CourseCreate,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['courses:create'])],
     service: CourseService = Depends(get_course_service),
-    current_user: CurrentUser = Security(get_current_user, scopes=['courses:create']),
 ) -> CoursePublic:
     return await service.create_course(course_data, current_user.id)
 

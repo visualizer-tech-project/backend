@@ -1,13 +1,17 @@
 import uuid
 from datetime import datetime, timezone, timedelta
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from sqlmodel import Field, Column
+from sqlmodel import Field, Column, Relationship
 from sqlalchemy import TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.models.base import BaseSQLModel
 from app.core.settings import settings
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class EmailAction(int, Enum):
@@ -32,6 +36,8 @@ class EmailNotification(BaseSQLModel, table=True):
         sa_column=Column(TIMESTAMP(timezone=True), nullable=False),
     )
     is_used: bool = Field(default=False, nullable=False)
+
+    user: 'User' = Relationship(back_populates='email_notifications')
 
     @property
     def is_expired(self) -> bool:

@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Annotated
 
 from fastapi import APIRouter, Depends, Security, Request
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ class EscalateRoleRequest(BaseModel):
 @limiter.limit('30/minute')
 async def get_profile(
     request: Request,
-    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['profile:read'])],
 ) -> UserPublic:
     return UserPublic.model_validate(current_user)
 
@@ -86,7 +86,7 @@ async def get_user(
 async def update_own_profile(
     request: Request,
     user_data: UserUpdate,
-    current_user: CurrentUser = Security(get_current_user, scopes=['profile:update']),
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['profile:update'])],
     user_service: UserService = Depends(get_user_service),
 ) -> UserPublic:
     return await user_service.update_user(current_user.id, user_data)
