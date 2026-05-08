@@ -33,5 +33,5 @@ async def get_current_user(
         security_scopes.scopes,
     )
     if user is None:
-        raise exceptions.UnauthorizedError('Invalid or expired token')
+        raise exceptions.UnauthorizedError("Invalid or expired token")
     return user
