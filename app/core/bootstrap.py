@@ -1,5 +1,7 @@
-import uuid
 from typing import Set
+
+from sqlalchemy import text
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.rbac import INITIAL_SUBJECTS, INITIAL_ACTIONS, INITIAL_PERMISSION_SCHEMA
 from app.core.settings import settings
@@ -9,6 +11,8 @@ from app.services.permission import PermissionService
 from app.services.role import RoleService
 from app.services.user import UserService
 
+BOOTSTRAP_LOCK_ID = 123456789
+
 
 class Bootstrapper:
     def __init__(
@@ -16,13 +20,26 @@ class Bootstrapper:
         user_service: UserService,
         role_service: RoleService,
         permission_service: PermissionService,
+        session: AsyncSession,
     ):
         self._user_service = user_service
         self._role_service = role_service
         self._permission_service = permission_service
+        self._session = session
 
     async def bootstrap_app(self) -> None:
-        all_permission_ids: Set[uuid.UUID] = set()
+        await self._session.exec(
+            text('SELECT pg_advisory_lock(:lock_id)').bindparams(lock_id=BOOTSTRAP_LOCK_ID)
+        )
+        try:
+            await self._do_bootstrap()
+        finally:
+            await self._session.exec(
+                text('SELECT pg_advisory_unlock(:lock_id)').bindparams(lock_id=BOOTSTRAP_LOCK_ID)
+            )
+
+    async def _do_bootstrap(self) -> None:
+        all_permission_ids: Set[int] = set()
         for subject in INITIAL_SUBJECTS:
             for action in INITIAL_ACTIONS:
                 perm = await self._permission_service.get_or_create_permission(

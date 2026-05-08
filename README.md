@@ -30,29 +30,9 @@ uv
 ### Требования
 - Docker Desktop (включает Docker и Docker Compose)
 
-### Инструкция
+### Переменные окружения
 
-1. Создайте файл `.env` в корне проекта со следующим содержимым:
-```env 
-
-DB__SCHEMA=postgresql+asyncpg
-DB__HOST=db
-DB__USER=postgres
-DB__PASSWORD=your_password
-DB__PORT=5432
-DB__NAME=edumap
-AUTH__JWT_SECRET_KEY=your-secret-key-min-32-chars
-AUTH__JWT_ALGORITHM=HS256
-AUTH__ACCESS_TOKEN_EXPIRE_MINUTES=15
-AUTH__REFRESH_TOKEN_EXPIRE_DAYS=7
-RBAC__ADMIN_EMAIL=admin@example.com
-RBAC__ADMIN_PASSWORD=admin123
-RBAC__ADMIN_FIRST_NAME=Admin
-RBAC__ADMIN_LAST_NAME=User
-RBAC__ADMIN_ROLE=admin
-RBAC__PUBLIC_ROLE=public
-DEBUG=true 
-```
+Для настройки приложения создайте файл `.env` на основе `.env.example`:
 
 ### Переменные окружения
 
@@ -71,9 +51,7 @@ DEBUG=true
 | ACCESS_TOKEN_EXPIRE_MINUTES | int | Время жизни access токена в минутах | 15 |
 | REFRESH_TOKEN_EXPIRE_DAYS | int | Время жизни refresh токена в днях | 7 |
 
-Для запуска скопируйте `.env.example` в `.env` и заполните значения:
-```bash```
-cp .env.example .env 
+Для запуска скопируйте `.env.example` в `.env` и заполните значения
 
 
 ### Миграции базы данных
@@ -81,7 +59,6 @@ cp .env.example .env
 Для управления схемой БД используется Alembic.
 
 ### Создание миграции
-```bash```
 # Автоматическое создание миграции на основе изменений в моделях
 uv run alembic revision --autogenerate -m "описание изменений"
 
