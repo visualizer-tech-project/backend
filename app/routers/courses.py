@@ -60,6 +60,8 @@ async def get_course_by_id(
     responses={
         **responses.auth_responses,
         **responses.bad_request_responses,
+        **responses.detail_responses,
+        **responses.conflict_responses,
         **responses.common_responses,
     },
 )
@@ -80,6 +82,7 @@ async def create_course(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.bad_request_responses,
+        **responses.conflict_responses,
         **responses.common_responses,
     },
     dependencies=[Security(get_current_user, scopes=['courses:update'])],
@@ -139,6 +142,8 @@ async def get_prerequisites(
     responses={
         **responses.auth_responses,
         **responses.bad_request_responses,
+        **responses.detail_responses,
+        **responses.conflict_responses,
         **responses.common_responses,
     },
     dependencies=[Security(get_current_user, scopes=['courses:update'])],
