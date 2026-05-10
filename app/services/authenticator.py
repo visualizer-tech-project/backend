@@ -1,20 +1,19 @@
 from typing import Optional
 
-from fastapi import Depends
-from sqlmodel.ext.asyncio.session import AsyncSession
-
 from app.core.auth import JWTHandler
-from app.dependencies.session import get_session
 from app.models.user import User
 from app.repositories.role import RoleRepository
 from app.repositories.user import UserRepository
 
 
 class AuthenticatorService:
-    def __init__(self, session: AsyncSession):
-        self._session = session
-        self._user_repo = UserRepository(session)
-        self._role_repo = RoleRepository(session)
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        role_repo: RoleRepository,
+    ):
+        self._user_repo = user_repo
+        self._role_repo = role_repo
 
     async def get_user_from_token(self, access_token: str) -> Optional[User]:
         payload = JWTHandler.decode_token(access_token)
@@ -35,7 +34,6 @@ class AuthenticatorService:
 
         user_scopes = set()
         for role in user_roles:
-            await self._session.refresh(role, ['permissions'])
             for permission in role.permissions:
                 user_scopes.add(f'{permission.subject}:{permission.action}')
 

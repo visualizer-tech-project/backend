@@ -18,6 +18,7 @@ from app.services.user import UserService
 from app.services.permission import PermissionService
 from app.services.role import RoleService
 from app.repositories.refresh_session import RefreshSessionRepository
+from app.services.auth import AuthService
 
 
 async def get_user_repo(session: SessionDep) -> UserRepository:
@@ -104,5 +105,20 @@ async def get_role_service(
 ) -> RoleService:
     return RoleService(role_repo, permission_repo)
 
+
 async def get_email_repo(session: SessionDep) -> EmailRepository:
     return EmailRepository(session)
+
+
+async def get_auth_service(
+    user_repo: UserRepository = Depends(get_user_repo),
+    refresh_session_repo: RefreshSessionRepository = Depends(get_refresh_session_repo),
+    role_repo: RoleRepository = Depends(get_role_repo),
+    email_repo: EmailRepository = Depends(get_email_repo),
+) -> AuthService:
+    return AuthService(
+        user_repo=user_repo,
+        refresh_session_repo=refresh_session_repo,
+        role_repo=role_repo,
+        email_repo=email_repo,
+    )
