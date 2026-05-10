@@ -17,7 +17,7 @@ from app.schemas.auth import (
     ResetPasswordRequest,
     MessageResponse,
 )
-from app.services.auth import AuthService
+from app.services.auth import AuthService, get_auth_service
 from app.core.constants import REFRESH_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_MAX_AGE
 
 router = APIRouter(prefix='/auth', tags=['auth'])

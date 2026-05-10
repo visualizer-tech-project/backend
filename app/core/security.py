@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core import exceptions
 from app.core.rbac import PERMISSION_DESCRIPTIONS
@@ -18,6 +19,10 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 AccessTokenDep = Annotated[str, Depends(oauth2_scheme)]
+
+
+def get_authenticator(session: AsyncSession = Depends(get_session)) -> AuthenticatorService:
+    return AuthenticatorService(session)
 
 
 async def get_current_user(

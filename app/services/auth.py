@@ -246,3 +246,23 @@ class AuthService:
         user.hashed_password = hash_password(request.new_password)
         await self._user_repo.save(user)
         await self._refresh_session_repo.invalidate_all_user_sessions(user.id)
+
+from app.dependencies.services import (
+    get_user_repo,
+    get_refresh_session_repo,
+    get_role_repo,
+    get_email_repo,
+)
+
+async def get_auth_service(
+    user_repo: UserRepository = Depends(get_user_repo),
+    refresh_session_repo: RefreshSessionRepository = Depends(get_refresh_session_repo),
+    role_repo: RoleRepository = Depends(get_role_repo),
+    email_repo: EmailRepository = Depends(get_email_repo),
+) -> AuthService:
+    return AuthService(
+        user_repo=user_repo,
+        refresh_session_repo=refresh_session_repo,
+        role_repo=role_repo,
+        email_repo=email_repo,
+    )
