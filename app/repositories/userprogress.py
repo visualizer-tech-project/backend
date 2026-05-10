@@ -26,21 +26,23 @@ class UserProgressRepository(
         self.add_filter('status')
 
     async def get_by_user_and_course(
-            self, user_id: int, course_id: int
+        self, user_id: int, course_id: int
     ) -> Optional[UserProgress]:
-        filters = self._create_filter_conditions_from_dict({
-            'user_id': user_id,
-            'course_id': course_id,
-        })
+        filters = self._create_filter_conditions_from_dict(
+            {
+                'user_id': user_id,
+                'course_id': course_id,
+            }
+        )
         items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
         return items[0] if items else None
 
     async def get_by_user(
-            self,
-            user_id: int,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
-            status: Optional[ProgressStatus] = None,
+        self,
+        user_id: int,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
         filter_dict = {'user_id': user_id}
         if status:
@@ -56,9 +58,9 @@ class UserProgressRepository(
         )
 
     async def get_filtered_paginated_by_user(
-            self,
-            user_id: int,
-            filters: ProgressFilters,
+        self,
+        user_id: int,
+        filters: ProgressFilters,
     ) -> ListResponse[UserProgress]:
         filter_dict = {'user_id': user_id}
         if filters.status:
@@ -75,11 +77,11 @@ class UserProgressRepository(
         )
 
     async def get_by_course(
-            self,
-            course_id: int,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
-            status: Optional[ProgressStatus] = None,
+        self,
+        course_id: int,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        status: Optional[ProgressStatus] = None,
     ) -> tuple[List[UserProgress], int]:
         filter_dict = {'course_id': course_id}
         if status:
@@ -103,11 +105,16 @@ class UserProgressRepository(
             started_at=progress_data.started_at,
             completed_at=progress_data.completed_at,
         )
-        if progress.status == ProgressStatus.IN_PROGRESS and progress.started_at is None:
+        if (
+            progress.status == ProgressStatus.IN_PROGRESS
+            and progress.started_at is None
+        ):
             progress.started_at = datetime.now(timezone.utc)
         return await self.save(progress)
 
-    async def update_progress(self, user_id: int, course_id: int, progress_data: ProgressUpdate):
+    async def update_progress(
+        self, user_id: int, course_id: int, progress_data: ProgressUpdate
+    ):
         existing = await self.get_by_user_and_course(user_id, course_id)
         if not existing:
             return None

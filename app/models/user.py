@@ -43,8 +43,12 @@ class User(UserBase, BaseSQLModel, table=True):
 
     programs: list['Program'] = Relationship(back_populates='user', cascade_delete=True)
     courses: list['Course'] = Relationship(back_populates='user', cascade_delete=True)
-    progress: list['UserProgress'] = Relationship(back_populates='user', cascade_delete=True)
-    career_tracks: list['CareerTrack'] = Relationship(back_populates='user', cascade_delete=True)
+    progress: list['UserProgress'] = Relationship(
+        back_populates='user', cascade_delete=True
+    )
+    career_tracks: list['CareerTrack'] = Relationship(
+        back_populates='user', cascade_delete=True
+    )
 
     roles: List['Role'] = Relationship(
         back_populates='users',

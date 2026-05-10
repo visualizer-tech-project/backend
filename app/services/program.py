@@ -37,9 +37,9 @@ class ProgramService:
         return ProgramPublic.model_validate(program)
 
     async def create_program(
-            self,
-            program_data: ProgramCreate,
-            user_id: int,
+        self,
+        program_data: ProgramCreate,
+        user_id: int,
     ) -> ProgramPublic:
         existing = await self._program_repo.get_by_title(program_data.title)
         if existing:
@@ -48,7 +48,7 @@ class ProgramService:
         program = Program(
             title=program_data.title,
             description=program_data.description,
-            user_id=user_id
+            user_id=user_id,
         )
         program = await self._program_repo.save(program)
         return ProgramPublic.model_validate(program)
@@ -96,7 +96,7 @@ class ProgramService:
         new_program = Program(
             title=copy_request.title,
             description=source_program.description,
-            user_id=user_id
+            user_id=user_id,
         )
         new_program = await self._program_repo.save(new_program)
 
@@ -107,7 +107,7 @@ class ProgramService:
                 description=course.description,
                 type=course.type,
                 program_id=new_program.id,
-                user_id=user_id
+                user_id=user_id,
             )
             await self._course_repo.save(new_course)
 

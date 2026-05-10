@@ -11,8 +11,12 @@ if TYPE_CHECKING:
 
 
 class ProgramBase(BaseSchema):
-    title: str = Field(unique=True, index=True, max_length=TITLE_MAX_LENGTH, nullable=False)
-    description: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    title: str = Field(
+        unique=True, index=True, max_length=TITLE_MAX_LENGTH, nullable=False
+    )
+    description: Optional[str] = Field(
+        default=None, sa_column=Column(Text, nullable=True)
+    )
     user_id: int = Field(foreign_key='users.id', nullable=False, index=True)
 
 
@@ -20,7 +24,9 @@ class Program(BaseSQLModel, ProgramBase, table=True):
     __tablename__ = 'programs'
 
     user: 'User' = Relationship(back_populates='programs')
-    courses: List['Course'] = Relationship(back_populates='program', cascade_delete=True)
+    courses: List['Course'] = Relationship(
+        back_populates='program', cascade_delete=True
+    )
 
 
 class ProgramCreate(ProgramBase):

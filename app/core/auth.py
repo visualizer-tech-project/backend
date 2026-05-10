@@ -8,7 +8,6 @@ from app.core.settings import settings
 
 
 class JWTHandler:
-
     @staticmethod
     def _get_current_time() -> datetime:
         return datetime.now(timezone.utc)
@@ -32,7 +31,9 @@ class JWTHandler:
             'exp': int(expire.timestamp()),
         }
 
-        return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+        return jwt.encode(
+            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+        )
 
     @classmethod
     def create_access_token(cls, user_id: int, jti: Optional[str] = None) -> str:

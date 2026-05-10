@@ -1,8 +1,11 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Security, status, Request
 
 from app.core import responses
 from app.core.rate_limiter import limiter
-from app.dependencies import CurrentUser, get_current_user
+from app.core.security import get_current_user
+from app.dependencies import CurrentUser
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
@@ -20,9 +23,9 @@ router = APIRouter(prefix='/courses', tags=['courses'])
         **responses.auth_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:list'])]
+    dependencies=[Security(get_current_user, scopes=['courses:list'])],
 )
-@limiter.limit("60/minute")
+@limiter.limit('60/minute')
 async def get_courses(
     request: Request,
     filters: CourseFilters = Depends(),
@@ -39,9 +42,9 @@ async def get_courses(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:read'])]
+    dependencies=[Security(get_current_user, scopes=['courses:read'])],
 )
-@limiter.limit("60/minute")
+@limiter.limit('60/minute')
 async def get_course_by_id(
     request: Request,
     course_id: int,
@@ -57,15 +60,17 @@ async def get_course_by_id(
     responses={
         **responses.auth_responses,
         **responses.bad_request_responses,
+        **responses.detail_responses,
+        **responses.conflict_responses,
         **responses.common_responses,
     },
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def create_course(
     request: Request,
     course_data: CourseCreate,
+    current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['courses:create'])],
     service: CourseService = Depends(get_course_service),
-    current_user: CurrentUser = Security(get_current_user, scopes=['courses:create']),
 ) -> CoursePublic:
     return await service.create_course(course_data, current_user.id)
 
@@ -77,11 +82,12 @@ async def create_course(
         **responses.auth_responses,
         **responses.detail_responses,
         **responses.bad_request_responses,
+        **responses.conflict_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:update'])]
+    dependencies=[Security(get_current_user, scopes=['courses:update'])],
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def update_course(
     request: Request,
     course_id: int,
@@ -99,9 +105,9 @@ async def update_course(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:delete'])]
+    dependencies=[Security(get_current_user, scopes=['courses:delete'])],
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def delete_course(
     request: Request,
     course_id: int,
@@ -118,9 +124,9 @@ async def delete_course(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:read'])]
+    dependencies=[Security(get_current_user, scopes=['courses:read'])],
 )
-@limiter.limit("60/minute")
+@limiter.limit('60/minute')
 async def get_prerequisites(
     request: Request,
     course_id: int,
@@ -136,11 +142,13 @@ async def get_prerequisites(
     responses={
         **responses.auth_responses,
         **responses.bad_request_responses,
+        **responses.detail_responses,
+        **responses.conflict_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:update'])]
+    dependencies=[Security(get_current_user, scopes=['courses:update'])],
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def add_prerequisite(
     request: Request,
     course_id: int,
@@ -158,9 +166,9 @@ async def add_prerequisite(
         **responses.detail_responses,
         **responses.common_responses,
     },
-    dependencies=[Security(get_current_user, scopes=['courses:update'])]
+    dependencies=[Security(get_current_user, scopes=['courses:update'])],
 )
-@limiter.limit("10/minute")
+@limiter.limit('10/minute')
 async def remove_prerequisite(
     request: Request,
     course_id: int,

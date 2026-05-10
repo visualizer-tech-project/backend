@@ -58,9 +58,13 @@ class RoleRepository(BaseRepository[Role, RoleCreate, RoleUpdate]):
             self.session.add(mapping)
         await self.session.commit()
 
-    async def set_role_permissions(self, role_id: int, permission_ids: List[int]) -> None:
+    async def set_role_permissions(
+        self, role_id: int, permission_ids: List[int]
+    ) -> None:
         await self.session.exec(
-            delete(RolePermissionMapping).where(RolePermissionMapping.role_id == role_id)
+            delete(RolePermissionMapping).where(
+                RolePermissionMapping.role_id == role_id
+            )
         )
         for perm_id in permission_ids:
             mapping = RolePermissionMapping(role_id=role_id, permission_id=perm_id)
