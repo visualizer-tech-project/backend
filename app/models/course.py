@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
-from sqlmodel import Field, Column, Relationship, Text
+from sqlmodel import Field, Column, Relationship, Text, UniqueConstraint
 
 from app.core.constants import TITLE_FIELD_CONFIG
 from app.models.base import BaseSQLModel, BaseSchema, BaseModelSchema
@@ -20,7 +20,6 @@ class CourseType(str, Enum):
 
 class CourseBase(BaseSchema):
     title: str = Field(
-        unique=True,
         index=True,
         nullable=False,
         **TITLE_FIELD_CONFIG
@@ -33,6 +32,9 @@ class CourseBase(BaseSchema):
 
 class Course(CourseBase, BaseSQLModel, table=True):
     __tablename__ = 'courses'
+    __table_args__ = (
+        UniqueConstraint('title', 'program_id', name='uq_course_title_program'),
+    )
 
     program: 'Program' = Relationship(back_populates='courses')
     user: 'User' = Relationship(back_populates='courses')

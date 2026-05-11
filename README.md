@@ -25,26 +25,43 @@ uv
 3. **uv run fastapi dev main.py**
 
 
+## Запуск через Docker Compose
+
+### Требования
+- Docker Desktop (включает Docker и Docker Compose)
+```bash
+    docker-compose up -d --build
+```
+
+### Переменные окружения
+
+Для настройки приложения создайте файл `.env` на основе `.env.example`:
+
 ### Переменные окружения
 
 Для настройки приложения используйте файл `.env`.
 
-| Название переменной | Тип    | Описание                        | Значение по умолчанию |
-|---------------------|--------|---------------------------------|-----------------------|
-| DB_SCHEMA           | string | Драйвер для подключения         | postgresql+asyncpg    |
-| DB_HOST             | string | Хост базы данных                | localhost             |
-| DB_PORT             | int    | Порт базы данных                | 5432                  |
-| DB_USER             | string | Имя пользователя базы данных    |                       |
-| DB_PASSWORD         | string | Пароль пользователя базы данных |                       |
-| DB_NAME             | string | Имя базы данных                 |                       |
-| JWT_SECRET_KEY      | string | Секретный ключ для JWT (мин. 32 символа) |  |
-| JWT_ALGORITHM       | string | Алгоритм шифрования JWT         | HS256                 |
-| ACCESS_TOKEN_EXPIRE_MINUTES | int | Время жизни access токена в минутах | 15 |
-| REFRESH_TOKEN_EXPIRE_DAYS | int | Время жизни refresh токена в днях | 7 |
+| Название переменной | Тип | Описание | Значение по умолчанию |
+|---------------------|-----|----------|----------------------|
+| DB__SCHEMA | string | Драйвер для подключения | postgresql+asyncpg |
+| DB__HOST | string | Хост базы данных | db |
+| DB__PORT | int | Порт базы данных | 5432 |
+| DB__USER | string | Имя пользователя базы данных | postgres |
+| DB__PASSWORD | string | Пароль пользователя базы данных | |
+| DB__NAME | string | Имя базы данных | edumap |
+| AUTH__JWT_SECRET_KEY | string | Секретный ключ для JWT (мин. 32 символа) | |
+| AUTH__JWT_ALGORITHM | string | Алгоритм шифрования JWT | HS256 |
+| AUTH__ACCESS_TOKEN_EXPIRE_MINUTES | int | Время жизни access токена в минутах | 15 |
+| AUTH__REFRESH_TOKEN_EXPIRE_DAYS | int | Время жизни refresh токена в днях | 7 |
+| RBAC__ADMIN_EMAIL | string | Email администратора | admin@example.com |
+| RBAC__ADMIN_PASSWORD | string | Пароль администратора | |
+| RBAC__ADMIN_FIRST_NAME | string | Имя администратора | Admin |
+| RBAC__ADMIN_LAST_NAME | string | Фамилия администратора | User |
+| RBAC__ADMIN_ROLE | string | Роль администратора | admin |
+| RBAC__PUBLIC_ROLE | string | Публичная роль по умолчанию | public |
+| DEBUG | bool | Режим отладки | false |
 
-Для запуска скопируйте `.env.example` в `.env` и заполните значения:
-```bash```
-cp .env.example .env 
+Для запуска скопируйте `.env.example` в `.env` и заполните значения
 
 
 ### Миграции базы данных
@@ -52,7 +69,6 @@ cp .env.example .env
 Для управления схемой БД используется Alembic.
 
 ### Создание миграции
-```bash```
 # Автоматическое создание миграции на основе изменений в моделях
 uv run alembic revision --autogenerate -m "описание изменений"
 

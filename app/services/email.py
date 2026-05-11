@@ -27,11 +27,11 @@ class EmailService:
         self._fast_mail = FastMail(self._conf)
 
     async def send_email(
-            self,
-            email_to: str,
-            subject: str,
-            template_name: str,
-            template_body: dict,
+        self,
+        email_to: str,
+        subject: str,
+        template_name: str,
+        template_body: dict,
     ) -> None:
         message = MessageSchema(
             subject=subject,
@@ -47,35 +47,35 @@ class EmailService:
         )
 
     async def send_verification_email(
-            self,
-            email_to: str,
-            verification_code: str,
-            verification_link: str,
+        self,
+        email_to: str,
+        verification_code: str,
+        verification_link: str,
     ) -> None:
         await self.send_email(
             email_to=email_to,
-            subject=f"Подтверждение аккаунта - {settings.email.title}",
-            template_name="verify_account.html",
+            subject=f'Подтверждение аккаунта - {settings.email.title}',
+            template_name='verify_account.html',
             template_body={
-                "title": settings.email.title,
-                "verification_code": verification_code,
-                "verification_link": verification_link,
+                'title': settings.email.title,
+                'verification_code': verification_code,
+                'verification_link': verification_link,
             },
         )
 
     async def send_change_password_email(
-            self,
-            email_to: str,
-            reset_code: str,
-            reset_link: str,
+        self,
+        email_to: str,
+        reset_code: str,
+        reset_link: str,
     ) -> None:
         await self.send_email(
             email_to=email_to,
-            subject=f"Сброс пароля - {settings.email.title}",
-            template_name="change_password.html",
+            subject=f'Сброс пароля - {settings.email.title}',
+            template_name='change_password.html',
             template_body={
-                "title": settings.email.title,
-                "reset_code": reset_code,
-                "reset_link": reset_link,
+                'title': settings.email.title,
+                'reset_code': reset_code,
+                'reset_link': reset_link,
             },
         )

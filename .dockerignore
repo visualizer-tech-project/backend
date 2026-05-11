@@ -1,0 +1,15 @@
+.git
+Dockerfile
+.dockerignore
+docker-compose.yml
+__pycache__
+*.pyc
+.venv
+venv
+.vscode
+.idea
+*.log
+.env
+README.md
+.pre-commit-config.yaml
+.ruff_cache

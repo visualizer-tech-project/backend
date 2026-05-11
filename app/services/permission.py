@@ -17,13 +17,19 @@ class PermissionService:
     async def get_permission_by_id(self, permission_id: uuid.UUID) -> PermissionPublic:
         permission = await self._permission_repository.get_by_id(permission_id)
         if not permission:
-            raise exceptions.NotFoundError(f"Permission with id {permission_id} not found")
+            raise exceptions.NotFoundError(
+                f'Permission with id {permission_id} not found'
+            )
         return PermissionPublic.model_validate(permission)
 
-    async def get_or_create_permission(self, subject: str, action: str) -> PermissionPublic:
+    async def get_or_create_permission(
+        self, subject: str, action: str
+    ) -> PermissionPublic:
         permission = await self._permission_repository.get_or_create(subject, action)
         return PermissionPublic.model_validate(permission)
 
-    async def create_permission(self, permission_data: PermissionCreate) -> PermissionPublic:
+    async def create_permission(
+        self, permission_data: PermissionCreate
+    ) -> PermissionPublic:
         permission = await self._permission_repository.create(permission_data)
         return PermissionPublic.model_validate(permission)
