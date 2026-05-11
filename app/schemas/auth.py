@@ -54,9 +54,15 @@ class VerifyAccountRequest(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    old_password: Optional[str] = Field(None, min_length=6, max_length=128, description='Старый пароль')
-    new_password: str = Field(..., min_length=6, max_length=128, description='Новый пароль')
-    confirm_password: str = Field(..., min_length=6, max_length=128, description='Подтверждение нового пароля')
+    old_password: Optional[str] = Field(
+        None, min_length=6, max_length=128, description='Старый пароль'
+    )
+    new_password: str = Field(
+        ..., min_length=6, max_length=128, description='Новый пароль'
+    )
+    confirm_password: str = Field(
+        ..., min_length=6, max_length=128, description='Подтверждение нового пароля'
+    )
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -65,8 +71,12 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     code: uuid.UUID = Field(..., description='Код из письма для сброса пароля')
-    new_password: str = Field(..., min_length=6, max_length=128, description='Новый пароль')
-    confirm_password: str = Field(..., min_length=6, max_length=128, description='Подтверждение нового пароля')
+    new_password: str = Field(
+        ..., min_length=6, max_length=128, description='Новый пароль'
+    )
+    confirm_password: str = Field(
+        ..., min_length=6, max_length=128, description='Подтверждение нового пароля'
+    )
 
 
 class MessageResponse(BaseModel):

@@ -1,0 +1,87 @@
+x-common-env: &common-env
+  DB__HOST: db
+  DB__PORT: 5432
+
+x-back-image: &back-image amirkhubeev/edumap-api:latest
+x-front-image: &front-image nginx:stable-alpine
+
+x-api-base: &api-base
+  image: *back-image
+  env_file:
+    - .env
+  environment:
+    <<: *common-env
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: edumap-db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB__USER}
+      - POSTGRES_PASSWORD=${DB__PASSWORD}
+      - POSTGRES_DB=${DB__NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB__USER} -d ${DB__NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  migrator:
+    <<: *api-base
+    container_name: edumap-migrator
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  bootstrap:
+    <<: *api-base
+    container_name: edumap-bootstrap
+    command: ["python", "bootstrap_runner.py"]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    restart: "no"
+
+  api:
+    image: *back-image
+    container_name: edumap-api
+    env_file:
+      - .env
+    environment:
+      <<: *common-env
+    depends_on:
+      db:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  web:
+    image: *front-image
+    container_name: edumap-web
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./html:/var/www/html:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

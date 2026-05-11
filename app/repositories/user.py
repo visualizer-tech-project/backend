@@ -23,10 +23,10 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
         return items[0] if items else None
 
     async def get_by_role(
-            self,
-            role: UserRole,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT,
+        self,
+        role: UserRole,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
     ) -> tuple[List[User], int]:
         filters = self._create_filter_conditions_from_dict({'role': role})
         return await self.get_all(
@@ -38,8 +38,8 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
         )
 
     async def get_filtered_paginated(
-            self,
-            filters: UserFilters,
+        self,
+        filters: UserFilters,
     ) -> ListResponse[User]:
         filter_conditions = self._create_filter_conditions_from_model(filters)
         return await self.get_paginated(
@@ -67,9 +67,7 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
             return None
 
         if role_ids:
-            roles = await self.session.exec(
-                select(Role).where(Role.id.in_(role_ids))
-            )
+            roles = await self.session.exec(select(Role).where(Role.id.in_(role_ids)))
             user.roles = list(roles.all())
         else:
             user.roles = []

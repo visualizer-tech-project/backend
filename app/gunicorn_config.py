@@ -1,11 +1,11 @@
 import multiprocessing
 import os
 
-port = int(os.getenv("COMMON_PORT", '8000'))
+port = int(os.getenv('COMMON_PORT', '8000'))
 
-bind = f"0.0.0.0:{port}"
+bind = f'0.0.0.0:{port}'
 workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = "uvicorn.workers.UvicornWorker"
+worker_class = 'uvicorn.workers.UvicornWorker'
 worker_connections = 1000
 keepalive = 5
 max_requests = 1000

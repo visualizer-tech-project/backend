@@ -2,7 +2,7 @@ import logging
 import sys
 from contextvars import ContextVar
 
-request_id_var: ContextVar[str] = ContextVar("request_id", default="no-id")
+request_id_var: ContextVar[str] = ContextVar('request_id', default='no-id')
 
 
 class RequestIdFilter(logging.Filter):
@@ -11,7 +11,7 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-def setup_logger(name: str = "edumap") -> logging.Logger:
+def setup_logger(name: str = 'edumap') -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
@@ -23,7 +23,7 @@ def setup_logger(name: str = "edumap") -> logging.Logger:
     console_handler.setFormatter(formatter)
     console_handler.addFilter(RequestIdFilter())
 
-    file_handler = logging.FileHandler("app.log", encoding="utf-8")
+    file_handler = logging.FileHandler('app.log', encoding='utf-8')
     file_handler.setFormatter(formatter)
     file_handler.addFilter(RequestIdFilter())
 
@@ -36,5 +36,5 @@ def setup_logger(name: str = "edumap") -> logging.Logger:
 
 def get_logger(name: str = None) -> logging.Logger:
     if name:
-        return logging.getLogger(f"edumap.{name}")
-    return logging.getLogger("edumap")
+        return logging.getLogger(f'edumap.{name}')
+    return logging.getLogger('edumap')

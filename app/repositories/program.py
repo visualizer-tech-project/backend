@@ -22,10 +22,7 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramCreate]):
         return items[0] if items else None
 
     async def get_by_user(
-            self,
-            user_id: int,
-            skip: int = DEFAULT_SKIP,
-            limit: int = DEFAULT_LIMIT
+        self, user_id: int, skip: int = DEFAULT_SKIP, limit: int = DEFAULT_LIMIT
     ) -> tuple[List[Program], int]:
         filters = self._create_filter_conditions_from_dict({'user_id': user_id})
         return await self.get_all(
@@ -37,8 +34,8 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramCreate]):
         )
 
     async def get_filtered_paginated(
-            self,
-            filters: ProgramFilters,
+        self,
+        filters: ProgramFilters,
     ) -> ListResponse[Program]:
         filter_conditions = self._create_filter_conditions_from_model(filters)
 
