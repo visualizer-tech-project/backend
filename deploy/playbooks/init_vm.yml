@@ -1,0 +1,48 @@
+- name: Init VM for docker deploy
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: true
+
+    - name: Install base packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - git
+          - gnupg
+          - python3-pip
+        state: present
+
+    - name: Install Docker
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Install docker compose plugin
+      apt:
+        name: docker-compose-plugin
+        state: present
+
+    - name: Add deploy user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
+
+    - name: Create app dir
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Create nginx and html dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ app_dir }}/nginx"
+        - "{{ app_dir }}/html"

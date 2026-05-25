@@ -1,0 +1,23 @@
+---
+- name: Build and push docker image
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "latest"
+
+  tasks:
+    - name: Docker Hub login
+      shell: |
+        echo "{{ lookup('env', 'DOCKER_TOKEN') }}" | docker login -u "{{ lookup('env', 'DOCKER_USER') }}" --password-stdin
+
+    - name: Build Docker image
+      shell: |
+        cd $GITHUB_WORKSPACE
+        docker build -t {{ docker_image_name }}:{{ docker_image_tag }} .
+
+    - name: Push Docker image
+      shell: |
+        docker push {{ docker_image_name }}:{{ docker_image_tag }}

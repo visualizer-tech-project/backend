@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
 from app.core.security import get_current_user
-from app.dependencies import CurrentUser
+from app.dependencies.auth import CurrentUser
 from app.dependencies.services import get_user_service, get_role_service
 from app.models.user import UserPublic, UserUpdate
 from app.schemas.filters import UserFilters

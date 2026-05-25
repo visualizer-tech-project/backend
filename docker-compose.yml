@@ -2,7 +2,7 @@ x-common-env: &common-env
   DB__HOST: db
   DB__PORT: 5432
 
-x-back-image: &back-image amirkhubeev/edumap-api:latest
+x-back-image: &back-image ${DOCKER_IMAGE_NAME}
 x-front-image: &front-image nginx:stable-alpine
 
 x-api-base: &api-base
@@ -19,18 +19,20 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_USER=${DB__USER}
-      - POSTGRES_PASSWORD=${DB__PASSWORD}
-      - POSTGRES_DB=${DB__NAME}
+      POSTGRES_USER: ${DB__USER}
+      POSTGRES_PASSWORD: ${DB__PASSWORD}
+      POSTGRES_DB: ${DB__NAME}
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB__USER} -d ${DB__NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U $$DB__USER -d $$DB__NAME || exit 1"]
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 20
+      start_period: 30s
     restart: unless-stopped
+    networks:
+      - internal
 
   migrator:
     <<: *api-base
@@ -39,24 +41,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: "no"
+    restart: on-failure
+    networks:
+      - internal
 
   bootstrap:
     <<: *api-base
     container_name: edumap-bootstrap
-    command: ["python", "bootstrap_runner.py"]
+    command: ["python", "-m", "app.bootstrap_runner"]
     depends_on:
       migrator:
         condition: service_completed_successfully
     restart: "no"
+    networks:
+      - internal
 
   api:
-    image: *back-image
+    <<: *api-base
     container_name: edumap-api
-    env_file:
-      - .env
-    environment:
-      <<: *common-env
     depends_on:
       db:
         condition: service_healthy
@@ -69,12 +71,13 @@ services:
       retries: 5
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - internal
+      - proxy
 
   web:
     image: *front-image
     container_name: edumap-web
-    ports:
-      - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./html:/var/www/html:ro
@@ -82,6 +85,28 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - proxy
+
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: edumap-npm
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - proxy
+
+networks:
+  internal:
+    driver: bridge
+  proxy:
+    driver: bridge
 
 volumes:
   postgres_data:

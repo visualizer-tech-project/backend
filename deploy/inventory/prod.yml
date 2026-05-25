@@ -1,0 +1,6 @@
+all:
+  hosts:
+    prod:
+      ansible_host: "{{ lookup('env', 'VM_HOST') }}"
+      ansible_user: "{{ lookup('env', 'VM_USER') }}"
+      ansible_port: "{{ lookup('env', 'VM_PORT') | default('22', true) }}"

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Security, status, Request
 from app.core import responses
 from app.core.rate_limiter import limiter
 from app.core.security import get_current_user
-from app.dependencies import CurrentUser
+from app.dependencies.auth import CurrentUser
 from app.dependencies import get_course_service
 from app.models.base import ListResponse
 from app.models.course import CourseCreate, CoursePublic, CourseUpdate
