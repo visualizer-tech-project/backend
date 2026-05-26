@@ -2,7 +2,7 @@ x-common-env: &common-env
   DB__HOST: db
   DB__PORT: 5432
 
-x-back-image: &back-image ${DOCKER_IMAGE_NAME}
+x-back-image: &back-image ka1ser67/edumap-api
 x-front-image: &front-image nginx:stable-alpine
 
 x-api-base: &api-base
@@ -28,11 +28,30 @@ services:
       test: ["CMD-SHELL", "pg_isready -U $$DB__USER -d $$DB__NAME || exit 1"]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 10
       start_period: 30s
     restart: unless-stopped
     networks:
       - internal
+
+  proxy_db:
+    image: postgres:18-alpine
+    container_name: edumap-proxy-db
+    environment:
+      POSTGRES_USER: npm
+      POSTGRES_PASSWORD: ${NPM_DB_PASSWORD}
+      POSTGRES_DB: npm
+    volumes:
+      - proxy_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U npm -d npm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - proxy
 
   migrator:
     <<: *api-base
@@ -96,9 +115,19 @@ services:
       - "80:80"
       - "81:81"
       - "443:443"
+    environment:
+      TZ: "Europe/Moscow"
+      DB_POSTGRES_HOST: proxy_db
+      DB_POSTGRES_PORT: 5432
+      DB_POSTGRES_USER: npm
+      DB_POSTGRES_PASSWORD: ${NPM_DB_PASSWORD}
+      DB_POSTGRES_NAME: npm
     volumes:
       - ./npm/data:/data
       - ./npm/letsencrypt:/etc/letsencrypt
+    depends_on:
+      proxy_db:
+        condition: service_healthy
     networks:
       - proxy
 
@@ -110,3 +139,4 @@ networks:
 
 volumes:
   postgres_data:
+  proxy_postgres_data:

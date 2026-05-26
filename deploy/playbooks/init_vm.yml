@@ -38,7 +38,7 @@
         state: directory
         mode: "0755"
 
-    - name: Create nginx and html dirs
+    - name: Create nginx, html and npm dirs
       file:
         path: "{{ item }}"
         state: directory
@@ -46,3 +46,5 @@
       loop:
         - "{{ app_dir }}/nginx"
         - "{{ app_dir }}/html"
+        - "{{ app_dir }}/npm/data"
+        - "{{ app_dir }}/npm/letsencrypt"
