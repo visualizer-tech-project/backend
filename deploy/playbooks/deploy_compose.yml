@@ -6,6 +6,8 @@
   vars:
     app_dir: /opt/edumap
     docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "{{ lookup('env', 'IMAGE_TAG', default='latest') }}"
+    npm_db_password: "{{ lookup('env', 'NPM_DB_PASSWORD') }}"
 
   tasks:
     - name: Ensure app dir exists
@@ -25,11 +27,17 @@
         - "{{ app_dir }}/npm/data"
         - "{{ app_dir }}/npm/letsencrypt"
 
-    - name: Upload docker-compose.yml
+    - name: Check if docker-compose.yml exists
+      stat:
+        path: "{{ app_dir }}/docker-compose.yml"
+      register: compose_exists
+
+    - name: Upload docker-compose.yml only if not exists
       copy:
         src: ../../docker-compose.yml
         dest: "{{ app_dir }}/docker-compose.yml"
         mode: "0644"
+      when: not compose_exists.stat.exists
 
     - name: Upload nginx config
       copy:
@@ -49,58 +57,17 @@
         dest: "{{ app_dir }}/.env"
         mode: "0600"
 
-    - name: Add DOCKER_IMAGE_NAME to .env
-      lineinfile:
-        path: "{{ app_dir }}/.env"
-        line: "DOCKER_IMAGE_NAME={{ docker_image_name }}"
-
     - name: Docker Hub login on VM
       community.docker.docker_login:
-        registry_url: https://index.docker.io/v1/
         username: "{{ lookup('env', 'DOCKER_USER') }}"
         password: "{{ lookup('env', 'DOCKER_TOKEN') }}"
 
-    - name: Stop and remove all existing services and orphans
-      shell: |
-        export DOCKER_IMAGE_NAME={{ docker_image_name }}
-        docker compose -f docker-compose.yml down --remove-orphans
-      args:
-        chdir: "{{ app_dir }}"
-      ignore_errors: yes
-
-    - name: Pull images
-      shell: |
-        export DOCKER_IMAGE_NAME={{ docker_image_name }}
-        docker compose -f docker-compose.yml pull
-      args:
-        chdir: "{{ app_dir }}"
-
-    - name: Start services
-      shell: |
-        export DOCKER_IMAGE_NAME={{ docker_image_name }}
-        docker compose -f docker-compose.yml up -d
-      args:
-        chdir: "{{ app_dir }}"
-
-    - name: Check running containers
-      shell: docker compose -f docker-compose.yml ps
-      args:
-        chdir: "{{ app_dir }}"
-      register: ps_output
-
-    - name: Show running containers
-      debug:
-        var: ps_output.stdout_lines
-
-    - name: Wait for API health endpoint (via docker exec)
-      shell: docker exec edumap-api curl -f http://localhost:8000/health
-      args:
-        chdir: "{{ app_dir }}"
-      register: healthcheck
-      retries: 30
-      delay: 5
-      until: healthcheck.rc == 0
-
-    - name: Show health check result
-      debug:
-        var: healthcheck.stdout_lines
+    - name: Deploy stack with docker compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        state: present
+        pull: always
+        recreate: always
+      environment:
+        DOCKER_IMAGE_NAME: "{{ docker_image_name }}:{{ docker_image_tag }}"
+        NPM_DB_PASSWORD: "{{ npm_db_password }}"
