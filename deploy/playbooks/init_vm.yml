@@ -1,6 +1,8 @@
 - name: Init VM for docker deploy
   hosts: all
   become: true
+  vars:
+    app_dir: /opt/edumap
   tasks:
     - name: Update apt cache
       apt:

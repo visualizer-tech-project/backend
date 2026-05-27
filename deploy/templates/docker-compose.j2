@@ -2,8 +2,8 @@ x-common-env: &common-env
   DB__HOST: db
   DB__PORT: 5432
 
-x-back-image: &back-image ka1ser67/edumap-api:latest
-x-front-image: &front-image nginx:stable-alpine
+x-back-image: &back-image {{ back_image }}
+x-front-image: &front-image {{ front_image }}
 
 x-api-base: &api-base
   image: *back-image
@@ -33,8 +33,6 @@ services:
     restart: unless-stopped
     networks:
       - internal
-    ports:
-      - "5432:5432"
 
   proxy_db:
     image: postgres:18-alpine
@@ -54,8 +52,6 @@ services:
     restart: unless-stopped
     networks:
       - proxy
-    ports:
-      - "5433:5432"
 
   migrator:
     <<: *api-base
@@ -97,9 +93,11 @@ services:
     networks:
       - internal
       - proxy
-    ports:
-      - "8000:8000"
 
+{% if web_service_config %}
+  web:
+{{ web_service_config | to_nice_yaml | indent(4) }}
+{% else %}
   web:
     image: *front-image
     container_name: edumap-web
@@ -112,8 +110,7 @@ services:
     restart: unless-stopped
     networks:
       - proxy
-    ports:
-      - "8080:80"
+{% endif %}
 
   npm:
     image: jc21/nginx-proxy-manager:latest

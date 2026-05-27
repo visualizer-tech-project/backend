@@ -5,9 +5,8 @@
 
   vars:
     app_dir: /opt/edumap
-    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
-    docker_image_tag: "{{ lookup('env', 'IMAGE_TAG', default='latest') }}"
     npm_db_password: "{{ lookup('env', 'NPM_DB_PASSWORD') }}"
+    compose_path: "{{ app_dir }}/docker-compose.yml"
 
   tasks:
     - name: Ensure app dir exists
@@ -27,29 +26,61 @@
         - "{{ app_dir }}/npm/data"
         - "{{ app_dir }}/npm/letsencrypt"
 
-    - name: Check if docker-compose.yml exists
-      stat:
-        path: "{{ app_dir }}/docker-compose.yml"
-      register: compose_exists
-
-    - name: Upload docker-compose.yml only if not exists
+    - name: Copy nginx config
       copy:
-        src: ../../docker-compose.yml
-        dest: "{{ app_dir }}/docker-compose.yml"
-        mode: "0644"
-      when: not compose_exists.stat.exists
-
-    - name: Upload nginx config
-      copy:
-        src: ../../nginx/nginx.conf
+        src: "../../nginx/nginx.conf"
         dest: "{{ app_dir }}/nginx/nginx.conf"
         mode: "0644"
 
-    - name: Upload html index
+    - name: Copy html index
       copy:
-        src: ../../html/index.html
+        src: "../../html/index.html"
         dest: "{{ app_dir }}/html/index.html"
         mode: "0644"
+
+    - name: Check if compose file exists
+      stat:
+        path: "{{ compose_path }}"
+      register: compose_file
+
+    - name: Set default values
+      set_fact:
+        web_service_config: {}
+        front_image: "nginx:stable-alpine"
+
+    - name: Extract web service config and front image from existing compose
+      block:
+        - name: Read existing compose file
+          slurp:
+            src: "{{ compose_path }}"
+          register: existing_compose_data
+
+        - name: Parse existing compose
+          set_fact:
+            existing_compose: "{{ existing_compose_data.content | b64decode | from_yaml }}"
+
+        - name: Extract full web service config
+          set_fact:
+            web_service_config: "{{ existing_compose.services.web | default({}) }}"
+
+        - name: Extract front image
+          set_fact:
+            front_image: "{{ existing_compose['x-front-image'] | default('nginx:stable-alpine') }}"
+      when: compose_file.stat.exists
+
+    - name: Set back_image variable
+      set_fact:
+        back_image: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}:{{ lookup('env', 'IMAGE_TAG', default='latest') }}"
+
+    - name: Render docker-compose.yml from template
+      template:
+        src: ../templates/docker-compose.j2
+        dest: "{{ compose_path }}"
+        mode: "0644"
+      vars:
+        back_image: "{{ back_image }}"
+        front_image: "{{ front_image }}"
+        web_service_config: "{{ web_service_config }}"
 
     - name: Render .env
       template:
@@ -65,9 +96,10 @@
     - name: Deploy stack with docker compose
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
+        files:
+          - docker-compose.yml
         state: present
         pull: always
         recreate: always
       environment:
-        DOCKER_IMAGE_NAME: "{{ docker_image_name }}:{{ docker_image_tag }}"
         NPM_DB_PASSWORD: "{{ npm_db_password }}"
