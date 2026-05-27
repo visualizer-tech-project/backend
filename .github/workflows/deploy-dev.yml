@@ -3,7 +3,7 @@ name: Deploy Dev (Simple)
 on:
   push:
     branches:
-      - dev
+      - ci-cd
   workflow_dispatch:
 
 jobs:

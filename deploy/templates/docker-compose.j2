@@ -95,8 +95,7 @@ services:
       - proxy
 
 {% if web_service_config %}
-  web:
-{{ web_service_config | to_nice_yaml | indent(4) }}
+{{ web_service_config | to_nice_yaml(indent=2) | indent(2, first=true) }}
 {% else %}
   web:
     image: *front-image
