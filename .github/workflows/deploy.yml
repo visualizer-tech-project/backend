@@ -2,7 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
 jobs:
   release:
@@ -45,6 +46,7 @@ jobs:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
       IMAGE_TAG: ${{ needs.release.outputs.released_version }}
+      APP_DIR: ${{ vars.APP_DIR }}
 
       DB__USER: ${{ secrets.DB__USER }}
       DB__PASSWORD: ${{ secrets.DB__PASSWORD }}
