@@ -4,9 +4,9 @@
   become: true
 
   vars:
-    app_dir: /opt/edumap
+    app_dir: "{{ lookup('env', 'APP_DIR') | default('/opt/edumap', true) }}"
     docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
-    docker_image_tag: "{{ lookup('env', 'IMAGE_TAG', default='latest') }}"
+    docker_image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
     npm_db_password: "{{ lookup('env', 'NPM_DB_PASSWORD') }}"
 
   tasks:
@@ -69,5 +69,4 @@
         pull: always
         recreate: always
       environment:
-        DOCKER_IMAGE_NAME: "{{ docker_image_name }}:{{ docker_image_tag }}"
         NPM_DB_PASSWORD: "{{ npm_db_password }}"

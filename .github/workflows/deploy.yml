@@ -2,10 +2,50 @@ name: Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - "**"
 
 jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    environment: deploy-test
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USER: ${{ secrets.VM_USER }}
+      VM_PORT: ${{ secrets.VM_PORT }}
+      VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+      APP_DIR: ${{ vars.APP_DIR }}
+
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
+      IMAGE_TAG: test-${{ github.sha }}
+
+      DB__USER: ${{ secrets.DB__USER }}
+      DB__PASSWORD: ${{ secrets.DB__PASSWORD }}
+      DB__NAME: ${{ secrets.DB__NAME }}
+      AUTH__JWT_SECRET_KEY: ${{ secrets.AUTH__JWT_SECRET_KEY }}
+      RBAC__ADMIN_EMAIL: ${{ secrets.RBAC__ADMIN_EMAIL }}
+      RBAC__ADMIN_PASSWORD: ${{ secrets.RBAC__ADMIN_PASSWORD }}
+
+      NPM_DB_PASSWORD: ${{ secrets.NPM_DB_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push test image
+        uses: ./.github/actions/ansible-runner
+        with:
+          playbook: build_and_push.yml
+
+      - name: Deploy test compose stack
+        uses: ./.github/actions/ansible-runner
+        with:
+          playbook: deploy_compose.yml
+
   release:
+    needs: deploy-test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -45,6 +85,7 @@ jobs:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
       IMAGE_TAG: ${{ needs.release.outputs.released_version }}
+      APP_DIR: ${{ vars.APP_DIR }}
 
       DB__USER: ${{ secrets.DB__USER }}
       DB__PASSWORD: ${{ secrets.DB__PASSWORD }}
