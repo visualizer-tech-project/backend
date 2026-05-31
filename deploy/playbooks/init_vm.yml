@@ -1,6 +1,10 @@
 - name: Init VM for docker deploy
   hosts: all
   become: true
+
+  vars:
+    app_dir: "{{ lookup('env', 'APP_DIR') | default('/opt/edumap', true) }}"
+
   tasks:
     - name: Update apt cache
       apt:
