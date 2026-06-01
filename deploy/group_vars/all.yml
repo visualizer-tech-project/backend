@@ -1,0 +1,5 @@
+app_dir: "{{ lookup('env', 'APP_DIR') | default('/opt/edumap', true) }}"
+compose_file: "{{ app_dir }}/docker-compose.yml"
+
+docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+docker_image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"

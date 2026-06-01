@@ -7,7 +7,7 @@ from app.database.engine import engine
 
 
 async def get_session():
-    async with AsyncSession(engine) as session:
+    async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
 
 

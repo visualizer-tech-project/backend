@@ -1,0 +1,44 @@
+---
+- name: Build and push docker image
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "{{ lookup('env', 'IMAGE_TAG', default='latest') }}"
+
+  tasks:
+    - name: Docker Hub login
+      community.docker.docker_login:
+        username: "{{ lookup('env', 'DOCKER_USER') }}"
+        password: "{{ lookup('env', 'DOCKER_TOKEN') }}"
+
+    - name: Build Docker image
+      community.docker.docker_image:
+        name: "{{ docker_image_name }}"
+        tag: "{{ docker_image_tag }}"
+        source: build
+        build:
+          path: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
+
+    - name: Push Docker image with tag
+      community.docker.docker_image:
+        name: "{{ docker_image_name }}"
+        tag: "{{ docker_image_tag }}"
+        push: true
+        source: local
+
+    - name: Tag as latest
+      community.docker.docker_image:
+        name: "{{ docker_image_name }}:{{ docker_image_tag }}"
+        repository: "{{ docker_image_name }}:latest"
+        state: present
+        source: local
+
+    - name: Push latest tag
+      community.docker.docker_image:
+        name: "{{ docker_image_name }}"
+        tag: latest
+        push: true
+        source: local

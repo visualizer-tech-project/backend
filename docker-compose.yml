@@ -2,7 +2,7 @@ x-common-env: &common-env
   DB__HOST: db
   DB__PORT: 5432
 
-x-back-image: &back-image amirkhubeev/edumap-api:latest
+x-back-image: &back-image ka1ser67/edumap-api
 x-front-image: &front-image nginx:stable-alpine
 
 x-api-base: &api-base
@@ -19,18 +19,39 @@ services:
     env_file:
       - .env
     environment:
-      - POSTGRES_USER=${DB__USER}
-      - POSTGRES_PASSWORD=${DB__PASSWORD}
-      - POSTGRES_DB=${DB__NAME}
+      POSTGRES_USER: ${DB__USER}
+      POSTGRES_PASSWORD: ${DB__PASSWORD}
+      POSTGRES_DB: ${DB__NAME}
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB__USER} -d ${DB__NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U $$DB__USER -d $$DB__NAME"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - internal
+
+  proxy_db:
+    image: postgres:18-alpine
+    container_name: edumap-proxy-db
+    environment:
+      POSTGRES_USER: npm
+      POSTGRES_PASSWORD: ${NPM_DB_PASSWORD}
+      POSTGRES_DB: npm
+    volumes:
+      - proxy_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U npm -d npm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - proxy
 
   migrator:
     <<: *api-base
@@ -39,36 +60,39 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: "no"
+    restart: on-failure
+    networks:
+      - internal
 
   bootstrap:
     <<: *api-base
     container_name: edumap-bootstrap
-    command: ["python", "bootstrap_runner.py"]
+    command: ["python", "-m", "app.bootstrap_runner"]
     depends_on:
       migrator:
         condition: service_completed_successfully
     restart: "no"
+    networks:
+      - internal
 
   api:
-    image: *back-image
+    <<: *api-base
     container_name: edumap-api
-    env_file:
-      - .env
-    environment:
-      <<: *common-env
     depends_on:
       db:
         condition: service_healthy
       bootstrap:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - internal
+      - proxy
 
   web:
     image: *front-image
@@ -82,6 +106,39 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - proxy
+
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: edumap-npm
+    restart: unless-stopped
+    ports:
+      - "81:81"
+      - "8080:80"
+      - "443:443"
+    environment:
+      TZ: "Europe/Moscow"
+      DB_POSTGRES_HOST: proxy_db
+      DB_POSTGRES_PORT: 5432
+      DB_POSTGRES_USER: npm
+      DB_POSTGRES_PASSWORD: ${NPM_DB_PASSWORD}
+      DB_POSTGRES_NAME: npm
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+    depends_on:
+      proxy_db:
+        condition: service_healthy
+    networks:
+      - proxy
+
+networks:
+  internal:
+    driver: bridge
+  proxy:
+    driver: bridge
 
 volumes:
   postgres_data:
+  proxy_postgres_data:

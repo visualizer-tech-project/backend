@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTask
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
 from app.core.security import oauth2_scheme, get_current_user
-from app.dependencies import CurrentUser, get_auth_service
+from app.dependencies import get_auth_service
+from app.dependencies.auth import CurrentUser
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,

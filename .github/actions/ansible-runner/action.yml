@@ -1,0 +1,31 @@
+name: "Ansible Runner"
+description: "Install ansible and run selected playbook"
+inputs:
+  playbook:
+    description: "Playbook filename from deploy/playbooks"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install ansible + deps
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ansible python3-pip
+        sudo /opt/pipx/venvs/ansible-core/bin/python -m pip install requests
+        ansible-galaxy collection install -r deploy/requirements.yml
+
+    - name: Setup SSH key
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${VM_SSH_KEY}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H "${VM_HOST}" >> ~/.ssh/known_hosts
+
+    - name: Run playbook
+      shell: bash
+      run: |
+        cd deploy
+        ansible-playbook playbooks/${{ inputs.playbook }}

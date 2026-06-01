@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    outputs:
+      released_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branches: '["main"]'
+
+  deploy-to-production:
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USER: ${{ secrets.VM_USER }}
+      VM_PORT: ${{ secrets.VM_PORT }}
+      VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
+      IMAGE_TAG: ${{ needs.release.outputs.released_version }}
+      APP_DIR: ${{ vars.APP_DIR }}
+
+      DB__USER: ${{ secrets.DB__USER }}
+      DB__PASSWORD: ${{ secrets.DB__PASSWORD }}
+      DB__NAME: ${{ secrets.DB__NAME }}
+      AUTH__JWT_SECRET_KEY: ${{ secrets.AUTH__JWT_SECRET_KEY }}
+      RBAC__ADMIN_EMAIL: ${{ secrets.RBAC__ADMIN_EMAIL }}
+      RBAC__ADMIN_PASSWORD: ${{ secrets.RBAC__ADMIN_PASSWORD }}
+
+      NPM_DB_PASSWORD: ${{ secrets.NPM_DB_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push image
+        uses: ./.github/actions/ansible-runner
+        with:
+          playbook: build_and_push.yml
+
+      - name: Deploy compose stack
+        uses: ./.github/actions/ansible-runner
+        with:
+          playbook: deploy_compose.yml

@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Security, status, Request
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
 from app.core.security import get_current_user
-from app.dependencies import get_progress_service, CurrentUser
+from app.dependencies import get_progress_service
+from app.dependencies.auth import CurrentUser
 from app.models.base import ListResponse
 from app.schemas.filters import ProgressFilters
 from app.models.userprogress import (

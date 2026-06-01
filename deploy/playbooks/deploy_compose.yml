@@ -1,0 +1,77 @@
+---
+- name: Deploy compose stack
+  hosts: all
+  become: true
+
+  vars:
+    app_dir: "{{ lookup('env', 'APP_DIR') | default('/opt/edumap', true) }}"
+    docker_image_name: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
+    docker_image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+    npm_db_password: "{{ lookup('env', 'NPM_DB_PASSWORD') }}"
+
+  tasks:
+    - name: Ensure app dir exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Ensure nginx, html and npm dirs exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ app_dir }}/nginx"
+        - "{{ app_dir }}/html"
+        - "{{ app_dir }}/npm/data"
+        - "{{ app_dir }}/npm/letsencrypt"
+
+    - name: Install initial docker compose file without overwriting existing frontend-managed file
+      copy:
+        src: ../../docker-compose.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        mode: "0644"
+        force: false
+
+    - name: Update backend image version in compose file (preserves frontend changes)
+      replace:
+        path: "{{ app_dir }}/docker-compose.yml"
+        regexp: '(image: {{ docker_image_name }}:)[^\s]+'
+        replace: '\1{{ docker_image_tag }}'
+      when:
+        - docker_image_name is defined
+        - docker_image_tag is defined
+
+    - name: Install initial nginx config without overwriting existing frontend-managed file
+      copy:
+        src: ../../nginx/nginx.conf
+        dest: "{{ app_dir }}/nginx/nginx.conf"
+        mode: "0644"
+
+    - name: Install initial html index without overwriting existing frontend-managed file
+      copy:
+        src: ../../html/index.html
+        dest: "{{ app_dir }}/html/index.html"
+        mode: "0644"
+        force: false
+
+    - name: Render .env
+      template:
+        src: ../templates/env.j2
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+
+    - name: Docker Hub login on VM
+      community.docker.docker_login:
+        username: "{{ lookup('env', 'DOCKER_USER') }}"
+        password: "{{ lookup('env', 'DOCKER_TOKEN') }}"
+
+    - name: Deploy stack with docker compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        state: present
+        pull: always
+        recreate: always
+      environment:
+        NPM_DB_PASSWORD: "{{ npm_db_password }}"
