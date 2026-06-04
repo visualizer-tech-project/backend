@@ -37,8 +37,8 @@
     - name: Update backend image version in compose file (preserves frontend changes)
       replace:
         path: "{{ app_dir }}/docker-compose.yml"
-        regexp: '(image: {{ docker_image_name }}:)[^\s]+'
-        replace: '\1{{ docker_image_tag }}'
+        regexp: 'image: {{ docker_image_name }}:.*$'
+        replace: 'image: {{ docker_image_name }}:{{ docker_image_tag }}'
       when:
         - docker_image_name is defined
         - docker_image_tag is defined
