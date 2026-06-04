@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, Security, Request
+from fastapi import APIRouter, Depends, Security, Request, Response
 
 from app.core import responses
 from app.core.rate_limiter import limiter
@@ -24,6 +24,7 @@ router = APIRouter(prefix='/permissions', tags=['permissions'])
 @limiter.limit('30/minute')
 async def get_permissions(
     request: Request,
+    response: Response,
     permission_service: PermissionService = Depends(get_permission_service),
 ) -> Sequence[PermissionPublic]:
     return await permission_service.get_permissions()

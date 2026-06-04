@@ -32,14 +32,16 @@ class JWTHandler:
         }
 
         return jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+            payload,
+            settings.auth.jwt_secret_key,
+            algorithm=settings.auth.jwt_algorithm
         )
 
     @classmethod
     def create_access_token(cls, user_id: int, jti: Optional[str] = None) -> str:
         return cls._create_token(
             user_id,
-            timedelta(minutes=settings.access_token_expire_minutes),
+            timedelta(minutes=settings.auth.access_token_expire_minutes),
             jti,
         )
 
@@ -47,7 +49,7 @@ class JWTHandler:
     def create_refresh_token(cls, user_id: int, jti: Optional[str] = None) -> str:
         return cls._create_token(
             user_id,
-            timedelta(days=settings.refresh_token_expire_days),
+            timedelta(days=settings.auth.refresh_token_expire_days),
             jti,
         )
 
@@ -56,8 +58,8 @@ class JWTHandler:
         try:
             payload = jwt.decode(
                 token,
-                settings.jwt_secret_key,
-                algorithms=[settings.jwt_algorithm],
+                settings.auth.jwt_secret_key,
+                algorithms=[settings.auth.jwt_algorithm],
             )
             return payload
         except jwt.PyJWTError:

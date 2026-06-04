@@ -41,6 +41,7 @@ from app.models.permission import (
     RolePermissionMapping,
 )
 from app.models.role import Role, RoleCreate, RoleUpdate, RolePublic, UserRoleMapping
+from app.models.email import EmailNotification, EmailAction
 
 UserPublic.model_rebuild()
 ProgramPublic.model_rebuild()
@@ -106,4 +107,6 @@ __all__ = [
     'RoleUpdate',
     'RolePublic',
     'UserRoleMapping',
+    'EmailNotification',
+    'EmailAction',
 ]

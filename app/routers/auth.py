@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, Response, status, Cookie, BackgroundTasks, Request, Security
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
-from app.core.security import oauth2_scheme, get_current_user
+from app.core.security import get_current_user
 from app.dependencies import get_auth_service
 from app.dependencies.auth import CurrentUser
 from app.schemas.auth import (
@@ -57,6 +58,7 @@ def clear_refresh_token_cookie(response: Response) -> None:
 @limiter.limit("5/minute")
 async def register(
     request: Request,
+    response: Response,
     register_data: RegisterRequest,
     background_tasks: BackgroundTasks,
     auth_service: AuthService = Depends(get_auth_service),
@@ -82,6 +84,7 @@ async def register(
 @limiter.limit("10/minute")
 async def verify_account(
     request: Request,
+    response: Response,
     verify_data: VerifyAccountRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ) -> MessageResponse:
@@ -175,14 +178,10 @@ async def logout(
 @limiter.limit("30/minute")
 async def get_me(
     request: Request,
-    token: str = Depends(oauth2_scheme),
-    auth_service: AuthService = Depends(get_auth_service),
+    response: Response,
+    current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
 ) -> MeResponse:
-    user = await auth_service.get_user_from_access_token(token)
-    if not user:
-        raise exceptions.UnauthorizedError('Invalid or expired token')
-
-    return MeResponse.model_validate(user)
+    return MeResponse.model_validate(current_user)
 
 
 @router.post(
@@ -196,6 +195,7 @@ async def get_me(
 @limiter.limit("3/minute")
 async def forgot_password(
     request: Request,
+    response: Response,
     forgot_data: ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
     auth_service: AuthService = Depends(get_auth_service),
@@ -219,6 +219,7 @@ async def forgot_password(
 @limiter.limit("5/minute")
 async def reset_password(
     request: Request,
+    response: Response,
     reset_data: ResetPasswordRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ) -> MessageResponse:
@@ -241,6 +242,7 @@ async def reset_password(
 @limiter.limit("5/minute")
 async def change_password(
     request: Request,
+    response: Response,
     change_data: ChangePasswordRequest,
     current_user: CurrentUser = Security(get_current_user, scopes=['profile:read']),
     auth_service: AuthService = Depends(get_auth_service),
@@ -250,3 +252,15 @@ async def change_password(
         message="Password has been changed successfully. Please login again with the new password.",
         success=True
     )
+
+@router.post('/oauth/token', response_model=TokenResponse, include_in_schema=False)
+async def oauth_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> TokenResponse:
+    login_data = LoginRequest(
+        email=form_data.username,
+        password=form_data.password
+    )
+    token_response = await auth_service.login(login_data)
+    return token_response

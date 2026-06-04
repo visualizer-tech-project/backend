@@ -12,7 +12,7 @@ from app.repositories.user import UserRepository
 from app.services.authenticator import AuthenticatorService
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl='/api/v1/auth/login',
+    tokenUrl='/api/v1/auth/oauth/token',
     refreshUrl='/api/v1/auth/refresh',
     scopes=PERMISSION_DESCRIPTIONS,
 )

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from fastapi import BackgroundTasks
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
@@ -7,6 +8,8 @@ from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+TEMPLATES_DIR = BASE_DIR / settings.email.templates_dir
 
 class EmailService:
     def __init__(self, background_tasks: BackgroundTasks):
@@ -14,14 +17,14 @@ class EmailService:
 
         self._conf = ConnectionConfig(
             MAIL_USERNAME=settings.email.username,
-            MAIL_PASSWORD=settings.email.password.get_secret_value(),
+            MAIL_PASSWORD=settings.email.password,
             MAIL_FROM=settings.email.username,
             MAIL_PORT=settings.email.port,
             MAIL_SERVER=settings.email.server,
             MAIL_FROM_NAME=settings.email.title,
             MAIL_STARTTLS=True,
             MAIL_SSL_TLS=False,
-            TEMPLATE_FOLDER=settings.email.templates_dir,
+            TEMPLATE_FOLDER=str(TEMPLATES_DIR),
             USE_CREDENTIALS=True,
         )
         self._fast_mail = FastMail(self._conf)

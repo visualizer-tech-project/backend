@@ -4,7 +4,8 @@ from typing import Optional
 
 from fastapi import BackgroundTasks
 
-from app.core import exceptions, settings
+from app.core import exceptions
+from app.core.settings import settings
 from app.core.auth import JWTHandler
 from app.core.hasher import hash_password, verify_password
 from app.models.user import User, UserCreate, UserRole, AccountStatus
@@ -82,9 +83,9 @@ class AuthService:
         )
 
         user = await self._user_repo.create(user_create)
-        public_role = await self._role_repo.get_by_name(settings.rbac.public_role)
-        if public_role:
-            await self._role_repo.assign_roles_to_user(user.id, [public_role.id])
+        student_role = await self._role_repo.get_by_name('student')
+        if student_role:
+            await self._role_repo.assign_roles_to_user(user.id, [student_role.id])
         notification = await self._email_repo.create_notification(
             user_id=user.id,
             action=EmailAction.VERIFY_ACCOUNT,

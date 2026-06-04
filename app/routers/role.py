@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, Security, status, Request
+from fastapi import APIRouter, Depends, Security, status, Request, Response
 
 from app.core import responses
 from app.core.rate_limiter import limiter
@@ -24,6 +24,7 @@ router = APIRouter(prefix='/roles', tags=['roles'])
 @limiter.limit('30/minute')
 async def get_roles(
     request: Request,
+    response: Response,
     role_service: RoleService = Depends(get_role_service),
 ) -> Sequence[Role]:
     return await role_service.get_roles()
@@ -42,6 +43,7 @@ async def get_roles(
 @limiter.limit('30/minute')
 async def get_role(
     request: Request,
+    response: Response,
     role_id: int,
     role_service: RoleService = Depends(get_role_service),
 ) -> Role:
@@ -61,6 +63,7 @@ async def get_role(
 @limiter.limit('5/minute')
 async def create_role(
     request: Request,
+    response: Response,
     role_data: RoleCreate,
     role_service: RoleService = Depends(get_role_service),
 ) -> Role:
@@ -80,6 +83,7 @@ async def create_role(
 @limiter.limit('5/minute')
 async def update_role(
     request: Request,
+    response: Response,
     role_id: int,
     role_data: RoleUpdate,
     role_service: RoleService = Depends(get_role_service),
@@ -100,6 +104,7 @@ async def update_role(
 @limiter.limit('5/minute')
 async def delete_role(
     request: Request,
+    response: Response,
     role_id: int,
     role_service: RoleService = Depends(get_role_service),
 ) -> None:

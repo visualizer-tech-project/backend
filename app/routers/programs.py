@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status, Request
+from fastapi import APIRouter, Depends, Security, status, Request, Response
 
 from app.core import responses
 from app.core.rate_limiter import limiter
@@ -28,6 +28,7 @@ router = APIRouter(prefix='/programs', tags=['programs'])
 @limiter.limit('60/minute')
 async def get_programs(
     request: Request,
+    response: Response,
     filters: ProgramFilters = Depends(),
     service: ProgramService = Depends(get_program_service),
 ) -> ListResponse[ProgramPublic]:
@@ -47,6 +48,7 @@ async def get_programs(
 @limiter.limit('60/minute')
 async def get_program_by_id(
     request: Request,
+    response: Response,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
 ) -> ProgramPublic:
@@ -66,6 +68,7 @@ async def get_program_by_id(
 @limiter.limit('10/minute')
 async def create_program(
     request: Request,
+    response: Response,
     program_data: ProgramCreate,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['programs:create'])],
     service: ProgramService = Depends(get_program_service),
@@ -87,6 +90,7 @@ async def create_program(
 @limiter.limit('10/minute')
 async def update_program(
     request: Request,
+    response: Response,
     program_id: int,
     program_data: ProgramUpdate,
     service: ProgramService = Depends(get_program_service),
@@ -107,6 +111,7 @@ async def update_program(
 @limiter.limit('10/minute')
 async def delete_program(
     request: Request,
+    response: Response,
     program_id: int,
     service: ProgramService = Depends(get_program_service),
 ) -> None:
@@ -127,6 +132,7 @@ async def delete_program(
 @limiter.limit('5/minute')
 async def copy_program(
     request: Request,
+    response: Response,
     program_id: int,
     copy_request: ProgramCopyRequest,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['programs:create'])],

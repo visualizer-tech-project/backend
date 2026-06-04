@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 from app.models.user import UserRole, AccountStatus
 
@@ -42,11 +42,13 @@ class UserInfoBase(BaseModel):
     email: EmailStr = Field(..., description='Email пользователя')
     first_name: str = Field(..., description='Имя')
     last_name: str = Field(..., description='Фамилия')
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeResponse(UserInfoBase):
     role: UserRole = Field(..., description='Роль пользователя')
     status: AccountStatus = Field(..., description='Статус аккаунта')
+    model_config = ConfigDict(from_attributes=True)
 
 
 class VerifyAccountRequest(BaseModel):

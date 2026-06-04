@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Security, status, Request
+from fastapi import APIRouter, Depends, Security, status, Request, Response
 
 from app.core import exceptions, responses
 from app.core.rate_limiter import limiter
@@ -15,7 +15,6 @@ from app.models.userprogress import (
 )
 from app.schemas.userprogress import UserProgressWithDetails
 from app.services.progress import ProgressService
-from app.services.role import RoleService
 
 router = APIRouter(prefix='/users', tags=['progress'])
 
@@ -32,6 +31,7 @@ router = APIRouter(prefix='/users', tags=['progress'])
 @limiter.limit('30/minute')
 async def get_user_progress(
     request: Request,
+    response: Response,
     user_id: int,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['progress:list'])],
     filters: ProgressFilters = Depends(),
@@ -60,6 +60,7 @@ async def get_user_progress(
 @limiter.limit('10/minute')
 async def create_progress(
     request: Request,
+    response: Response,
     user_id: int,
     course_id: int,
     progress_data: ProgressCreate,
@@ -87,6 +88,7 @@ async def create_progress(
 @limiter.limit('10/minute')
 async def update_progress(
     request: Request,
+    response: Response,
     user_id: int,
     course_id: int,
     progress_data: ProgressUpdate,
@@ -111,6 +113,7 @@ async def update_progress(
 @limiter.limit('10/minute')
 async def delete_progress(
     request: Request,
+    response: Response,
     user_id: int,
     course_id: int,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['progress:delete'])],

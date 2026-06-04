@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status, Request
+from fastapi import APIRouter, Depends, Security, status, Request, Response
 
 from app.core import responses
 from app.core.rate_limiter import limiter
@@ -28,6 +28,7 @@ router = APIRouter(prefix='/courses', tags=['courses'])
 @limiter.limit('60/minute')
 async def get_courses(
     request: Request,
+    response: Response,
     filters: CourseFilters = Depends(),
     service: CourseService = Depends(get_course_service),
 ) -> ListResponse[CoursePublic]:
@@ -47,6 +48,7 @@ async def get_courses(
 @limiter.limit('60/minute')
 async def get_course_by_id(
     request: Request,
+    response: Response,
     course_id: int,
     service: CourseService = Depends(get_course_service),
 ) -> CoursePublic:
@@ -68,6 +70,7 @@ async def get_course_by_id(
 @limiter.limit('10/minute')
 async def create_course(
     request: Request,
+    response: Response,
     course_data: CourseCreate,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['courses:create'])],
     service: CourseService = Depends(get_course_service),
@@ -90,6 +93,7 @@ async def create_course(
 @limiter.limit('10/minute')
 async def update_course(
     request: Request,
+    response: Response,
     course_id: int,
     course_data: CourseUpdate,
     service: CourseService = Depends(get_course_service),
@@ -110,6 +114,7 @@ async def update_course(
 @limiter.limit('10/minute')
 async def delete_course(
     request: Request,
+    response: Response,
     course_id: int,
     service: CourseService = Depends(get_course_service),
 ) -> None:
@@ -129,6 +134,7 @@ async def delete_course(
 @limiter.limit('60/minute')
 async def get_prerequisites(
     request: Request,
+    response: Response,
     course_id: int,
     service: CourseService = Depends(get_course_service),
 ) -> list[CoursePublic]:
@@ -151,6 +157,7 @@ async def get_prerequisites(
 @limiter.limit('10/minute')
 async def add_prerequisite(
     request: Request,
+    response: Response,
     course_id: int,
     prerequisite_data: PrerequisiteCreate,
     service: CourseService = Depends(get_course_service),
@@ -171,6 +178,7 @@ async def add_prerequisite(
 @limiter.limit('10/minute')
 async def remove_prerequisite(
     request: Request,
+    response: Response,
     course_id: int,
     prerequisite_course_id: int,
     service: CourseService = Depends(get_course_service),

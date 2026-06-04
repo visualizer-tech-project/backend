@@ -1,6 +1,6 @@
 from typing import Sequence, Annotated
 
-from fastapi import APIRouter, Depends, Security, Request
+from fastapi import APIRouter, Depends, Security, Request, Response
 from pydantic import BaseModel
 
 from app.core import exceptions, responses
@@ -31,6 +31,7 @@ class EscalateRoleRequest(BaseModel):
 @limiter.limit('30/minute')
 async def get_profile(
     request: Request,
+    response: Response,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['profile:read'])],
 ) -> UserPublic:
     return UserPublic.model_validate(current_user)
@@ -48,6 +49,7 @@ async def get_profile(
 @limiter.limit('30/minute')
 async def get_users(
     request: Request,
+    response: Response,
     user_service: UserService = Depends(get_user_service),
     filters: UserFilters = Depends(),
 ) -> Sequence[UserPublic]:
@@ -68,6 +70,7 @@ async def get_users(
 @limiter.limit('30/minute')
 async def get_user(
     request: Request,
+    response: Response,
     user_id: int,
     user_service: UserService = Depends(get_user_service),
 ) -> UserPublic:
@@ -85,6 +88,7 @@ async def get_user(
 @limiter.limit('10/minute')
 async def update_own_profile(
     request: Request,
+    response: Response,
     user_data: UserUpdate,
     current_user: Annotated[CurrentUser, Security(get_current_user, scopes=['profile:update'])],
     user_service: UserService = Depends(get_user_service),
@@ -105,6 +109,7 @@ async def update_own_profile(
 @limiter.limit('5/minute')
 async def escalate_user_role(
     request: Request,
+    response: Response,
     user_id: int,
     escalate_data: EscalateRoleRequest,
     user_service: UserService = Depends(get_user_service),
