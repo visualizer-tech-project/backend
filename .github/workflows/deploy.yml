@@ -55,6 +55,13 @@ jobs:
       RBAC__ADMIN_EMAIL: ${{ secrets.RBAC__ADMIN_EMAIL }}
       RBAC__ADMIN_PASSWORD: ${{ secrets.RBAC__ADMIN_PASSWORD }}
 
+      EMAIL__USERNAME: ${{ secrets.EMAIL__USERNAME }}
+      EMAIL__PASSWORD: ${{ secrets.EMAIL__PASSWORD }}
+      EMAIL__SERVER: ${{ secrets.EMAIL__SERVER }}
+      EMAIL__PORT: ${{ secrets.EMAIL__PORT }}
+      EMAIL__TITLE: ${{ secrets.EMAIL__TITLE }}
+      EMAIL__BASE_URL: ${{ secrets.EMAIL__BASE_URL }}
+
       NPM_DB_PASSWORD: ${{ secrets.NPM_DB_PASSWORD }}
 
     steps:
