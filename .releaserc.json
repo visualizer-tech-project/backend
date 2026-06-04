@@ -1,5 +1,5 @@
 {
-  "branches": ["feat/fix-app-logic"],
+  "branches": ["main"],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",

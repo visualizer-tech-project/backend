@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches:
-      - feat/fix-app-logic
+      - main
 
 jobs:
   release:
@@ -30,7 +30,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          branches: '["feat/fix-app-logic"]'
+          branches: '["main"]'
 
   deploy-to-production:
     needs: release
