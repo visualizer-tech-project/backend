@@ -50,7 +50,7 @@ class AuthService:
         payload = JWTHandler.decode_token(refresh_token)
         if not payload:
             raise exceptions.InternalServerError("Failed to decode refresh token")
-        expires_at = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
+        expires_at = datetime.fromtimestamp(payload['exp'], tz=timezone.utc).replace(tzinfo=None)
 
         await self._refresh_session_repo.create_session(
             user_id=user_id,

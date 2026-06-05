@@ -1,9 +1,11 @@
 from typing import List, Optional
 
+from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.course import Course, CourseCreate, CourseType, CourseUpdate
-from app.repositories.base import BaseRepository, ListResponse
+from app.models.course import Course, CourseCreate, CourseType
+from app.repositories.base import BaseRepository, ListResponse, FilterCondition
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT, FILTER_OPERATOR_CONTAINS
 from app.schemas.filters import CourseFilters
 
@@ -77,3 +79,28 @@ class CourseRepository(BaseRepository[Course, CourseCreate, CourseCreate]):
             order_by='created_at',
             descending=True,
         )
+
+    async def get_all(
+            self,
+            skip: int = DEFAULT_SKIP,
+            limit: int = DEFAULT_LIMIT,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
+    ) -> tuple[List[Course], int]:
+        query = select(self.model).options(selectinload(Course.program), selectinload(Course.user))
+        query = self._apply_filters(query, self.model, filters)
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_query) or 0
+        if order_by and hasattr(self.model, order_by):
+            order_field = getattr(self.model, order_by)
+            if descending:
+                query = query.order_by(order_field.desc())
+            else:
+                query = query.order_by(order_field)
+        if limit > 0:
+            query = query.limit(limit)
+        query = query.offset(skip)
+        result = await self.session.exec(query)
+        items = result.all()
+        return items, total

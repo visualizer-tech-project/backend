@@ -181,18 +181,19 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return items, total
 
     async def get_paginated(
-        self,
-        skip: int = DEFAULT_SKIP,
-        limit: int = DEFAULT_LIMIT,
-        filters: Optional[List[FilterCondition]] = None,
-        order_by: Optional[str] = None,
-        descending: bool = False,
+            self,
+            skip: int = DEFAULT_SKIP,
+            limit: int = DEFAULT_LIMIT,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
     ) -> ListResponse[ModelType]:
-        if limit < MIN_LIMIT:
+        if limit <= 0:
             limit = DEFAULT_LIMIT
+        if skip < 0:
+            skip = 0
         if limit > MAX_LIMIT:
             limit = MAX_LIMIT
-
         items, total = await self.get_all(
             skip=skip,
             limit=limit,
@@ -200,16 +201,16 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             order_by=order_by,
             descending=descending,
         )
-
-        page = (skip // limit) + 1 if limit > 0 else 1
-        pages_num = (total + limit - 1) // limit if limit > 0 and total > 0 else 1
-
+        if limit > 0 and total > 0:
+            pages_num = (total + limit - 1) // limit
+        else:
+            pages_num = 1
+        page = (skip // limit) + 1 if limit > 0 and skip >= 0 else 1
         pagination_info = PaginationInfo(
             total=total,
             page=page,
             pages_num=pages_num,
         )
-
         return ListResponse(info=pagination_info, items=items)
 
     async def create(self, create_data: CreateSchemaType) -> ModelType:

@@ -1,9 +1,11 @@
 from typing import List, Optional
 
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.program import Program, ProgramCreate, ProgramUpdate
-from app.repositories.base import BaseRepository, ListResponse
+from app.models.program import Program, ProgramCreate
+from app.repositories.base import BaseRepository, ListResponse, FilterCondition
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT, FILTER_OPERATOR_CONTAINS
 from app.schemas.filters import ProgramFilters
 
@@ -46,3 +48,19 @@ class ProgramRepository(BaseRepository[Program, ProgramCreate, ProgramCreate]):
             order_by='created_at',
             descending=True,
         )
+
+    async def get_by_id(self, program_id: int) -> Optional[Program]:
+        query = select(Program).where(Program.id == program_id).options(selectinload(Program.user))
+        result = await self.session.exec(query)
+        return result.one_or_none()
+
+    async def get_all(
+            self,
+            skip: int = DEFAULT_SKIP,
+            limit: int = DEFAULT_LIMIT,
+            filters: Optional[List[FilterCondition]] = None,
+            order_by: Optional[str] = None,
+            descending: bool = False,
+    ) -> tuple[List[Program], int]:
+        query = select(self.model).options(selectinload(Program.user))
+        query = self._apply_filters(query, self.model, filters)

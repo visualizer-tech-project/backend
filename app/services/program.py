@@ -80,26 +80,26 @@ class ProgramService:
             raise exceptions.NotFoundError('Program not found')
 
     async def copy_program(
-        self,
-        program_id: int,
-        copy_request: ProgramCopyRequest,
-        user_id: int,
+            self,
+            program_id: int,
+            copy_request: ProgramCopyRequest,
+            user_id: int,
     ) -> ProgramPublic:
         source_program = await self._program_repo.get_by_id(program_id)
         if not source_program:
             raise exceptions.NotFoundError('Source program not found')
-
-        existing = await self._program_repo.get_by_title(copy_request.title)
-        if existing:
-            raise exceptions.ConflictError('Program with this title already exists')
-
+        original_title = copy_request.title
+        new_title = original_title
+        counter = 1
+        while await self._program_repo.get_by_title(new_title):
+            new_title = f"{original_title} (копия {counter})"
+            counter += 1
         new_program = Program(
-            title=copy_request.title,
+            title=new_title,
             description=source_program.description,
             user_id=user_id,
         )
         new_program = await self._program_repo.save(new_program)
-
         courses, _ = await self._course_repo.get_by_program(program_id)
         for course in courses:
             new_course = Course(
@@ -110,5 +110,5 @@ class ProgramService:
                 user_id=user_id,
             )
             await self._course_repo.save(new_course)
-
+        new_program = await self._program_repo.get_by_id(new_program.id)
         return ProgramPublic.model_validate(new_program)
