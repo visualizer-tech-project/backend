@@ -1,5 +1,8 @@
 from typing import List, Optional
 
+from sqlalchemy import func
+from sqlalchemy.orm import selectinload
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.careertrack import (
@@ -7,6 +10,7 @@ from app.models.careertrack import (
     CareerTrackCourse,
     CareerTrackCreate,
 )
+from app.models.user import User
 from app.repositories.base import BaseRepository, ListResponse
 from app.core.constants import DEFAULT_SKIP, DEFAULT_LIMIT, FILTER_OPERATOR_CONTAINS
 from app.schemas.filters import CareerTrackFilters
@@ -22,10 +26,54 @@ class CareerTrackRepository(
         self.add_filter('title', operator=FILTER_OPERATOR_CONTAINS)
         self.add_filter('user_id')
 
+    async def get_by_id(self, item_id: int) -> Optional[CareerTrack]:
+        query = (
+            select(CareerTrack)
+            .join(User, CareerTrack.user_id == User.id)
+            .where(CareerTrack.id == item_id)
+            .options(selectinload(CareerTrack.user))
+        )
+        result = await self.session.exec(query)
+        return result.first()
+
+    async def get_all(
+        self,
+        skip: int = DEFAULT_SKIP,
+        limit: int = DEFAULT_LIMIT,
+        filters=None,
+        order_by: Optional[str] = None,
+        descending: bool = False,
+    ) -> tuple[List[CareerTrack], int]:
+        query = select(CareerTrack).join(User, CareerTrack.user_id == User.id).options(
+            selectinload(CareerTrack.user)
+        )
+        query = self._apply_filters(query, CareerTrack, filters)
+
+        count_query = select(func.count()).select_from(CareerTrack).join(
+            User, CareerTrack.user_id == User.id
+        )
+        count_query = self._apply_filters(count_query, CareerTrack, filters)
+        total = await self.session.scalar(count_query) or 0
+
+        if order_by and hasattr(CareerTrack, order_by):
+            order_field = getattr(CareerTrack, order_by)
+            query = query.order_by(order_field.desc() if descending else order_field)
+
+        if limit > 0:
+            query = query.limit(limit)
+        query = query.offset(skip)
+
+        result = await self.session.exec(query)
+        return result.all(), total
+
     async def get_by_title(self, title: str) -> Optional[CareerTrack]:
-        filters = self._create_filter_conditions_from_dict({'title': title})
-        items, _ = await self.get_all(filters=filters, limit=DEFAULT_LIMIT)
-        return items[0] if items else None
+        query = (
+            select(CareerTrack)
+            .where(CareerTrack.title == title)
+            .limit(1)
+        )
+        result = await self.session.exec(query)
+        return result.first()
 
     async def get_by_user(
         self,

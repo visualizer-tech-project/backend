@@ -80,6 +80,7 @@ class CareerTrackService:
             title=track_data.title, description=track_data.description, user_id=user_id
         )
         track = await self._track_repo.save(track)
+        track = await self._track_repo.get_by_id(track.id)
         return CareerTrackPublic.model_validate(track)
 
     async def update_track(
@@ -101,6 +102,7 @@ class CareerTrackService:
             setattr(track, field, value)
 
         track = await self._track_repo.save(track)
+        track = await self._track_repo.get_by_id(track.id)
         return CareerTrackPublic.model_validate(track)
 
     async def delete_track(self, track_id: int) -> None:

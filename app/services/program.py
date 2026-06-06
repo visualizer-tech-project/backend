@@ -51,6 +51,7 @@ class ProgramService:
             user_id=user_id,
         )
         program = await self._program_repo.save(program)
+        program = await self._program_repo.get_by_id(program.id)
         return ProgramPublic.model_validate(program)
 
     async def update_program(
@@ -72,6 +73,7 @@ class ProgramService:
             setattr(program, field, value)
 
         program = await self._program_repo.save(program)
+        program = await self._program_repo.get_by_id(program.id)
         return ProgramPublic.model_validate(program)
 
     async def delete_program(self, program_id: int) -> None:
@@ -111,4 +113,5 @@ class ProgramService:
             )
             await self._course_repo.save(new_course)
 
+        new_program = await self._program_repo.get_by_id(new_program.id)
         return ProgramPublic.model_validate(new_program)

@@ -8,7 +8,7 @@ from app.core.rate_limiter import limiter
 from app.core.security import get_current_user
 from app.dependencies.auth import CurrentUser
 from app.dependencies.services import get_user_service, get_role_service
-from app.models.user import UserPublic, UserUpdate
+from app.models.user import UserPublic, UserUpdate, UserRole
 from app.schemas.filters import UserFilters
 from app.services.user import UserService
 from app.services.role import RoleService
@@ -121,11 +121,12 @@ async def escalate_user_role(
     if not role:
         raise exceptions.NotFoundError()
 
-    current_role_ids = await role_service.get_user_role_ids(user_id)
+    try:
+        user_role = UserRole(escalate_data.role_name)
+    except ValueError:
+        raise exceptions.BadRequestError('Unsupported user role')
 
-    if role.id not in current_role_ids:
-        current_role_ids.append(role.id)
-
-    await role_service.assign_roles_to_user(user_id, current_role_ids)
+    await user_service.update_user(user_id, UserUpdate(role=user_role))
+    await role_service.assign_roles_to_user(user_id, [role.id])
 
     return await user_service.get_user_by_id(user_id)

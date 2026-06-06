@@ -25,9 +25,7 @@ class RefreshSessionRepository(BaseRepository[RefreshSession, None, None]):
             }
         )
         items, _ = await self.get_all(filters=filters)
-        valid_items = [
-            item for item in items if item.expires_at > datetime.now(timezone.utc)
-        ]
+        valid_items = [item for item in items if not item.is_expired()]
         return valid_items
 
     async def create_session(
