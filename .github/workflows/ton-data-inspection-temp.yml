@@ -1,0 +1,99 @@
+name: Temporary TON data inspection
+
+on:
+  push:
+    branches:
+      - chatgpt-temp-ton-summary-20260825
+    paths:
+      - .github/workflows/ton-data-inspection-temp.yml
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt-temp-ton-summary-20260825
+          fetch-depth: 0
+
+      - name: Download prior audit artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/tondata/counterparties /tmp/tondata/jettons
+          gh run download 32858178686 -D /tmp/tondata/counterparties
+          gh run download 32858283238 -D /tmp/tondata/jettons
+          find /tmp/tondata -type f -printf '%p\t%s bytes\n' | sort
+
+      - name: Build inspection report
+        run: |
+          mkdir -p tmp
+          python3 - <<'PY'
+          import json, os, pathlib
+
+          root = pathlib.Path('/tmp/tondata')
+          out = []
+          out.append('# TON dataset inspection')
+          out.append('')
+          for p in sorted(root.rglob('*')):
+              if not p.is_file():
+                  continue
+              rel = p.relative_to(root)
+              out.append(f'## `{rel}`')
+              out.append('')
+              out.append(f'- Size: {p.stat().st_size} bytes')
+              if p.suffix.lower() == '.json':
+                  try:
+                      with p.open('r', encoding='utf-8') as f:
+                          data = json.load(f)
+                      out.append(f'- Top-level type: `{type(data).__name__}`')
+                      if isinstance(data, dict):
+                          out.append(f'- Top-level keys: `{list(data.keys())}`')
+                          for k, v in data.items():
+                              if isinstance(v, list):
+                                  out.append(f'- List `{k}` length: **{len(v)}**')
+                                  if v:
+                                      out.append(f'- First `{k}` element type: `{type(v[0]).__name__}`')
+                                      if isinstance(v[0], dict):
+                                          out.append(f'- First `{k}` element keys: `{list(v[0].keys())}`')
+                              elif isinstance(v, dict):
+                                  out.append(f'- Dict `{k}` keys: `{list(v.keys())[:50]}`')
+                      elif isinstance(data, list):
+                          out.append(f'- List length: **{len(data)}**')
+                          if data:
+                              out.append(f'- First element type: `{type(data[0]).__name__}`')
+                              if isinstance(data[0], dict):
+                                  out.append(f'- First element keys: `{list(data[0].keys())}`')
+                      sample = json.dumps(data[0] if isinstance(data, list) and data else data, ensure_ascii=False, indent=2)
+                      if len(sample) > 7000:
+                          sample = sample[:7000] + '\n...TRUNCATED...'
+                      out.append('')
+                      out.append('```json')
+                      out.append(sample)
+                      out.append('```')
+                  except Exception as e:
+                      out.append(f'- JSON read error: `{e!r}`')
+              else:
+                  try:
+                      txt = p.read_text(encoding='utf-8', errors='replace')[:7000]
+                      out.append('')
+                      out.append('```text')
+                      out.append(txt)
+                      out.append('```')
+                  except Exception as e:
+                      out.append(f'- Read error: `{e!r}`')
+              out.append('')
+          pathlib.Path('tmp/ton_data_inspection.md').write_text('\n'.join(out), encoding='utf-8')
+          PY
+
+      - name: Commit inspection report
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tmp/ton_data_inspection.md
+          git commit -m 'chore: add temporary TON data inspection'
+          git push origin HEAD:chatgpt-temp-ton-summary-20260825
